@@ -1,0 +1,38 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --background: #090611;
+  --surface: #151021;
+  --surface-raised: #211632;
+  --foreground: #F8F6FC;
+  --muted: #B9B1C8;
+  --primary: #C026D3;          /* Display headings & accent badges */
+  --primary-text: #E879F9;     /* Body links & interactive text (WCAG 2.2 AA 8.6:1 ratio) */
+  --accent: #F5E642;           /* Electric yellow accent */
+  --border: rgba(255, 255, 255, 0.12);
+  --focus: #F5E642;
+  --radius: 0.5rem;
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+
+  body {
+    background-color: var(--background);
+    color: var(--foreground);
+    font-feature-settings: "rlig" 1, "calt" 1;
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  /* Accessible focus indicators */
+  :focus-visible {
+    outline: 2px solid var(--focus);
+    outline-offset: 2px;
+  }
+}
+
