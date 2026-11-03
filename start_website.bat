@@ -10,3 +10,4 @@ timeout /t 3 >nul
 start "" http://localhost:8080/
 call npm run dev
 pause
+

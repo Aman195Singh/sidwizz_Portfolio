@@ -1,11 +1,16 @@
-<!-- LOVABLE:BEGIN -->
-> [!IMPORTANT]
-> This project is connected to [Lovable](https://lovable.dev). Avoid rewriting
-> published git history — force pushing, or rebasing/amending/squashing commits
-> that are already pushed — as it rewrites history on Lovable's side and the
-> user will likely lose their project history.
->
-> Commits you push to the connected branch sync back to Lovable and show up in
-> the editor, so keep the branch in a working state.
-<!-- LOVABLE:END -->
-- Site UI lives in src/components/site (Layout, Reveal, Lightbox, icons); content in src/lib/data.ts; photos in public/images — keeps pages thin and content editable in one place.
+# SIDD.WHIZZ — Developer & Agent Instructions
+
+This repository contains the official portfolio website for **Siddharth “Sid” Maurya** (Event Host, Emcee & Moderator).
+
+## Tech Stack
+- **Framework:** TanStack Start + Vite
+- **Routing:** TanStack Router (`src/routes/`)
+- **Styling:** Tailwind CSS + Radix UI primitives
+- **Components:** `src/components/site/` (Header, Footer, Layout, Reveal, Lightbox)
+- **Data & Content:** `src/lib/data.ts`
+- **Assets:** `public/images/` and `src/assets/`
+
+## Guidelines
+- Maintain code cleanliness and documentation integrity.
+- Keep routes responsive, accessible, and fast loading.
+- Verify dev server runs smoothly on `http://localhost:8080/`.

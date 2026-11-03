@@ -1,29 +1,27 @@
-# Welcome to your Lovable project
+# SIDD.WHIZZ — Siddharth “Sid” Maurya Portfolio
 
-This project was built with [Lovable](https://lovable.dev).
+Official modern portfolio website for **Siddharth “Sid” Maurya** — Premier Event Host, Anchor, Emcee & Moderator with 15+ years of stage experience across 1,200+ corporate conclaves, tech summits, award galas, and celebrity events.
 
-## Build with Lovable
+## Features
+- **Cinematic Design:** Dark, modern, high-contrast aesthetic tailored for elite event hosting.
+- **Full Route Suite:** Home, About, Services, Portfolio, Gallery, and Contact/Booking.
+- **Fast Performance:** Powered by Vite, TanStack Router & Start SSR architecture.
+- **Interactive Components:** Image lightbox galleries, responsive navigation, dynamic contact inquiry form.
 
-Open your project in the [Lovable editor](https://lovable.dev) and keep building.
+## Getting Started
 
-- **Ship faster**: describe what you want to build and Lovable handles the code.
-- **Stay in sync**: connect the project to GitHub and every change made in Lovable is committed straight to your repository.
-- **Full ownership**: this code is yours. Push to your repository and your changes sync back into Lovable, ready for your next prompt.
+### Prerequisites
+- Node.js (v18+ or v20+)
+- npm or bun
 
-## Development
-
-Prefer working locally? You need Node.js and npm — [install with nvm](https://github.com/nvm-sh/nvm#installing-and-updating).
-
+### Local Development
 ```sh
-git clone <this-repository-url>
-cd <repository-name>
-npm i
+npm install --legacy-peer-deps
 npm run dev
 ```
+Or simply double-click `start_website.bat` on Windows.
 
-## Built with
-
-- TanStack Start
-- TypeScript
-- React
-- Tailwind CSS
+### Build
+```sh
+npm run build
+```
