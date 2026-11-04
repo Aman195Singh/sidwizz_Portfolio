@@ -115,19 +115,19 @@ function ProfilePage() {
   if (!isAuthenticated || !user) {
     return (
       <div className="flex min-h-[70vh] items-center justify-center px-4 bg-black">
-        <div className="card-ink max-w-md p-8 text-center rounded-2xl border border-zinc-800 bg-zinc-950">
+        <div className="card-ink max-w-md p-8 text-center rounded-2xl border border-border bg-card">
           <div className="mx-auto mb-4 grid h-12 w-12 place-items-center rounded-full bg-primary/20 text-primary">
             <User className="h-6 w-6" />
           </div>
           <h2 className="text-xl font-bold text-white">Sign In Required</h2>
-          <p className="mt-2 text-sm text-zinc-400">
+          <p className="mt-2 text-sm text-muted-foreground">
             Please log in to manage your attendee passes and account profile.
           </p>
           <div className="mt-6 flex flex-col gap-2">
             <Link to="/login" className="btn-red w-full">
               Sign In to Continue
             </Link>
-            <Link to="/" className="btn-outline w-full !border-zinc-700 !text-white hover:!bg-zinc-800">
+            <Link to="/" className="btn-outline w-full !border-border !text-white hover:!bg-muted">
               Back to Homepage
             </Link>
           </div>
@@ -141,12 +141,12 @@ function ProfilePage() {
     const target = user.role === "admin" ? "/admin" : "/organizer";
     return (
       <div className="flex min-h-[70vh] items-center justify-center px-4 bg-black">
-        <div className="card-ink max-w-md p-8 text-center rounded-2xl border border-zinc-800 bg-zinc-950">
+        <div className="card-ink max-w-md p-8 text-center rounded-2xl border border-border bg-card">
           <div className="mx-auto mb-4 grid h-12 w-12 place-items-center rounded-full bg-primary/20 text-primary">
             <Sparkles className="h-6 w-6 animate-spin" />
           </div>
           <h2 className="text-xl font-bold text-white">Opening Your Portal...</h2>
-          <p className="mt-2 text-sm text-zinc-400">
+          <p className="mt-2 text-sm text-muted-foreground">
             Redirecting to your dedicated {user.role === "admin" ? "Admin Panel" : "Organiser Portal"}.
           </p>
           <div className="mt-6">
@@ -172,7 +172,7 @@ function ProfilePage() {
 
       <div className="container-x max-w-5xl space-y-8">
         {/* Top Header Card with Profile Photo Studio */}
-        <div className="rounded-2xl border border-zinc-800 bg-zinc-950 p-6 sm:p-8 shadow-xl">
+        <div className="rounded-2xl border border-border bg-card p-6 sm:p-8 shadow-xl">
           <div className="flex flex-col gap-6 sm:flex-row sm:items-center sm:justify-between">
             <div className="flex items-center gap-4">
               {/* Photo Avatar */}
@@ -201,11 +201,11 @@ function ProfilePage() {
               <div>
                 <div className="flex items-center gap-2.5">
                   <h1 className="text-2xl font-black font-display text-white">{user.name}</h1>
-                  <span className="rounded-full bg-white/10 text-white border border-zinc-700 px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wider">
+                  <span className="rounded-full bg-white/10 text-white border border-border px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wider">
                     Member Pass
                   </span>
                 </div>
-                <p className="text-sm text-zinc-400">{user.email}</p>
+                <p className="text-sm text-muted-foreground">{user.email}</p>
                 <div className="mt-1 flex items-center gap-2">
                   <button
                     type="button"
@@ -218,7 +218,7 @@ function ProfilePage() {
                     <button
                       type="button"
                       onClick={handleRemovePhoto}
-                      className="text-xs text-zinc-500 hover:text-destructive flex items-center gap-1"
+                      className="text-xs text-muted-foreground/80 hover:text-destructive flex items-center gap-1"
                     >
                       <Trash2 className="h-3 w-3" /> Remove
                     </button>
@@ -233,7 +233,7 @@ function ProfilePage() {
                   logout();
                   navigate({ to: "/" });
                 }}
-                className="btn-outline !py-2 !px-4 text-xs !border-zinc-700 !text-white hover:!bg-zinc-900"
+                className="btn-outline !py-2 !px-4 text-xs !border-border !text-white hover:!bg-card"
               >
                 <LogOut className="h-4 w-4" /> Sign Out
               </button>
@@ -242,24 +242,24 @@ function ProfilePage() {
         </div>
 
         {/* VIP Stage Passes / Registered Events */}
-        <div className="rounded-2xl border border-zinc-800 bg-zinc-950 p-6 shadow-sm space-y-4">
-          <div className="flex items-center justify-between border-b border-zinc-800 pb-3">
+        <div className="rounded-2xl border border-border bg-card p-6 shadow-sm space-y-4">
+          <div className="flex items-center justify-between border-b border-border pb-3">
             <div>
               <h3 className="text-base font-bold text-white flex items-center gap-2">
                 <Ticket className="h-4 w-4 text-primary" /> Active Stage Passes & RSVPs
               </h3>
-              <p className="text-xs text-zinc-400">Events hosted by Siddharth Maurya where you hold audience registration.</p>
+              <p className="text-xs text-muted-foreground">Events hosted by Siddharth Maurya where you hold audience registration.</p>
             </div>
-            <span className="rounded-full bg-white/10 text-white border border-zinc-700 px-2.5 py-0.5 text-xs font-bold">
+            <span className="rounded-full bg-white/10 text-white border border-border px-2.5 py-0.5 text-xs font-bold">
               1 Active Pass
             </span>
           </div>
 
-          <div className="rounded-xl border border-zinc-800 bg-black p-4 sm:p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+          <div className="rounded-xl border border-border bg-black p-4 sm:p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
             <div>
               <span className="font-mono text-xs font-bold text-primary">TICKET: PASS-2026-VIP</span>
               <h4 className="text-base font-bold text-white mt-0.5">Global FinTech Summit 2026</h4>
-              <p className="text-xs text-zinc-400 mt-0.5">
+              <p className="text-xs text-muted-foreground mt-0.5">
                 📅 Dec 14, 2026 • Jio World Convention Centre, Mumbai • Emcee: Siddharth Maurya
               </p>
             </div>
@@ -273,53 +273,53 @@ function ProfilePage() {
         </div>
 
         {/* Member Account & Profile Form */}
-        <div className="rounded-2xl border border-zinc-800 bg-zinc-950 p-6 shadow-sm space-y-6">
+        <div className="rounded-2xl border border-border bg-card p-6 shadow-sm space-y-6">
           <div>
             <h3 className="text-base font-bold text-white">Personal Account Information</h3>
-            <p className="text-xs text-zinc-400">Update your contact profile and preferences.</p>
+            <p className="text-xs text-muted-foreground">Update your contact profile and preferences.</p>
           </div>
 
           <form onSubmit={handleSaveProfile} className="space-y-4 text-xs">
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
-                <label className="font-bold text-zinc-400 block mb-1">Your Full Name</label>
+                <label className="font-bold text-muted-foreground block mb-1">Your Full Name</label>
                 <input
                   type="text"
                   required
                   value={name}
                   onChange={(e) => setName(e.target.value)}
-                  className="w-full rounded-xl border border-zinc-800 bg-black py-2.5 px-3 text-xs text-white placeholder:text-zinc-600 focus:border-primary focus:outline-none"
+                  className="w-full rounded-xl border border-border bg-black py-2.5 px-3 text-xs text-white placeholder:text-muted-foreground/50 focus:border-primary focus:outline-none"
                 />
               </div>
 
               <div>
-                <label className="font-bold text-zinc-400 block mb-1">Email Address</label>
+                <label className="font-bold text-muted-foreground block mb-1">Email Address</label>
                 <input
                   type="email"
                   required
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  className="w-full rounded-xl border border-zinc-800 bg-black py-2.5 px-3 text-xs text-white placeholder:text-zinc-600 focus:border-primary focus:outline-none"
+                  className="w-full rounded-xl border border-border bg-black py-2.5 px-3 text-xs text-white placeholder:text-muted-foreground/50 focus:border-primary focus:outline-none"
                 />
               </div>
 
               <div>
-                <label className="font-bold text-zinc-400 block mb-1">Mobile Contact</label>
+                <label className="font-bold text-muted-foreground block mb-1">Mobile Contact</label>
                 <input
                   type="text"
                   value={phone}
                   onChange={(e) => setPhone(e.target.value)}
-                  className="w-full rounded-xl border border-zinc-800 bg-black py-2.5 px-3 text-xs text-white placeholder:text-zinc-600 focus:border-primary focus:outline-none"
+                  className="w-full rounded-xl border border-border bg-black py-2.5 px-3 text-xs text-white placeholder:text-muted-foreground/50 focus:border-primary focus:outline-none"
                 />
               </div>
 
               <div>
-                <label className="font-bold text-zinc-400 block mb-1">Location / City</label>
+                <label className="font-bold text-muted-foreground block mb-1">Location / City</label>
                 <input
                   type="text"
                   value={city}
                   onChange={(e) => setCity(e.target.value)}
-                  className="w-full rounded-xl border border-zinc-800 bg-black py-2.5 px-3 text-xs text-white placeholder:text-zinc-600 focus:border-primary focus:outline-none"
+                  className="w-full rounded-xl border border-border bg-black py-2.5 px-3 text-xs text-white placeholder:text-muted-foreground/50 focus:border-primary focus:outline-none"
                 />
               </div>
             </div>
@@ -332,7 +332,7 @@ function ProfilePage() {
           </form>
 
           {/* Password update */}
-          <div className="border-t border-zinc-800 pt-6 space-y-4">
+          <div className="border-t border-border pt-6 space-y-4">
             <div className="flex items-center gap-2">
               <KeyRound className="h-4 w-4 text-primary" />
               <h4 className="text-sm font-bold text-white">Account Password</h4>
@@ -340,36 +340,36 @@ function ProfilePage() {
             <form onSubmit={handleUpdatePassword} className="space-y-4 text-xs">
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                 <div>
-                  <label className="font-bold text-zinc-400 block mb-1">Current Password</label>
+                  <label className="font-bold text-muted-foreground block mb-1">Current Password</label>
                   <input
                     type="password"
                     required
                     value={currentPassword}
                     onChange={(e) => setCurrentPassword(e.target.value)}
                     placeholder="••••••••"
-                    className="w-full rounded-xl border border-zinc-800 bg-black py-2 px-3 text-xs text-white focus:border-primary focus:outline-none"
+                    className="w-full rounded-xl border border-border bg-black py-2 px-3 text-xs text-white focus:border-primary focus:outline-none"
                   />
                 </div>
                 <div>
-                  <label className="font-bold text-zinc-400 block mb-1">New Password</label>
+                  <label className="font-bold text-muted-foreground block mb-1">New Password</label>
                   <input
                     type="password"
                     required
                     value={newPassword}
                     onChange={(e) => setNewPassword(e.target.value)}
                     placeholder="Min 6 characters"
-                    className="w-full rounded-xl border border-zinc-800 bg-black py-2 px-3 text-xs text-white focus:border-primary focus:outline-none"
+                    className="w-full rounded-xl border border-border bg-black py-2 px-3 text-xs text-white focus:border-primary focus:outline-none"
                   />
                 </div>
                 <div>
-                  <label className="font-bold text-zinc-400 block mb-1">Confirm New Password</label>
+                  <label className="font-bold text-muted-foreground block mb-1">Confirm New Password</label>
                   <input
                     type="password"
                     required
                     value={confirmPassword}
                     onChange={(e) => setConfirmPassword(e.target.value)}
                     placeholder="Re-enter password"
-                    className="w-full rounded-xl border border-zinc-800 bg-black py-2 px-3 text-xs text-white focus:border-primary focus:outline-none"
+                    className="w-full rounded-xl border border-border bg-black py-2 px-3 text-xs text-white focus:border-primary focus:outline-none"
                   />
                 </div>
               </div>

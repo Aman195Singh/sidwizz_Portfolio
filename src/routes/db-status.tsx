@@ -223,7 +223,7 @@ VITE_DATABASE_URL="postgresql://neondb_owner:YOUR_PASSWORD@ep-sample-pool-123456
               onClick={copyEnvSnippet}
               className="absolute right-3 top-3 flex items-center gap-1 rounded bg-white/10 px-2 py-1 text-[11px] text-white hover:bg-white/20 transition"
             >
-              {copied ? <Check className="h-3.5 w-3.5 text-primary" /> : <Copy className="h-3.5 w-3.5 text-zinc-400" />}
+              {copied ? <Check className="h-3.5 w-3.5 text-primary" /> : <Copy className="h-3.5 w-3.5 text-muted-foreground" />}
               <span>{copied ? "Copied!" : "Copy"}</span>
             </button>
             <pre className="overflow-x-auto whitespace-pre">{sampleEnv}</pre>
