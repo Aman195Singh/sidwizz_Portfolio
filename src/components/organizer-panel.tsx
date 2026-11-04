@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { Link, useNavigate } from "@tanstack/react-router";
 import {
   LayoutDashboard,
@@ -27,10 +27,16 @@ import {
   Sparkles,
   Lock,
   ShieldCheck,
+  Camera,
+  ImagePlus,
+  Trash2,
+  KeyRound,
+  Upload,
 } from "lucide-react";
 import { useAuth } from "@/lib/auth";
 import { toast } from "sonner";
 import { Logo } from "@/components/site";
+import { getStoredEnquiries, saveEnquiry } from "@/lib/data-store";
 
 export type OrganizerTab = "overview" | "enquiries" | "bookings" | "events" | "account";
 
@@ -75,14 +81,52 @@ const INITIAL_ORG_ENQUIRIES: OrgEnquiry[] = [
 ];
 
 export function OrganizerPanel() {
-  const { user, logout } = useAuth();
+  const { user, logout, updateProfilePhoto, updatePassword, updateProfile } = useAuth();
   const navigate = useNavigate();
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const [activeTab, setActiveTab] = useState<OrganizerTab>("overview");
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
-  // Enquiries state
-  const [enquiries, setEnquiries] = useState<OrgEnquiry[]>(INITIAL_ORG_ENQUIRIES);
+  // Sync enquiries with DataStore
+  const [enquiries, setEnquiries] = useState<OrgEnquiry[]>(() => {
+    const stored = getStoredEnquiries();
+    return stored.map((e) => ({
+      id: e.id,
+      eventName: e.eventName,
+      date: e.date,
+      city: e.city,
+      venue: e.venue,
+      format: e.format,
+      crowdSize: e.crowdSize,
+      budget: e.budget,
+      status: e.status === "New" ? "Under Review" : e.status === "Confirmed" ? "Confirmed" : "Proposal Sent",
+      createdAt: e.createdAt,
+    }));
+  });
+
+  useEffect(() => {
+    const handleSync = () => {
+      const stored = getStoredEnquiries();
+      setEnquiries(
+        stored.map((e) => ({
+          id: e.id,
+          eventName: e.eventName,
+          date: e.date,
+          city: e.city,
+          venue: e.venue,
+          format: e.format,
+          crowdSize: e.crowdSize,
+          budget: e.budget,
+          status: e.status === "New" ? "Under Review" : e.status === "Confirmed" ? "Confirmed" : "Proposal Sent",
+          createdAt: e.createdAt,
+        }))
+      );
+    };
+    window.addEventListener("siddwhizz_enquiries_updated", handleSync);
+    return () => window.removeEventListener("siddwhizz_enquiries_updated", handleSync);
+  }, []);
+
   const [createModalOpen, setCreateModalOpen] = useState(false);
 
   // Form fields for new enquiry
@@ -96,13 +140,35 @@ export function OrganizerPanel() {
   const [newBrief, setNewBrief] = useState("");
 
   // Account details state (Merged Account & Profile for Organizer)
-  const [companyName, setCompanyName] = useState("Apex Global Tech Summits Pvt Ltd");
+  const [companyName, setCompanyName] = useState(user?.organization || "Apex Global Tech Summits Pvt Ltd");
   const [contactPerson, setContactPerson] = useState(user?.name || "Priya Sharma");
   const [contactEmail, setContactEmail] = useState(user?.email || "priya@techsummit.io");
   const [contactPhone, setContactPhone] = useState("+91 98200 11223");
   const [gstNumber, setGstNumber] = useState("27AABCA1234F1Z5");
   const [currentPassword, setCurrentPassword] = useState("");
   const [newPassword, setNewPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+
+  const handlePhotoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    if (file.size > 5 * 1024 * 1024) {
+      toast.error("Profile photo must be smaller than 5MB.");
+      return;
+    }
+    const reader = new FileReader();
+    reader.onload = async () => {
+      const dataUrl = reader.result as string;
+      await updateProfilePhoto(dataUrl);
+      toast.success("Profile photo uploaded and saved successfully!");
+    };
+    reader.readAsDataURL(file);
+  };
+
+  const handleRemovePhoto = async () => {
+    await updateProfilePhoto("");
+    toast.success("Profile photo removed.");
+  };
 
   const handleCreateEnquiry = (e: React.FormEvent) => {
     e.preventDefault();
@@ -111,20 +177,22 @@ export function OrganizerPanel() {
       return;
     }
 
-    const newEnq: OrgEnquiry = {
-      id: `ENQ-ORG-0${enquiries.length + 1}`,
+    saveEnquiry({
       eventName: newEventName.trim(),
+      clientName: contactPerson,
+      organization: companyName,
+      email: contactEmail,
+      phone: contactPhone,
       date: newDate,
       city: newCity.trim(),
       venue: newVenue.trim() || `${newCity.trim()} Convention Centre`,
       format: newFormat,
       crowdSize: newCrowd,
       budget: newBudget,
-      status: "Under Review",
-      createdAt: new Date().toISOString().split("T")[0],
-    };
+      status: "New",
+      brief: newBrief.trim(),
+    });
 
-    setEnquiries([newEnq, ...enquiries]);
     setCreateModalOpen(false);
     setNewEventName("");
     setNewDate("");
@@ -135,20 +203,39 @@ export function OrganizerPanel() {
     setActiveTab("enquiries");
   };
 
-  const handleSaveAccount = (e: React.FormEvent) => {
+  const handleSaveAccount = async (e: React.FormEvent) => {
     e.preventDefault();
+    await updateProfile({
+      name: contactPerson,
+      email: contactEmail,
+      organization: companyName,
+    });
     toast.success("Organizer company and contact preferences updated successfully!");
   };
 
-  const handleUpdatePassword = (e: React.FormEvent) => {
+  const handleUpdatePassword = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!currentPassword || !newPassword) {
-      toast.error("Please fill in both current and new password.");
+    if (!currentPassword) {
+      toast.error("Please enter your current password.");
       return;
     }
-    toast.success("Organizer account password changed successfully!");
-    setCurrentPassword("");
-    setNewPassword("");
+    if (newPassword.length < 6) {
+      toast.error("New password must be at least 6 characters.");
+      return;
+    }
+    if (newPassword !== confirmPassword) {
+      toast.error("New password and confirmation do not match.");
+      return;
+    }
+    const res = await updatePassword(currentPassword, newPassword);
+    if (res.success) {
+      toast.success("Organizer account password changed successfully!");
+      setCurrentPassword("");
+      setNewPassword("");
+      setConfirmPassword("");
+    } else {
+      toast.error(res.error || "Failed to update password.");
+    }
   };
 
   return (
@@ -335,10 +422,14 @@ export function OrganizerPanel() {
 
             <button
               onClick={() => setActiveTab("account")}
-              className="grid h-8 w-8 place-items-center rounded-full bg-primary/20 text-xs font-bold text-primary border border-primary/40 hover:bg-primary hover:text-white transition"
+              className="grid h-8 w-8 place-items-center rounded-full overflow-hidden border border-primary/40 hover:scale-105 transition cursor-pointer"
               title="My Account"
             >
-              PS
+              {user?.avatar ? (
+                <img src={user.avatar} alt="Avatar" className="h-full w-full object-cover" />
+              ) : (
+                <span className="text-xs font-bold text-primary">PS</span>
+              )}
             </button>
           </div>
         </header>
@@ -783,10 +874,72 @@ export function OrganizerPanel() {
           {/* ========================================================= */}
           {activeTab === "account" && (
             <div className="space-y-6 max-w-3xl">
+              <input
+                type="file"
+                ref={fileInputRef}
+                onChange={handlePhotoUpload}
+                accept="image/*"
+                className="hidden"
+                aria-label="Upload organizer photo"
+              />
+
               <div className="rounded-2xl border border-zinc-800 bg-zinc-950 p-6 shadow-sm space-y-6">
-                <div>
-                  <h3 className="text-base font-bold text-white">Company & Organizer Account Profile</h3>
-                  <p className="text-xs text-zinc-400">Keep your billing legal information, primary coordinator details, and account credentials synchronized.</p>
+                {/* Organizer Profile Header Card with Avatar Studio */}
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-zinc-800 pb-5">
+                  <div className="flex items-center gap-4">
+                    <div className="relative group">
+                      {user?.avatar ? (
+                        <img
+                          src={user.avatar}
+                          alt={contactPerson}
+                          className="h-16 w-16 rounded-2xl object-cover border-2 border-primary shadow-lg"
+                        />
+                      ) : (
+                        <div className="grid h-16 w-16 place-items-center rounded-2xl bg-primary/20 text-2xl font-black text-primary border border-primary/30">
+                          {contactPerson.charAt(0).toUpperCase()}
+                        </div>
+                      )}
+                      <button
+                        type="button"
+                        onClick={() => fileInputRef.current?.click()}
+                        className="absolute -bottom-1 -right-1 rounded-full bg-primary p-1.5 text-white shadow-md hover:scale-110 transition cursor-pointer"
+                        title="Change profile photo"
+                      >
+                        <Camera className="h-3 w-3" />
+                      </button>
+                    </div>
+
+                    <div>
+                      <div className="flex items-center gap-2">
+                        <h3 className="text-lg font-black font-display text-white">{contactPerson}</h3>
+                        <span className="rounded-full bg-white/10 text-white border border-zinc-700 px-2 py-0.5 text-[10px] font-bold">
+                          Organizer Account
+                        </span>
+                      </div>
+                      <p className="text-xs text-zinc-400 mt-0.5">{companyName}</p>
+                      <p className="text-xs font-mono text-primary mt-0.5">{contactEmail}</p>
+                    </div>
+                  </div>
+
+                  <div className="flex gap-2">
+                    <button
+                      type="button"
+                      onClick={() => fileInputRef.current?.click()}
+                      className="btn-red !py-1.5 !px-3 text-xs flex items-center gap-1.5"
+                    >
+                      <Upload className="h-3.5 w-3.5" /> Upload Photo
+                    </button>
+                    {user?.avatar && (
+                      <button
+                        type="button"
+                        onClick={handleRemovePhoto}
+                        className="btn-outline !py-1.5 !px-2.5 text-xs !border-zinc-700 !text-zinc-400 hover:!bg-zinc-800"
+                        title="Remove photo"
+                      >
+                        <Trash2 className="h-3.5 w-3.5" />
+                      </button>
+                    )}
+                  </div>
                 </div>
 
                 <form onSubmit={handleSaveAccount} className="space-y-4 text-xs">
@@ -858,15 +1011,16 @@ export function OrganizerPanel() {
                 {/* Password / Security Section inside Account */}
                 <div className="border-t border-zinc-800 pt-6 space-y-4">
                   <div className="flex items-center gap-2">
-                    <Lock className="h-4 w-4 text-primary" />
+                    <KeyRound className="h-4 w-4 text-primary" />
                     <h4 className="text-sm font-bold text-white">Security & Password</h4>
                   </div>
                   <form onSubmit={handleUpdatePassword} className="space-y-4 text-xs">
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                       <div>
                         <label className="font-bold text-zinc-400 block mb-1">Current Password</label>
                         <input
                           type="password"
+                          required
                           value={currentPassword}
                           onChange={(e) => setCurrentPassword(e.target.value)}
                           placeholder="••••••••"
@@ -877,18 +1031,30 @@ export function OrganizerPanel() {
                         <label className="font-bold text-zinc-400 block mb-1">New Password</label>
                         <input
                           type="password"
+                          required
                           value={newPassword}
                           onChange={(e) => setNewPassword(e.target.value)}
-                          placeholder="••••••••"
+                          placeholder="Min 6 characters"
+                          className="w-full rounded-xl border border-zinc-800 bg-black py-2 px-3 text-xs text-white focus:border-primary focus:outline-none"
+                        />
+                      </div>
+                      <div>
+                        <label className="font-bold text-zinc-400 block mb-1">Confirm Password</label>
+                        <input
+                          type="password"
+                          required
+                          value={confirmPassword}
+                          onChange={(e) => setConfirmPassword(e.target.value)}
+                          placeholder="Re-enter password"
                           className="w-full rounded-xl border border-zinc-800 bg-black py-2 px-3 text-xs text-white focus:border-primary focus:outline-none"
                         />
                       </div>
                     </div>
                     <button
                       type="submit"
-                      className="btn-outline !py-2 !px-4 text-xs !border-zinc-700 !text-white hover:!bg-zinc-800"
+                      className="btn-red !py-2 !px-4 text-xs"
                     >
-                      Update Password
+                      Update Password & Save
                     </button>
                   </form>
                 </div>

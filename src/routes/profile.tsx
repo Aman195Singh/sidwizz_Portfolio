@@ -1,5 +1,5 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import {
   User,
   ShieldCheck,
@@ -14,6 +14,10 @@ import {
   Sparkles,
   ExternalLink,
   Ticket,
+  Camera,
+  Trash2,
+  KeyRound,
+  Upload,
 } from "lucide-react";
 import { useAuth } from "@/lib/auth";
 import { toast } from "sonner";
@@ -22,15 +26,16 @@ export const Route = createFileRoute("/profile")({
   head: () => ({
     meta: [
       { title: "My Account — SIDD.WHIZZ" },
-      { name: "description", content: "Member account and personal stage access passes." },
+      { name: "description", content: "Member account, profile photo, and personal stage access passes." },
     ],
   }),
   component: ProfilePage,
 });
 
 function ProfilePage() {
-  const { user, isAuthenticated, logout } = useAuth();
+  const { user, isAuthenticated, logout, updateProfilePhoto, updatePassword, updateProfile } = useAuth();
   const navigate = useNavigate();
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   // If user is Admin or Client, route directly to their merged portal
   useEffect(() => {
@@ -50,6 +55,62 @@ function ProfilePage() {
   const [city, setCity] = useState("Mumbai, Maharashtra");
   const [currentPassword, setCurrentPassword] = useState("");
   const [newPassword, setNewPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+
+  const handlePhotoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    if (file.size > 5 * 1024 * 1024) {
+      toast.error("Profile photo must be smaller than 5MB.");
+      return;
+    }
+    const reader = new FileReader();
+    reader.onload = async () => {
+      const dataUrl = reader.result as string;
+      await updateProfilePhoto(dataUrl);
+      toast.success("Profile photo uploaded and saved successfully!");
+    };
+    reader.readAsDataURL(file);
+  };
+
+  const handleRemovePhoto = async () => {
+    await updateProfilePhoto("");
+    toast.success("Profile photo removed.");
+  };
+
+  const handleSaveProfile = async (e: React.FormEvent) => {
+    e.preventDefault();
+    await updateProfile({
+      name,
+      email,
+    });
+    toast.success("Member profile details updated successfully!");
+  };
+
+  const handleUpdatePassword = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!currentPassword) {
+      toast.error("Please enter your current password.");
+      return;
+    }
+    if (newPassword.length < 6) {
+      toast.error("New password must be at least 6 characters.");
+      return;
+    }
+    if (newPassword !== confirmPassword) {
+      toast.error("New password and confirmation do not match.");
+      return;
+    }
+    const res = await updatePassword(currentPassword, newPassword);
+    if (res.success) {
+      toast.success("Security password updated successfully!");
+      setCurrentPassword("");
+      setNewPassword("");
+      setConfirmPassword("");
+    } else {
+      toast.error(res.error || "Failed to update password.");
+    }
+  };
 
   if (!isAuthenticated || !user) {
     return (
@@ -98,32 +159,45 @@ function ProfilePage() {
     );
   }
 
-  const handleSaveProfile = (e: React.FormEvent) => {
-    e.preventDefault();
-    toast.success("Member profile details updated successfully!");
-  };
-
-  const handleUpdatePassword = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!currentPassword || !newPassword) {
-      toast.error("Please provide your current and new password.");
-      return;
-    }
-    toast.success("Security password updated successfully!");
-    setCurrentPassword("");
-    setNewPassword("");
-  };
-
   return (
-    <div className="min-h-screen bg-black py-10 text-white">
+    <div className="min-h-screen bg-black py-10 text-white font-sans">
+      <input
+        type="file"
+        ref={fileInputRef}
+        onChange={handlePhotoUpload}
+        accept="image/*"
+        className="hidden"
+        aria-label="Upload profile picture"
+      />
+
       <div className="container-x max-w-5xl space-y-8">
-        {/* Top Header Card */}
+        {/* Top Header Card with Profile Photo Studio */}
         <div className="rounded-2xl border border-zinc-800 bg-zinc-950 p-6 sm:p-8 shadow-xl">
           <div className="flex flex-col gap-6 sm:flex-row sm:items-center sm:justify-between">
             <div className="flex items-center gap-4">
-              <div className="grid h-16 w-16 place-items-center rounded-2xl bg-primary/20 text-2xl font-black text-primary border border-primary/30">
-                {user.name.charAt(0).toUpperCase()}
+              {/* Photo Avatar */}
+              <div className="relative group">
+                {user.avatar ? (
+                  <img
+                    src={user.avatar}
+                    alt={user.name}
+                    className="h-20 w-20 rounded-2xl object-cover border-2 border-primary shadow-xl"
+                  />
+                ) : (
+                  <div className="grid h-20 w-20 place-items-center rounded-2xl bg-primary/20 text-3xl font-black text-primary border-2 border-primary/30">
+                    {user.name.charAt(0).toUpperCase()}
+                  </div>
+                )}
+                <button
+                  type="button"
+                  onClick={() => fileInputRef.current?.click()}
+                  className="absolute -bottom-1 -right-1 rounded-full bg-primary p-2 text-white shadow-lg hover:scale-110 transition cursor-pointer"
+                  title="Upload profile photo"
+                >
+                  <Camera className="h-3.5 w-3.5" />
+                </button>
               </div>
+
               <div>
                 <div className="flex items-center gap-2.5">
                   <h1 className="text-2xl font-black font-display text-white">{user.name}</h1>
@@ -132,7 +206,24 @@ function ProfilePage() {
                   </span>
                 </div>
                 <p className="text-sm text-zinc-400">{user.email}</p>
-                <p className="text-xs text-zinc-500 mt-0.5">Attendee & Community Access</p>
+                <div className="mt-1 flex items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={() => fileInputRef.current?.click()}
+                    className="text-xs text-primary font-bold hover:underline flex items-center gap-1"
+                  >
+                    <Upload className="h-3 w-3" /> Change Photo
+                  </button>
+                  {user.avatar && (
+                    <button
+                      type="button"
+                      onClick={handleRemovePhoto}
+                      className="text-xs text-zinc-500 hover:text-destructive flex items-center gap-1"
+                    >
+                      <Trash2 className="h-3 w-3" /> Remove
+                    </button>
+                  )}
+                </div>
               </div>
             </div>
 
@@ -243,15 +334,16 @@ function ProfilePage() {
           {/* Password update */}
           <div className="border-t border-zinc-800 pt-6 space-y-4">
             <div className="flex items-center gap-2">
-              <Lock className="h-4 w-4 text-primary" />
+              <KeyRound className="h-4 w-4 text-primary" />
               <h4 className="text-sm font-bold text-white">Account Password</h4>
             </div>
             <form onSubmit={handleUpdatePassword} className="space-y-4 text-xs">
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                 <div>
                   <label className="font-bold text-zinc-400 block mb-1">Current Password</label>
                   <input
                     type="password"
+                    required
                     value={currentPassword}
                     onChange={(e) => setCurrentPassword(e.target.value)}
                     placeholder="••••••••"
@@ -262,18 +354,30 @@ function ProfilePage() {
                   <label className="font-bold text-zinc-400 block mb-1">New Password</label>
                   <input
                     type="password"
+                    required
                     value={newPassword}
                     onChange={(e) => setNewPassword(e.target.value)}
-                    placeholder="••••••••"
+                    placeholder="Min 6 characters"
+                    className="w-full rounded-xl border border-zinc-800 bg-black py-2 px-3 text-xs text-white focus:border-primary focus:outline-none"
+                  />
+                </div>
+                <div>
+                  <label className="font-bold text-zinc-400 block mb-1">Confirm New Password</label>
+                  <input
+                    type="password"
+                    required
+                    value={confirmPassword}
+                    onChange={(e) => setConfirmPassword(e.target.value)}
+                    placeholder="Re-enter password"
                     className="w-full rounded-xl border border-zinc-800 bg-black py-2 px-3 text-xs text-white focus:border-primary focus:outline-none"
                   />
                 </div>
               </div>
               <button
                 type="submit"
-                className="btn-outline !py-2 !px-4 text-xs !border-zinc-700 !text-white hover:!bg-zinc-800"
+                className="btn-red !py-2 !px-4 text-xs"
               >
-                Change Password
+                Change Password & Save
               </button>
             </form>
           </div>

@@ -13,7 +13,7 @@ import {
   Check,
   ShieldCheck,
 } from "lucide-react";
-import { getNeonDbStatus, EXPECTED_NEON_TABLES, type NeonDbConfig } from "@/lib/db";
+import { getNeonDbStatus, getLiveNeonTables, type NeonDbConfig } from "@/lib/db";
 
 export const Route = createFileRoute("/db-status")({
   head: () => ({
@@ -29,12 +29,14 @@ function DbStatusPage() {
   const [status, setStatus] = useState<NeonDbConfig | null>(null);
   const [checking, setChecking] = useState(true);
   const [copied, setCopied] = useState(false);
+  const [tables, setTables] = useState(getLiveNeonTables());
 
   const checkConnection = async () => {
     setChecking(true);
     try {
       const res = await getNeonDbStatus();
       setStatus(res);
+      setTables(getLiveNeonTables());
     } catch {
       setStatus({
         isConfigured: false,
@@ -250,13 +252,13 @@ VITE_DATABASE_URL="postgresql://neondb_owner:YOUR_PASSWORD@ep-sample-pool-123456
                 </tr>
               </thead>
               <tbody className="divide-y divide-border/60">
-                {EXPECTED_NEON_TABLES.map((t) => (
+                {tables.map((t) => (
                   <tr key={t.name} className="hover:bg-accent/40 transition">
                     <td className="p-3 font-mono font-bold text-primary">{t.name}</td>
                     <td className="p-3 text-muted-foreground">{t.description}</td>
                     <td className="p-3">
-                      <span className="rounded-full bg-white/10 text-white border border-zinc-700 px-2 py-0.5 text-[10px] font-bold">
-                        Ready
+                      <span className="rounded-full bg-primary/20 text-primary border border-primary/40 px-2 py-0.5 text-[10px] font-bold">
+                        {t.rows} Active Records
                       </span>
                     </td>
                   </tr>

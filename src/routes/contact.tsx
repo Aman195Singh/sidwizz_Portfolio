@@ -7,6 +7,7 @@ import {
 } from "lucide-react";
 import { PageHero, Reveal, SocialIcons, CtaBanner } from "@/components/site";
 import heroContact from "@/assets/hero-contact.jpg";
+import { saveEnquiry } from "@/lib/data-store";
 
 export const Route = createFileRoute("/contact")({
   head: () => ({
@@ -49,6 +50,7 @@ function Contact() {
     const email = String(d.get("email") || "").trim();
     const type = String(d.get("type") || "");
     const msg = String(d.get("message") || "").trim();
+    const date = String(d.get("date") || "");
     if (name.length < 2) { toast.error("Please enter your name."); return; }
     if (!/^[+\d][\d\s-]{7,}$/.test(phone)) { toast.error("Please enter a valid phone number."); return; }
     if (!/^\S+@\S+\.\S+$/.test(email)) { toast.error("Please enter a valid email address."); return; }
@@ -56,10 +58,25 @@ function Contact() {
     if (msg.length < 10) { toast.error("Tell us a little more about your event."); return; }
     setSending(true);
     setTimeout(() => {
+      saveEnquiry({
+        eventName: `${name}'s ${type}`,
+        clientName: name,
+        organization: "Direct Enquiry via Website",
+        email,
+        phone,
+        date: date || "Upcoming Date",
+        city: "Mumbai / Pan-India",
+        venue: "Client Specified Venue",
+        format: type,
+        crowdSize: "500 - 1,000 Attendees",
+        budget: "₹2,50,000 - ₹4,00,000",
+        status: "New",
+        brief: msg,
+      });
       setSending(false);
       form.reset();
-      toast.success(`Thanks ${name}! Your enquiry has been sent. We'll reply within 24 hours.`);
-    }, 900);
+      toast.success(`Thanks ${name}! Your enquiry has been saved and sent to Siddharth Maurya's team. We'll reply within 24 hours.`);
+    }, 600);
   };
 
   return (

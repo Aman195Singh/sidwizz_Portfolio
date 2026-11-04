@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { Link, useNavigate } from "@tanstack/react-router";
 import {
   LayoutDashboard,
@@ -33,10 +33,26 @@ import {
   Send,
   Lock,
   Users,
+  Camera,
+  ImagePlus,
+  Trash2,
+  KeyRound,
+  Check,
 } from "lucide-react";
 import { useAuth } from "@/lib/auth";
 import { toast } from "sonner";
 import { Logo } from "@/components/site";
+import {
+  getStoredEnquiries,
+  updateEnquiryStatus,
+  addEnquiryNote,
+  getStoredMedia,
+  addMediaItem,
+  deleteMediaItem,
+} from "@/lib/data-store";
+import hostBowtie from "@/assets/host-bowtie.jpg";
+import hostPurple from "@/assets/host-purple.jpg";
+import hostSmileRed from "@/assets/host-smile-red.jpg";
 
 export type AdminTab =
   | "overview"
@@ -259,21 +275,22 @@ const INITIAL_MEDIA_ITEMS: MediaItem[] = [
 ];
 
 export function AdminPanel({ initialTab = "overview" }: { initialTab?: AdminTab }) {
-  const { user, logout } = useAuth();
+  const { user, logout, updateProfilePhoto, updatePassword, updateProfile } = useAuth();
   const navigate = useNavigate();
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const [activeTab, setActiveTab] = useState<AdminTab>(initialTab);
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
-  // Enquiries state
-  const [enquiries, setEnquiries] = useState<Enquiry[]>(INITIAL_ENQUIRIES);
+  // Enquiries live state synced with persistent DataStore
+  const [enquiries, setEnquiries] = useState<Enquiry[]>(getStoredEnquiries);
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("All");
   const [selectedEnquiry, setSelectedEnquiry] = useState<Enquiry | null>(null);
   const [newNoteText, setNewNoteText] = useState("");
 
-  // Media state
-  const [mediaItems, setMediaItems] = useState<MediaItem[]>(INITIAL_MEDIA_ITEMS);
+  // Media live state synced with persistent DataStore
+  const [mediaItems, setMediaItems] = useState<MediaItem[]>(getStoredMedia);
   const [mediaTypeFilter, setMediaTypeFilter] = useState<string>("all");
   const [uploadModalOpen, setUploadModalOpen] = useState(false);
   const [newMediaTitle, setNewMediaTitle] = useState("");
@@ -287,6 +304,21 @@ export function AdminPanel({ initialTab = "overview" }: { initialTab?: AdminTab 
   const [adminBio, setAdminBio] = useState("15+ years of live stage hosting across tech summits, global corporate galas, and arena music festivals.");
   const [currentPassword, setCurrentPassword] = useState("");
   const [newPassword, setNewPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+
+  // Keep state synchronized with live DataStore events
+  useEffect(() => {
+    const handleSync = () => {
+      setEnquiries(getStoredEnquiries());
+      setMediaItems(getStoredMedia());
+    };
+    window.addEventListener("siddwhizz_enquiries_updated", handleSync);
+    window.addEventListener("siddwhizz_media_updated", handleSync);
+    return () => {
+      window.removeEventListener("siddwhizz_enquiries_updated", handleSync);
+      window.removeEventListener("siddwhizz_media_updated", handleSync);
+    };
+  }, []);
 
   // Developer Support Ticket Form state
   const [ticketSubject, setTicketSubject] = useState("");
@@ -297,6 +329,70 @@ export function AdminPanel({ initialTab = "overview" }: { initialTab?: AdminTab 
   const [bookingAvailable, setBookingAvailable] = useState(true);
   const [whatsappNotifications, setWhatsappNotifications] = useState(true);
   const [autoReplyEnabled, setAutoReplyEnabled] = useState(true);
+
+  // Profile Photo Upload Handlers
+  const handlePhotoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    if (file.size > 5 * 1024 * 1024) {
+      toast.error("Profile photo must be smaller than 5MB.");
+      return;
+    }
+    const reader = new FileReader();
+    reader.onload = async () => {
+      const dataUrl = reader.result as string;
+      await updateProfilePhoto(dataUrl);
+      toast.success("Profile photo uploaded and saved successfully!");
+    };
+    reader.readAsDataURL(file);
+  };
+
+  const handleSelectPresetPhoto = async (photoUrl: string) => {
+    await updateProfilePhoto(photoUrl);
+    toast.success("Stage photo set as profile picture!");
+  };
+
+  const handleRemovePhoto = async () => {
+    await updateProfilePhoto("");
+    toast.success("Profile photo removed.");
+  };
+
+  // Password Change Handler
+  const handlePasswordSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!currentPassword) {
+      toast.error("Please enter your current password.");
+      return;
+    }
+    if (newPassword.length < 6) {
+      toast.error("New password must be at least 6 characters.");
+      return;
+    }
+    if (newPassword !== confirmPassword) {
+      toast.error("New password and confirmation do not match.");
+      return;
+    }
+    const res = await updatePassword(currentPassword, newPassword);
+    if (res.success) {
+      toast.success("Account password changed and saved successfully!");
+      setCurrentPassword("");
+      setNewPassword("");
+      setConfirmPassword("");
+    } else {
+      toast.error(res.error || "Failed to update password.");
+    }
+  };
+
+  // Profile Information Save Handler
+  const handleSaveAccount = async (e: React.FormEvent) => {
+    e.preventDefault();
+    await updateProfile({
+      name: adminName,
+      email: adminEmail,
+      organization: adminTitle,
+    });
+    toast.success("Host profile & contact details updated and saved successfully!");
+  };
 
   // WhatsApp reply handler
   const handleWhatsAppReply = (enquiry: Enquiry) => {
@@ -322,6 +418,7 @@ export function AdminPanel({ initialTab = "overview" }: { initialTab?: AdminTab 
 
   // Change Enquiry Status
   const handleStatusChange = (id: string, newStatus: Enquiry["status"]) => {
+    updateEnquiryStatus(id, newStatus);
     setEnquiries((prev) =>
       prev.map((e) => (e.id === id ? { ...e, status: newStatus } : e))
     );
@@ -334,6 +431,7 @@ export function AdminPanel({ initialTab = "overview" }: { initialTab?: AdminTab 
   // Add Note to Enquiry
   const handleAddNote = (id: string) => {
     if (!newNoteText.trim()) return;
+    addEnquiryNote(id, newNoteText.trim());
     setEnquiries((prev) =>
       prev.map((e) =>
         e.id === id ? { ...e, notes: [...(e.notes || []), newNoteText.trim()] } : e
@@ -345,7 +443,7 @@ export function AdminPanel({ initialTab = "overview" }: { initialTab?: AdminTab 
       );
     }
     setNewNoteText("");
-    toast.success("Internal note added successfully!");
+    toast.success("Internal note added and saved!");
   };
 
   // Upload Media Simulator
@@ -376,12 +474,6 @@ export function AdminPanel({ initialTab = "overview" }: { initialTab?: AdminTab 
   const handleCopyLink = (url: string) => {
     navigator.clipboard.writeText(url);
     toast.success("Public media link copied to clipboard!");
-  };
-
-  // Save Merged Account Settings
-  const handleSaveAccount = (e: React.FormEvent) => {
-    e.preventDefault();
-    toast.success("Host account profile and credentials saved successfully!");
   };
 
   // Submit Developer Ticket
@@ -650,10 +742,14 @@ export function AdminPanel({ initialTab = "overview" }: { initialTab?: AdminTab 
             {/* Account Icon */}
             <button
               onClick={() => setActiveTab("account")}
-              className="grid h-8 w-8 place-items-center rounded-full bg-primary/15 text-xs font-bold text-primary border border-primary/30 hover:scale-105 transition"
+              className="grid h-8 w-8 place-items-center rounded-full overflow-hidden border border-primary/30 hover:scale-105 transition cursor-pointer"
               title="Open Account & Profile"
             >
-              SM
+              {user?.avatar ? (
+                <img src={user.avatar} alt="Avatar" className="h-full w-full object-cover" />
+              ) : (
+                <span className="text-xs font-bold text-primary">SM</span>
+              )}
             </button>
           </div>
         </header>
@@ -1376,21 +1472,51 @@ export function AdminPanel({ initialTab = "overview" }: { initialTab?: AdminTab 
           {/* ========================================================= */}
           {activeTab === "account" && (
             <div className="space-y-6 max-w-4xl">
-              {/* Host Profile Header Card */}
-              <div className="rounded-2xl border border-border bg-card p-6 shadow-sm">
+              {/* Hidden file input for custom profile photo upload */}
+              <input
+                type="file"
+                ref={fileInputRef}
+                onChange={handlePhotoUpload}
+                accept="image/*"
+                className="hidden"
+                aria-label="Upload profile photo"
+              />
+
+              {/* Host Profile & Photo Studio Card */}
+              <div className="rounded-2xl border border-border bg-card p-6 shadow-sm space-y-6">
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-border pb-5">
                   <div className="flex items-center gap-4">
-                    <div className="grid h-16 w-16 place-items-center rounded-2xl bg-primary/20 text-2xl font-black text-primary border border-primary/30">
-                      SM
+                    {/* Interactive Avatar with Camera Upload Badge */}
+                    <div className="relative group">
+                      {user?.avatar ? (
+                        <img
+                          src={user.avatar}
+                          alt={adminName}
+                          className="h-20 w-20 rounded-2xl object-cover border-2 border-primary shadow-xl"
+                        />
+                      ) : (
+                        <div className="grid h-20 w-20 place-items-center rounded-2xl bg-primary/20 text-3xl font-black text-primary border-2 border-primary/30">
+                          SM
+                        </div>
+                      )}
+                      <button
+                        type="button"
+                        onClick={() => fileInputRef.current?.click()}
+                        className="absolute -bottom-1 -right-1 rounded-full bg-primary p-2 text-white shadow-lg hover:scale-110 transition cursor-pointer"
+                        title="Upload new profile photo"
+                      >
+                        <Camera className="h-4 w-4" />
+                      </button>
                     </div>
+
                     <div>
                       <div className="flex items-center gap-2">
                         <h2 className="text-xl font-black font-display text-foreground">{adminName}</h2>
-                        <span className="rounded-full bg-primary/20 text-primary px-2 py-0.5 text-[10px] font-bold border border-primary/30">
-                          Super Admin
+                        <span className="rounded-full bg-primary/20 text-primary px-2.5 py-0.5 text-[10px] font-bold border border-primary/30 uppercase tracking-wider">
+                          Host & Super Admin
                         </span>
                       </div>
-                      <p className="text-xs text-muted-foreground">{adminTitle}</p>
+                      <p className="text-xs text-muted-foreground mt-0.5">{adminTitle}</p>
                       <p className="text-xs font-mono text-primary mt-0.5">{adminEmail}</p>
                     </div>
                   </div>
@@ -1408,8 +1534,106 @@ export function AdminPanel({ initialTab = "overview" }: { initialTab?: AdminTab 
                   </div>
                 </div>
 
+                {/* Profile Photo Studio Section */}
+                <div className="rounded-xl border border-border/80 bg-background/60 p-4 space-y-3">
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                    <div>
+                      <h4 className="text-xs font-bold uppercase tracking-wider text-foreground flex items-center gap-2">
+                        <ImagePlus className="h-4 w-4 text-primary" /> Profile Photo & Stage Headshot
+                      </h4>
+                      <p className="text-[11px] text-muted-foreground mt-0.5">
+                        Upload your personal photo or select from Siddharth Maurya's curated stage portfolio presets.
+                      </p>
+                    </div>
+                    <div className="flex gap-2">
+                      <button
+                        type="button"
+                        onClick={() => fileInputRef.current?.click()}
+                        className="btn-red !py-1.5 !px-3 text-xs flex items-center gap-1.5"
+                      >
+                        <Upload className="h-3.5 w-3.5" /> Upload File
+                      </button>
+                      {user?.avatar && (
+                        <button
+                          type="button"
+                          onClick={handleRemovePhoto}
+                          className="btn-outline !py-1.5 !px-2.5 text-xs text-destructive hover:bg-destructive/10"
+                          title="Remove custom photo"
+                        >
+                          <Trash2 className="h-3.5 w-3.5" />
+                        </button>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Preset Photo Cards */}
+                  <div>
+                    <span className="text-[10px] font-bold uppercase text-muted-foreground block mb-2">
+                      Quick Stage Presets:
+                    </span>
+                    <div className="grid grid-cols-3 gap-3">
+                      <button
+                        type="button"
+                        onClick={() => handleSelectPresetPhoto(hostBowtie)}
+                        className={`group rounded-xl border p-2 flex flex-col items-center gap-2 transition cursor-pointer text-center ${
+                          user?.avatar === hostBowtie
+                            ? "border-primary bg-primary/15 ring-2 ring-primary"
+                            : "border-border bg-card hover:border-primary/50"
+                        }`}
+                      >
+                        <img
+                          src={hostBowtie}
+                          alt="Gala Bowtie"
+                          className="h-14 w-14 rounded-lg object-cover"
+                        />
+                        <span className="text-[11px] font-semibold text-foreground group-hover:text-primary">
+                          Gala Bowtie
+                        </span>
+                      </button>
+
+                      <button
+                        type="button"
+                        onClick={() => handleSelectPresetPhoto(hostPurple)}
+                        className={`group rounded-xl border p-2 flex flex-col items-center gap-2 transition cursor-pointer text-center ${
+                          user?.avatar === hostPurple
+                            ? "border-primary bg-primary/15 ring-2 ring-primary"
+                            : "border-border bg-card hover:border-primary/50"
+                        }`}
+                      >
+                        <img
+                          src={hostPurple}
+                          alt="Summit Anchor"
+                          className="h-14 w-14 rounded-lg object-cover"
+                        />
+                        <span className="text-[11px] font-semibold text-foreground group-hover:text-primary">
+                          Summit Anchor
+                        </span>
+                      </button>
+
+                      <button
+                        type="button"
+                        onClick={() => handleSelectPresetPhoto(hostSmileRed)}
+                        className={`group rounded-xl border p-2 flex flex-col items-center gap-2 transition cursor-pointer text-center ${
+                          user?.avatar === hostSmileRed
+                            ? "border-primary bg-primary/15 ring-2 ring-primary"
+                            : "border-border bg-card hover:border-primary/50"
+                        }`}
+                      >
+                        <img
+                          src={hostSmileRed}
+                          alt="Festival Energy"
+                          className="h-14 w-14 rounded-lg object-cover"
+                        />
+                        <span className="text-[11px] font-semibold text-foreground group-hover:text-primary">
+                          Live Energy
+                        </span>
+                      </button>
+                    </div>
+                  </div>
+                </div>
+
                 {/* Profile Edit Form */}
-                <form onSubmit={handleSaveAccount} className="mt-5 space-y-4 text-xs">
+                <form onSubmit={handleSaveAccount} className="space-y-4 text-xs">
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div>
                       <label className="font-bold text-muted-foreground block mb-1">Full Legal Name</label>
@@ -1418,7 +1642,7 @@ export function AdminPanel({ initialTab = "overview" }: { initialTab?: AdminTab 
                         required
                         value={adminName}
                         onChange={(e) => setAdminName(e.target.value)}
-                        className="w-full rounded-xl border border-input bg-background py-2 px-3 text-xs text-foreground focus:border-primary focus:outline-none"
+                        className="w-full rounded-xl border border-input bg-background py-2.5 px-3 text-xs text-foreground focus:border-primary focus:outline-none"
                       />
                     </div>
 
@@ -1429,7 +1653,7 @@ export function AdminPanel({ initialTab = "overview" }: { initialTab?: AdminTab 
                         required
                         value={adminEmail}
                         onChange={(e) => setAdminEmail(e.target.value)}
-                        className="w-full rounded-xl border border-input bg-background py-2 px-3 text-xs text-foreground focus:border-primary focus:outline-none"
+                        className="w-full rounded-xl border border-input bg-background py-2.5 px-3 text-xs text-foreground focus:border-primary focus:outline-none"
                       />
                     </div>
                   </div>
@@ -1441,7 +1665,7 @@ export function AdminPanel({ initialTab = "overview" }: { initialTab?: AdminTab 
                         type="text"
                         value={adminPhone}
                         onChange={(e) => setAdminPhone(e.target.value)}
-                        className="w-full rounded-xl border border-input bg-background py-2 px-3 text-xs text-foreground focus:border-primary focus:outline-none"
+                        className="w-full rounded-xl border border-input bg-background py-2.5 px-3 text-xs text-foreground focus:border-primary focus:outline-none"
                       />
                     </div>
 
@@ -1451,7 +1675,7 @@ export function AdminPanel({ initialTab = "overview" }: { initialTab?: AdminTab 
                         type="text"
                         value={adminTitle}
                         onChange={(e) => setAdminTitle(e.target.value)}
-                        className="w-full rounded-xl border border-input bg-background py-2 px-3 text-xs text-foreground focus:border-primary focus:outline-none"
+                        className="w-full rounded-xl border border-input bg-background py-2.5 px-3 text-xs text-foreground focus:border-primary focus:outline-none"
                       />
                     </div>
                   </div>
@@ -1462,12 +1686,12 @@ export function AdminPanel({ initialTab = "overview" }: { initialTab?: AdminTab 
                       rows={2}
                       value={adminBio}
                       onChange={(e) => setAdminBio(e.target.value)}
-                      className="w-full rounded-xl border border-input bg-background py-2 px-3 text-xs text-foreground focus:border-primary focus:outline-none"
+                      className="w-full rounded-xl border border-input bg-background py-2.5 px-3 text-xs text-foreground focus:border-primary focus:outline-none"
                     />
                   </div>
 
                   <div className="pt-2">
-                    <button type="submit" className="btn-red !py-2 !px-5 text-xs">
+                    <button type="submit" className="btn-red !py-2.5 !px-5 text-xs">
                       Save Profile Information
                     </button>
                   </div>
@@ -1477,45 +1701,60 @@ export function AdminPanel({ initialTab = "overview" }: { initialTab?: AdminTab 
               {/* Password & Security Card */}
               <div className="rounded-2xl border border-border bg-card p-6 shadow-sm space-y-4">
                 <div className="flex items-center gap-2 border-b border-border pb-3">
-                  <Lock className="h-4 w-4 text-primary" />
-                  <h3 className="text-sm font-bold text-foreground">Password & Account Security</h3>
-                </div>
-
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs">
+                  <KeyRound className="h-4 w-4 text-primary" />
                   <div>
-                    <label className="font-bold text-muted-foreground block mb-1">Current Password</label>
-                    <input
-                      type="password"
-                      value={currentPassword}
-                      onChange={(e) => setCurrentPassword(e.target.value)}
-                      placeholder="••••••••"
-                      className="w-full rounded-xl border border-input bg-background py-2 px-3 text-xs text-foreground focus:border-primary focus:outline-none"
-                    />
-                  </div>
-
-                  <div>
-                    <label className="font-bold text-muted-foreground block mb-1">New Password</label>
-                    <input
-                      type="password"
-                      value={newPassword}
-                      onChange={(e) => setNewPassword(e.target.value)}
-                      placeholder="••••••••"
-                      className="w-full rounded-xl border border-input bg-background py-2 px-3 text-xs text-foreground focus:border-primary focus:outline-none"
-                    />
+                    <h3 className="text-sm font-bold text-foreground">Change Password & Security</h3>
+                    <p className="text-[11px] text-muted-foreground">Keep your admin authentication credentials secure.</p>
                   </div>
                 </div>
 
-                <button
-                  type="button"
-                  onClick={() => {
-                    toast.success("Security credentials updated successfully!");
-                    setCurrentPassword("");
-                    setNewPassword("");
-                  }}
-                  className="btn-outline !py-2 !px-4 text-xs"
-                >
-                  Update Password
-                </button>
+                <form onSubmit={handlePasswordSubmit} className="space-y-4 text-xs">
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                    <div>
+                      <label className="font-bold text-muted-foreground block mb-1">Current Password</label>
+                      <input
+                        type="password"
+                        required
+                        value={currentPassword}
+                        onChange={(e) => setCurrentPassword(e.target.value)}
+                        placeholder="••••••••"
+                        className="w-full rounded-xl border border-input bg-background py-2.5 px-3 text-xs text-foreground focus:border-primary focus:outline-none"
+                      />
+                      <span className="text-[10px] text-muted-foreground mt-0.5 block">Default: sid123</span>
+                    </div>
+
+                    <div>
+                      <label className="font-bold text-muted-foreground block mb-1">New Password</label>
+                      <input
+                        type="password"
+                        required
+                        value={newPassword}
+                        onChange={(e) => setNewPassword(e.target.value)}
+                        placeholder="At least 6 characters"
+                        className="w-full rounded-xl border border-input bg-background py-2.5 px-3 text-xs text-foreground focus:border-primary focus:outline-none"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="font-bold text-muted-foreground block mb-1">Confirm New Password</label>
+                      <input
+                        type="password"
+                        required
+                        value={confirmPassword}
+                        onChange={(e) => setConfirmPassword(e.target.value)}
+                        placeholder="Re-enter new password"
+                        className="w-full rounded-xl border border-input bg-background py-2.5 px-3 text-xs text-foreground focus:border-primary focus:outline-none"
+                      />
+                    </div>
+                  </div>
+
+                  <button
+                    type="submit"
+                    className="btn-red !py-2.5 !px-5 text-xs"
+                  >
+                    Update Password & Save
+                  </button>
+                </form>
               </div>
 
               {/* Management Team Members */}

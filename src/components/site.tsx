@@ -260,9 +260,13 @@ export function Header() {
                   className="flex items-center gap-2 rounded-full border border-border/70 bg-card/60 px-3 py-1.5 text-xs font-semibold text-foreground backdrop-blur transition hover:border-primary/50 hover:bg-card focus-visible:ring-2 focus-visible:ring-primary outline-none"
                   aria-label="User profile options"
                 >
-                  <div className="grid h-6 w-6 place-items-center rounded-full bg-primary/15 text-[11px] font-bold text-primary">
-                    {user.name.charAt(0).toUpperCase()}
-                  </div>
+                  {user.avatar ? (
+                    <img src={user.avatar} alt={user.name} className="h-6 w-6 rounded-full object-cover border border-primary/40 shrink-0" />
+                  ) : (
+                    <div className="grid h-6 w-6 place-items-center rounded-full bg-primary/15 text-[11px] font-bold text-primary shrink-0">
+                      {user.name.charAt(0).toUpperCase()}
+                    </div>
+                  )}
                   <span className="max-w-[90px] truncate">{user.name.split(" ")[0]}</span>
                   <span
                     className={`rounded-full px-1.5 py-0.2 text-[9px] font-bold uppercase tracking-wide ${
@@ -352,10 +356,14 @@ export function Header() {
           {user ? (
             <Link
               to="/profile"
-              className="grid h-8 w-8 place-items-center rounded-full bg-primary/15 text-xs font-bold text-primary border border-primary/30"
+              className="grid h-8 w-8 place-items-center rounded-full bg-primary/15 text-xs font-bold text-primary border border-primary/30 overflow-hidden"
               aria-label="Profile"
             >
-              {user.name.charAt(0).toUpperCase()}
+              {user.avatar ? (
+                <img src={user.avatar} alt={user.name} className="h-full w-full object-cover" />
+              ) : (
+                user.name.charAt(0).toUpperCase()
+              )}
             </Link>
           ) : (
             <Link
