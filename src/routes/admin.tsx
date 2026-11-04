@@ -46,3 +46,4 @@ function AdminRouteComponent() {
 
   return <AdminPanel />;
 }
+

@@ -269,8 +269,8 @@ export function Header() {
                       user.role === "admin"
                         ? "bg-primary/20 text-primary border border-primary/30"
                         : user.role === "client"
-                        ? "bg-amber-500/20 text-amber-500 border border-amber-500/30"
-                        : "bg-emerald-500/20 text-emerald-500 border border-emerald-500/30"
+                        ? "bg-white/10 text-white border border-white/20"
+                        : "bg-muted text-muted-foreground border border-border"
                     }`}
                   >
                     {user.role}
@@ -280,7 +280,7 @@ export function Header() {
               </DropdownMenuTrigger>
               <DropdownMenuContent
                 align="end"
-                className="w-56 p-2 bg-card/95 backdrop-blur border border-border shadow-2xl rounded-xl z-50"
+                className="w-60 p-2 bg-card/95 backdrop-blur border border-border shadow-2xl rounded-xl z-50"
               >
                 <div className="px-2 py-1.5">
                   <p className="text-xs font-bold text-foreground truncate">{user.name}</p>
@@ -291,8 +291,8 @@ export function Header() {
                         user.role === "admin"
                           ? "bg-primary/20 text-primary"
                           : user.role === "client"
-                          ? "bg-amber-500/20 text-amber-500"
-                          : "bg-emerald-500/20 text-emerald-500"
+                          ? "bg-white/10 text-white"
+                          : "bg-muted text-muted-foreground"
                       }`}
                     >
                       Role: {user.role === "admin" ? "Site Admin / Sid" : user.role === "client" ? "Event Organizer" : "Member"}
@@ -300,33 +300,25 @@ export function Header() {
                   </div>
                 </div>
                 <DropdownMenuSeparator className="my-1" />
-                {user.role === "admin" && (
+                {user.role === "admin" ? (
                   <DropdownMenuItem asChild>
-                    <Link to="/admin" className="flex items-center gap-2 px-2 py-1.5 text-xs font-bold text-primary cursor-pointer">
+                    <Link to="/admin" className="flex items-center gap-2 px-2 py-1.5 text-xs font-bold text-primary cursor-pointer hover:bg-muted">
                       <ShieldCheck className="h-3.5 w-3.5 text-primary" />
-                      <span>Admin Panel</span>
+                      <span>Admin Panel & Account</span>
                     </Link>
                   </DropdownMenuItem>
-                )}
-                {user.role === "client" && (
+                ) : user.role === "client" ? (
                   <DropdownMenuItem asChild>
-                    <Link to="/organizer" className="flex items-center gap-2 px-2 py-1.5 text-xs font-bold text-amber-500 cursor-pointer">
-                      <Briefcase className="h-3.5 w-3.5 text-amber-500" />
-                      <span>Organiser Portal</span>
+                    <Link to="/organizer" className="flex items-center gap-2 px-2 py-1.5 text-xs font-bold text-white cursor-pointer hover:bg-muted">
+                      <Briefcase className="h-3.5 w-3.5 text-white" />
+                      <span>Organiser Portal & Account</span>
                     </Link>
                   </DropdownMenuItem>
-                )}
-                <DropdownMenuItem asChild>
-                  <Link to="/profile" className="flex items-center gap-2 px-2 py-1.5 text-xs font-medium cursor-pointer">
-                    <User className="h-3.5 w-3.5 text-muted-foreground" />
-                    <span>My Account</span>
-                  </Link>
-                </DropdownMenuItem>
-                {user.role === "admin" && (
+                ) : (
                   <DropdownMenuItem asChild>
-                    <Link to="/db-status" className="flex items-center gap-2 px-2 py-1.5 text-xs font-medium cursor-pointer">
-                      <Database className="h-3.5 w-3.5 text-amber-400" />
-                      <span>Neon DB Health</span>
+                    <Link to="/profile" className="flex items-center gap-2 px-2 py-1.5 text-xs font-medium cursor-pointer hover:bg-muted">
+                      <User className="h-3.5 w-3.5 text-muted-foreground" />
+                      <span>My Account</span>
                     </Link>
                   </DropdownMenuItem>
                 )}
@@ -469,17 +461,19 @@ export function Header() {
                   <div className="flex flex-col gap-1.5">
                     {user.role === "admin" && (
                       <Link to="/admin" className="btn-red !py-2 text-xs flex items-center justify-center gap-1.5">
-                        <ShieldCheck className="h-3.5 w-3.5" /> Open Admin Panel
+                        <ShieldCheck className="h-3.5 w-3.5" /> Admin Panel & Account
                       </Link>
                     )}
                     {user.role === "client" && (
                       <Link to="/organizer" className="btn-red !py-2 text-xs flex items-center justify-center gap-1.5">
-                        <Briefcase className="h-3.5 w-3.5" /> Open Organiser Portal
+                        <Briefcase className="h-3.5 w-3.5" /> Organiser Portal & Account
                       </Link>
                     )}
-                    <Link to="/profile" className="btn-outline text-xs">
-                      <User className="h-3.5 w-3.5" /> My Account & Profile
-                    </Link>
+                    {user.role === "member" && (
+                      <Link to="/profile" className="btn-outline text-xs">
+                        <User className="h-3.5 w-3.5" /> My Member Account
+                      </Link>
+                    )}
                   </div>
                   <button onClick={logout} className="text-left text-xs text-destructive px-3 py-1 font-semibold">
                     Sign Out

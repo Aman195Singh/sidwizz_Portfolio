@@ -26,21 +26,32 @@ function SignupPage() {
   const [error, setError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  // If already logged in, redirect to profile
+  // If already logged in, show direct portal button
   if (isAuthenticated && user) {
+    const portalPath = user.role === "admin" ? "/admin" : user.role === "client" ? "/organizer" : "/profile";
+    const portalName =
+      user.role === "admin"
+        ? "Admin Panel & Account"
+        : user.role === "client"
+        ? "Organiser Portal & Bookings"
+        : "Member Account";
+
     return (
       <div className="flex min-h-[70vh] items-center justify-center px-4">
-        <div className="card-ink max-w-md p-8 text-center rounded-2xl border">
+        <div className="card-ink max-w-md p-8 text-center rounded-2xl border border-zinc-800 bg-zinc-950">
           <div className="mx-auto mb-4 grid h-12 w-12 place-items-center rounded-full bg-primary/20 text-primary">
             <UserCheck className="h-6 w-6" />
           </div>
-          <h2 className="text-xl font-bold text-foreground">Already Registered</h2>
-          <p className="mt-2 text-sm text-muted-foreground">
-            You are signed in as <span className="font-semibold text-foreground">{user.name}</span> ({user.role}).
+          <h2 className="text-xl font-bold text-white">Already Registered</h2>
+          <p className="mt-2 text-sm text-zinc-400">
+            You are signed in as <span className="font-semibold text-white">{user.name}</span> ({user.role}).
           </p>
           <div className="mt-6 flex flex-col gap-2">
-            <Link to="/profile" className="btn-red w-full">
-              Go to Role Dashboard
+            <Link to={portalPath} className="btn-red w-full">
+              Open {portalName}
+            </Link>
+            <Link to="/" className="btn-outline w-full !border-zinc-700 !text-white hover:!bg-zinc-800">
+              Back to Home
             </Link>
           </div>
         </div>
@@ -72,7 +83,13 @@ function SignupPage() {
       });
 
       if (res.success) {
-        navigate({ to: "/profile" });
+        if (role === "admin") {
+          navigate({ to: "/admin" });
+        } else if (role === "client") {
+          navigate({ to: "/organizer" });
+        } else {
+          navigate({ to: "/profile" });
+        }
       } else {
         setError(res.error || "Failed to create account.");
       }
@@ -84,34 +101,34 @@ function SignupPage() {
   };
 
   return (
-    <div className="min-h-[calc(100vh-72px)] bg-gradient-to-b from-background via-ink/5 to-background py-12 px-4 sm:px-6 lg:px-8 flex flex-col justify-center">
+    <div className="min-h-[calc(100vh-72px)] bg-black py-12 px-4 sm:px-6 lg:px-8 flex flex-col justify-center">
       <div className="mx-auto w-full max-w-lg space-y-8">
         {/* Header */}
         <div className="text-center">
           <div className="flex justify-center mb-4">
             <Logo />
           </div>
-          <h1 className="text-3xl font-black font-display tracking-tight text-foreground">
+          <h1 className="text-3xl font-black font-display tracking-tight text-white">
             Create Your Account
           </h1>
-          <p className="mt-2 text-sm text-muted-foreground">
-            Choose your role to get personalized access to event bookings, client proposals, or community updates.
+          <p className="mt-2 text-sm text-zinc-400">
+            Choose your role to get direct access to event bookings, client proposals, or stage management.
           </p>
         </div>
 
         {/* Card */}
-        <div className="rounded-2xl border bg-card/90 backdrop-blur-md p-6 sm:p-8 shadow-2xl">
+        <div className="rounded-2xl border border-zinc-800 bg-zinc-950 p-6 sm:p-8 shadow-2xl">
           {error && (
-            <div className="mb-6 flex items-start gap-2.5 rounded-lg border border-destructive/30 bg-destructive/10 p-3 text-sm text-destructive">
-              <AlertCircle className="h-4 w-4 mt-0.5 shrink-0" />
+            <div className="mb-6 flex items-start gap-2.5 rounded-lg border border-primary/40 bg-primary/10 p-3 text-sm text-white">
+              <AlertCircle className="h-4 w-4 mt-0.5 shrink-0 text-primary" />
               <span>{error}</span>
             </div>
           )}
 
           <form onSubmit={handleSubmit} className="space-y-4">
-            {/* Role Selection */}
+            {/* Role Selection strictly in White, Red, Black */}
             <div>
-              <label className="block text-xs font-bold uppercase tracking-wider text-muted-foreground mb-2">
+              <label className="block text-xs font-bold uppercase tracking-wider text-zinc-400 mb-2">
                 Select Your Role (Role-Based Access)
               </label>
               <div className="grid grid-cols-1 gap-2.5 sm:grid-cols-3">
@@ -120,13 +137,13 @@ function SignupPage() {
                   onClick={() => setRole("client")}
                   className={`flex flex-col items-center justify-center rounded-xl border p-3 text-center transition ${
                     role === "client"
-                      ? "border-amber-500 bg-amber-500/15 text-foreground ring-1 ring-amber-500"
-                      : "border-border bg-background/60 text-muted-foreground hover:border-amber-500/50"
+                      ? "border-primary bg-primary/10 text-white ring-1 ring-primary"
+                      : "border-zinc-800 bg-black text-zinc-400 hover:border-zinc-700 hover:text-white"
                   }`}
                 >
-                  <Briefcase className={`h-5 w-5 mb-1.5 ${role === "client" ? "text-amber-500" : "text-muted-foreground"}`} />
-                  <span className="text-xs font-bold text-foreground">Organizer</span>
-                  <span className="text-[10px] text-muted-foreground">Corporate / Event</span>
+                  <Briefcase className={`h-5 w-5 mb-1.5 ${role === "client" ? "text-primary" : "text-zinc-500"}`} />
+                  <span className="text-xs font-bold text-white">Organizer</span>
+                  <span className="text-[10px] text-zinc-400">Corporate / Event</span>
                 </button>
 
                 <button
@@ -134,13 +151,13 @@ function SignupPage() {
                   onClick={() => setRole("member")}
                   className={`flex flex-col items-center justify-center rounded-xl border p-3 text-center transition ${
                     role === "member"
-                      ? "border-emerald-500 bg-emerald-500/15 text-foreground ring-1 ring-emerald-500"
-                      : "border-border bg-background/60 text-muted-foreground hover:border-emerald-500/50"
+                      ? "border-primary bg-primary/10 text-white ring-1 ring-primary"
+                      : "border-zinc-800 bg-black text-zinc-400 hover:border-zinc-700 hover:text-white"
                   }`}
                 >
-                  <UserCheck className={`h-5 w-5 mb-1.5 ${role === "member" ? "text-emerald-500" : "text-muted-foreground"}`} />
-                  <span className="text-xs font-bold text-foreground">Member</span>
-                  <span className="text-[10px] text-muted-foreground">Audience / Attendee</span>
+                  <UserCheck className={`h-5 w-5 mb-1.5 ${role === "member" ? "text-primary" : "text-zinc-500"}`} />
+                  <span className="text-xs font-bold text-white">Member</span>
+                  <span className="text-[10px] text-zinc-400">Audience / Attendee</span>
                 </button>
 
                 <button
@@ -148,24 +165,24 @@ function SignupPage() {
                   onClick={() => setRole("admin")}
                   className={`flex flex-col items-center justify-center rounded-xl border p-3 text-center transition ${
                     role === "admin"
-                      ? "border-primary bg-primary/15 text-foreground ring-1 ring-primary"
-                      : "border-border bg-background/60 text-muted-foreground hover:border-primary/50"
+                      ? "border-primary bg-primary/10 text-white ring-1 ring-primary"
+                      : "border-zinc-800 bg-black text-zinc-400 hover:border-zinc-700 hover:text-white"
                   }`}
                 >
-                  <ShieldCheck className={`h-5 w-5 mb-1.5 ${role === "admin" ? "text-primary" : "text-muted-foreground"}`} />
-                  <span className="text-xs font-bold text-foreground">Admin</span>
-                  <span className="text-[10px] text-muted-foreground">Host / Management</span>
+                  <ShieldCheck className={`h-5 w-5 mb-1.5 ${role === "admin" ? "text-primary" : "text-zinc-500"}`} />
+                  <span className="text-xs font-bold text-white">Admin</span>
+                  <span className="text-[10px] text-zinc-400">Host / Management</span>
                 </button>
               </div>
             </div>
 
             {/* Name */}
             <div>
-              <label htmlFor="name" className="block text-xs font-bold uppercase tracking-wider text-muted-foreground mb-1.5">
+              <label htmlFor="name" className="block text-xs font-bold uppercase tracking-wider text-zinc-400 mb-1.5">
                 Full Name
               </label>
               <div className="relative">
-                <User className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                <User className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-zinc-500" />
                 <input
                   id="name"
                   type="text"
@@ -173,18 +190,18 @@ function SignupPage() {
                   value={name}
                   onChange={(e) => setName(e.target.value)}
                   placeholder="e.g. Priya Sharma"
-                  className="w-full rounded-xl border border-input bg-background/80 py-2.5 pl-10 pr-4 text-sm text-foreground placeholder:text-muted-foreground/60 focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20 transition"
+                  className="w-full rounded-xl border border-zinc-800 bg-black py-2.5 pl-10 pr-4 text-sm text-white placeholder:text-zinc-600 focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary transition"
                 />
               </div>
             </div>
 
             {/* Email */}
             <div>
-              <label htmlFor="email" className="block text-xs font-bold uppercase tracking-wider text-muted-foreground mb-1.5">
+              <label htmlFor="email" className="block text-xs font-bold uppercase tracking-wider text-zinc-400 mb-1.5">
                 Email Address
               </label>
               <div className="relative">
-                <Mail className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                <Mail className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-zinc-500" />
                 <input
                   id="email"
                   type="email"
@@ -192,36 +209,36 @@ function SignupPage() {
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   placeholder="name@company.com"
-                  className="w-full rounded-xl border border-input bg-background/80 py-2.5 pl-10 pr-4 text-sm text-foreground placeholder:text-muted-foreground/60 focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20 transition"
+                  className="w-full rounded-xl border border-zinc-800 bg-black py-2.5 pl-10 pr-4 text-sm text-white placeholder:text-zinc-600 focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary transition"
                 />
               </div>
             </div>
 
             {/* Organization / Company */}
             <div>
-              <label htmlFor="org" className="block text-xs font-bold uppercase tracking-wider text-muted-foreground mb-1.5">
+              <label htmlFor="org" className="block text-xs font-bold uppercase tracking-wider text-zinc-400 mb-1.5">
                 Company / Organization (Optional)
               </label>
               <div className="relative">
-                <Building className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                <Building className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-zinc-500" />
                 <input
                   id="org"
                   type="text"
                   value={organization}
                   onChange={(e) => setOrganization(e.target.value)}
                   placeholder="e.g. Google Cloud, TechSparks, Event Planners"
-                  className="w-full rounded-xl border border-input bg-background/80 py-2.5 pl-10 pr-4 text-sm text-foreground placeholder:text-muted-foreground/60 focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20 transition"
+                  className="w-full rounded-xl border border-zinc-800 bg-black py-2.5 pl-10 pr-4 text-sm text-white placeholder:text-zinc-600 focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary transition"
                 />
               </div>
             </div>
 
             {/* Password */}
             <div>
-              <label htmlFor="password" className="block text-xs font-bold uppercase tracking-wider text-muted-foreground mb-1.5">
+              <label htmlFor="password" className="block text-xs font-bold uppercase tracking-wider text-zinc-400 mb-1.5">
                 Password
               </label>
               <div className="relative">
-                <Lock className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                <Lock className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-zinc-500" />
                 <input
                   id="password"
                   type="password"
@@ -229,7 +246,7 @@ function SignupPage() {
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   placeholder="••••••••"
-                  className="w-full rounded-xl border border-input bg-background/80 py-2.5 pl-10 pr-4 text-sm text-foreground placeholder:text-muted-foreground/60 focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20 transition"
+                  className="w-full rounded-xl border border-zinc-800 bg-black py-2.5 pl-10 pr-4 text-sm text-white placeholder:text-zinc-600 focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary transition"
                 />
               </div>
             </div>
@@ -245,7 +262,7 @@ function SignupPage() {
           </form>
 
           {/* Footer link to Login */}
-          <div className="mt-6 text-center text-xs text-muted-foreground">
+          <div className="mt-6 text-center text-xs text-zinc-400">
             Already have an account?{" "}
             <Link to="/login" className="font-semibold text-primary hover:underline">
               Sign in here
@@ -256,4 +273,3 @@ function SignupPage() {
     </div>
   );
 }
-

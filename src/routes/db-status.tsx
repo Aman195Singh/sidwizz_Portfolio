@@ -67,7 +67,7 @@ VITE_DATABASE_URL="postgresql://neondb_owner:YOUR_PASSWORD@ep-sample-pool-123456
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 border-b pb-6">
           <div>
             <div className="flex items-center gap-2">
-              <span className="rounded-full bg-amber-500/20 text-amber-500 px-2.5 py-0.5 text-xs font-bold uppercase tracking-wider">
+              <span className="rounded-full bg-primary/20 text-primary px-2.5 py-0.5 text-xs font-bold uppercase tracking-wider">
                 Database Diagnostics
               </span>
             </div>
@@ -95,14 +95,14 @@ VITE_DATABASE_URL="postgresql://neondb_owner:YOUR_PASSWORD@ep-sample-pool-123456
             <div
               className={`rounded-2xl p-3 border ${
                 status?.status === "connected"
-                  ? "bg-emerald-500/15 border-emerald-500/30 text-emerald-500"
-                  : "bg-amber-500/15 border-amber-500/30 text-amber-500"
+                  ? "bg-primary/15 border-primary/40 text-primary"
+                  : "bg-muted border-border text-foreground"
               }`}
             >
               {status?.status === "connected" ? (
                 <CheckCircle2 className="h-8 w-8" />
               ) : (
-                <AlertTriangle className="h-8 w-8" />
+                <AlertTriangle className="h-8 w-8 text-primary" />
               )}
             </div>
 
@@ -116,8 +116,8 @@ VITE_DATABASE_URL="postgresql://neondb_owner:YOUR_PASSWORD@ep-sample-pool-123456
                 <span
                   className={`rounded-full px-2.5 py-0.5 text-xs font-bold uppercase tracking-wider ${
                     status?.status === "connected"
-                      ? "bg-emerald-500/20 text-emerald-500"
-                      : "bg-amber-500/20 text-amber-500"
+                      ? "bg-primary/20 text-primary border border-primary/30"
+                      : "bg-muted text-muted-foreground border border-border"
                   }`}
                 >
                   {status?.status === "connected" ? "Status: Active" : "Status: Action Required"}
@@ -147,7 +147,7 @@ VITE_DATABASE_URL="postgresql://neondb_owner:YOUR_PASSWORD@ep-sample-pool-123456
               </div>
               <div className="rounded-xl border bg-background/50 p-3">
                 <span className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground">SSL Mode</span>
-                <p className="font-mono text-xs font-semibold text-emerald-500 mt-1">{status.sslMode || "require"}</p>
+                <p className="font-mono text-xs font-semibold text-foreground mt-1">{status.sslMode || "require"}</p>
               </div>
             </div>
           )}
@@ -219,9 +219,9 @@ VITE_DATABASE_URL="postgresql://neondb_owner:YOUR_PASSWORD@ep-sample-pool-123456
           <div className="relative rounded-xl border bg-ink/90 p-4 font-mono text-xs text-ink-foreground">
             <button
               onClick={copyEnvSnippet}
-              className="absolute right-3 top-3 flex items-center gap-1 rounded bg-white/10 px-2 py-1 text-[11px] hover:bg-white/20 transition"
+              className="absolute right-3 top-3 flex items-center gap-1 rounded bg-white/10 px-2 py-1 text-[11px] text-white hover:bg-white/20 transition"
             >
-              {copied ? <Check className="h-3.5 w-3.5 text-emerald-400" /> : <Copy className="h-3.5 w-3.5" />}
+              {copied ? <Check className="h-3.5 w-3.5 text-primary" /> : <Copy className="h-3.5 w-3.5 text-zinc-400" />}
               <span>{copied ? "Copied!" : "Copy"}</span>
             </button>
             <pre className="overflow-x-auto whitespace-pre">{sampleEnv}</pre>
@@ -255,7 +255,7 @@ VITE_DATABASE_URL="postgresql://neondb_owner:YOUR_PASSWORD@ep-sample-pool-123456
                     <td className="p-3 font-mono font-bold text-primary">{t.name}</td>
                     <td className="p-3 text-muted-foreground">{t.description}</td>
                     <td className="p-3">
-                      <span className="rounded-full bg-emerald-500/20 text-emerald-500 px-2 py-0.5 text-[10px] font-bold">
+                      <span className="rounded-full bg-white/10 text-white border border-zinc-700 px-2 py-0.5 text-[10px] font-bold">
                         Ready
                       </span>
                     </td>
@@ -266,10 +266,10 @@ VITE_DATABASE_URL="postgresql://neondb_owner:YOUR_PASSWORD@ep-sample-pool-123456
           </div>
         </div>
 
-        {/* Back to Profile */}
+        {/* Back navigation */}
         <div className="flex justify-between items-center">
-          <Link to="/profile" className="btn-outline text-xs">
-            ← Back to Role Dashboard
+          <Link to="/admin" className="btn-outline text-xs">
+            ← Back to Admin Panel
           </Link>
           <Link to="/" className="btn-red text-xs">
             Return to Homepage

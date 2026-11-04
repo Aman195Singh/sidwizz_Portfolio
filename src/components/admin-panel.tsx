@@ -5,7 +5,7 @@ import {
   BarChart3,
   Inbox,
   FolderOpen,
-  Users,
+  User,
   Settings,
   HelpCircle,
   Menu,
@@ -16,12 +16,8 @@ import {
   Mail,
   MessageCircle,
   Search,
-  Filter,
   CheckCircle2,
-  Clock,
-  AlertTriangle,
   Copy,
-  Check,
   Plus,
   Upload,
   Calendar,
@@ -30,15 +26,13 @@ import {
   ShieldCheck,
   Database,
   ArrowRight,
-  Eye,
   FileText,
   Video,
   Music,
   Image as ImageIcon,
-  Sparkles,
-  ChevronRight,
   Send,
-  Building,
+  Lock,
+  Users,
 } from "lucide-react";
 import { useAuth } from "@/lib/auth";
 import { toast } from "sonner";
@@ -49,11 +43,10 @@ export type AdminTab =
   | "analytics"
   | "enquiries"
   | "media"
-  | "accounts"
+  | "account"
   | "settings"
   | "support";
 
-// Mock received enquiries from multiple organizers
 interface Enquiry {
   id: string;
   eventName: string;
@@ -172,7 +165,6 @@ const INITIAL_ENQUIRIES: Enquiry[] = [
   },
 ];
 
-// Media file library structure
 interface MediaItem {
   id: string;
   title: string;
@@ -266,11 +258,11 @@ const INITIAL_MEDIA_ITEMS: MediaItem[] = [
   },
 ];
 
-export function AdminPanel() {
+export function AdminPanel({ initialTab = "overview" }: { initialTab?: AdminTab }) {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
 
-  const [activeTab, setActiveTab] = useState<AdminTab>("overview");
+  const [activeTab, setActiveTab] = useState<AdminTab>(initialTab);
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
   // Enquiries state
@@ -287,6 +279,15 @@ export function AdminPanel() {
   const [newMediaTitle, setNewMediaTitle] = useState("");
   const [newMediaType, setNewMediaType] = useState<"image" | "video" | "audio" | "document">("image");
 
+  // Account merged state
+  const [adminName, setAdminName] = useState(user?.name || "Siddharth Maurya");
+  const [adminEmail, setAdminEmail] = useState(user?.email || "admin@siddwhizz.com");
+  const [adminPhone, setAdminPhone] = useState("+91 98200 88776");
+  const [adminTitle, setAdminTitle] = useState("Celebrity Event Host, Emcee & Moderator");
+  const [adminBio, setAdminBio] = useState("15+ years of live stage hosting across tech summits, global corporate galas, and arena music festivals.");
+  const [currentPassword, setCurrentPassword] = useState("");
+  const [newPassword, setNewPassword] = useState("");
+
   // Developer Support Ticket Form state
   const [ticketSubject, setTicketSubject] = useState("");
   const [ticketSeverity, setTicketSeverity] = useState("Medium");
@@ -299,7 +300,7 @@ export function AdminPanel() {
 
   // WhatsApp reply handler
   const handleWhatsAppReply = (enquiry: Enquiry) => {
-    const text = `Hello ${enquiry.clientName}, this is Siddharth "Sid" Maurya's management team! We received your booking enquiry for "${enquiry.eventName}" on ${enquiry.date} in ${enquiry.city}. We would love to check stage availability and share our rate card with you. Are you available for a brief call today?`;
+    const text = `Hello ${enquiry.clientName}, this is Siddharth "Sid" Maurya's management team! We received your booking enquiry for "${enquiry.eventName}" on ${enquiry.date} in ${enquiry.city}. We are pleased to check stage availability and share our rate card with you. Are you available for a brief call today?`;
     const url = `https://wa.me/${enquiry.cleanPhone}?text=${encodeURIComponent(text)}`;
     window.open(url, "_blank");
     toast.success(`Opening WhatsApp chat with ${enquiry.clientName}...`);
@@ -314,7 +315,7 @@ export function AdminPanel() {
   // Email reply handler
   const handleEmailReply = (enquiry: Enquiry) => {
     const subject = `Siddharth Maurya (Emcee) — Availability for ${enquiry.eventName}`;
-    const body = `Hi ${enquiry.clientName},\n\nThank you for reaching out to book Siddharth Maurya for "${enquiry.eventName}" on ${enquiry.date} at ${enquiry.venue}, ${enquiry.city}.\n\nWe have reviewed your event format (${enquiry.format}) and crowd estimation (${enquiry.crowdSize}). We are pleased to confirm that Siddharth is currently available for this stage date.\n\nPlease find attached our technical stage rider and commercial proposal.\n\nWarm regards,\nSiddharth Maurya Management Team\nhttps://sidwizz-portfolio.vercel.app`;
+    const body = `Hi ${enquiry.clientName},\n\nThank you for reaching out to book Siddharth Maurya for "${enquiry.eventName}" on ${enquiry.date} at ${enquiry.venue}, ${enquiry.city}.\n\nWe have reviewed your event format (${enquiry.format}) and crowd estimation (${enquiry.crowdSize}). We are pleased to confirm that Siddharth is available for this date.\n\nPlease find attached our technical stage rider and commercial proposal.\n\nWarm regards,\nSiddharth Maurya Management Team\nhttps://sidwizz-portfolio.vercel.app`;
     window.location.href = `mailto:${enquiry.email}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
     toast.success(`Opening email draft for ${enquiry.email}...`);
   };
@@ -377,6 +378,12 @@ export function AdminPanel() {
     toast.success("Public media link copied to clipboard!");
   };
 
+  // Save Merged Account Settings
+  const handleSaveAccount = (e: React.FormEvent) => {
+    e.preventDefault();
+    toast.success("Host account profile and credentials saved successfully!");
+  };
+
   // Submit Developer Ticket
   const handleSubmitTicket = (e: React.FormEvent) => {
     e.preventDefault();
@@ -384,7 +391,7 @@ export function AdminPanel() {
       toast.error("Please fill in subject and description.");
       return;
     }
-    toast.success("Ticket logged with lead engineer! You will receive an update on WhatsApp.");
+    toast.success("Developer ticket logged! The lead engineer will respond via WhatsApp.");
     setTicketSubject("");
     setTicketMessage("");
   };
@@ -410,21 +417,21 @@ export function AdminPanel() {
   return (
     <div className="flex min-h-screen bg-background text-foreground font-sans">
       {/* ------------------------------------------------------------- */}
-      {/* LEFT NAVIGATION SIDEBAR (Desktop Sticky + Mobile Drawer)      */}
+      {/* LEFT NAVIGATION SIDEBAR (Strict White, Red & Black Theme)     */}
       {/* ------------------------------------------------------------- */}
       <aside
-        className={`fixed inset-y-0 left-0 z-50 flex w-64 flex-col border-r bg-card/95 backdrop-blur-md transition-transform duration-300 md:static md:translate-x-0 ${
+        className={`fixed inset-y-0 left-0 z-50 flex w-64 flex-col border-r border-border bg-card transition-transform duration-300 md:static md:translate-x-0 ${
           sidebarOpen ? "translate-x-0 shadow-2xl" : "-translate-x-full"
         }`}
       >
         {/* Brand Header */}
-        <div className="flex h-16 items-center justify-between border-b px-5">
+        <div className="flex h-16 items-center justify-between border-b border-border px-5">
           <Link to="/" className="flex items-center gap-2">
             <Logo />
           </Link>
           <button
             onClick={() => setSidebarOpen(false)}
-            className="rounded-lg p-1 text-muted-foreground hover:bg-accent md:hidden"
+            className="rounded-lg p-1 text-muted-foreground hover:bg-accent hover:text-foreground md:hidden"
             aria-label="Close menu"
           >
             <X className="h-5 w-5" />
@@ -432,20 +439,20 @@ export function AdminPanel() {
         </div>
 
         {/* Admin Tag */}
-        <div className="px-5 py-3 border-b border-border/60 bg-primary/5">
+        <div className="px-5 py-3 border-b border-border bg-primary/10">
           <div className="flex items-center justify-between">
             <span className="text-[10px] font-black uppercase tracking-wider text-primary flex items-center gap-1.5">
               <ShieldCheck className="h-3.5 w-3.5" /> Admin Panel
             </span>
-            <span className="rounded-full bg-emerald-500/20 text-emerald-500 px-2 py-0.5 text-[9px] font-bold">
-              Live v2.4
+            <span className="rounded-full bg-primary/20 text-primary px-2 py-0.5 text-[9px] font-bold border border-primary/30">
+              Active
             </span>
           </div>
-          <p className="text-xs font-bold text-foreground mt-1 truncate">Siddharth Maurya</p>
-          <p className="text-[11px] text-muted-foreground truncate">admin@siddwhizz.com</p>
+          <p className="text-xs font-bold text-foreground mt-1 truncate">{adminName}</p>
+          <p className="text-[11px] text-muted-foreground truncate">{adminEmail}</p>
         </div>
 
-        {/* Navigation Menu */}
+        {/* Navigation Menu (Strict White, Red, Black) */}
         <nav className="flex-1 space-y-1 overflow-y-auto p-3 text-xs">
           <button
             onClick={() => {
@@ -454,7 +461,7 @@ export function AdminPanel() {
             }}
             className={`flex w-full items-center justify-between rounded-xl px-3 py-2.5 font-semibold transition ${
               activeTab === "overview"
-                ? "bg-primary text-primary-foreground shadow-md"
+                ? "bg-primary text-primary-foreground shadow-sm"
                 : "text-muted-foreground hover:bg-accent hover:text-foreground"
             }`}
           >
@@ -470,7 +477,7 @@ export function AdminPanel() {
             }}
             className={`flex w-full items-center justify-between rounded-xl px-3 py-2.5 font-semibold transition ${
               activeTab === "analytics"
-                ? "bg-primary text-primary-foreground shadow-md"
+                ? "bg-primary text-primary-foreground shadow-sm"
                 : "text-muted-foreground hover:bg-accent hover:text-foreground"
             }`}
           >
@@ -486,7 +493,7 @@ export function AdminPanel() {
             }}
             className={`flex w-full items-center justify-between rounded-xl px-3 py-2.5 font-semibold transition ${
               activeTab === "enquiries"
-                ? "bg-primary text-primary-foreground shadow-md"
+                ? "bg-primary text-primary-foreground shadow-sm"
                 : "text-muted-foreground hover:bg-accent hover:text-foreground"
             }`}
           >
@@ -513,29 +520,30 @@ export function AdminPanel() {
             }}
             className={`flex w-full items-center justify-between rounded-xl px-3 py-2.5 font-semibold transition ${
               activeTab === "media"
-                ? "bg-primary text-primary-foreground shadow-md"
+                ? "bg-primary text-primary-foreground shadow-sm"
                 : "text-muted-foreground hover:bg-accent hover:text-foreground"
             }`}
           >
             <span className="flex items-center gap-2.5">
               <FolderOpen className="h-4 w-4" /> Media Library
             </span>
-            <span className="text-[10px] text-muted-foreground">{mediaItems.length}</span>
+            <span className="text-[10px] font-bold text-muted-foreground">{mediaItems.length}</span>
           </button>
 
+          {/* Merged Account & Profile Tab */}
           <button
             onClick={() => {
-              setActiveTab("accounts");
+              setActiveTab("account");
               setSidebarOpen(false);
             }}
             className={`flex w-full items-center justify-between rounded-xl px-3 py-2.5 font-semibold transition ${
-              activeTab === "accounts"
-                ? "bg-primary text-primary-foreground shadow-md"
+              activeTab === "account"
+                ? "bg-primary text-primary-foreground shadow-sm"
                 : "text-muted-foreground hover:bg-accent hover:text-foreground"
             }`}
           >
             <span className="flex items-center gap-2.5">
-              <Users className="h-4 w-4" /> Accounts & Team
+              <User className="h-4 w-4" /> Account & Profile
             </span>
           </button>
 
@@ -546,7 +554,7 @@ export function AdminPanel() {
             }}
             className={`flex w-full items-center justify-between rounded-xl px-3 py-2.5 font-semibold transition ${
               activeTab === "settings"
-                ? "bg-primary text-primary-foreground shadow-md"
+                ? "bg-primary text-primary-foreground shadow-sm"
                 : "text-muted-foreground hover:bg-accent hover:text-foreground"
             }`}
           >
@@ -562,29 +570,21 @@ export function AdminPanel() {
             }}
             className={`flex w-full items-center justify-between rounded-xl px-3 py-2.5 font-semibold transition ${
               activeTab === "support"
-                ? "bg-primary text-primary-foreground shadow-md"
+                ? "bg-primary text-primary-foreground shadow-sm"
                 : "text-muted-foreground hover:bg-accent hover:text-foreground"
             }`}
           >
             <span className="flex items-center gap-2.5">
               <HelpCircle className="h-4 w-4" /> Support & Help
             </span>
-            <span className="rounded-full bg-amber-500/20 text-amber-500 px-1.5 py-0.2 text-[9px] font-bold">
+            <span className="rounded-full bg-primary/15 text-primary px-1.5 py-0.2 text-[9px] font-bold border border-primary/30">
               Dev
             </span>
           </button>
         </nav>
 
         {/* Sidebar Footer */}
-        <div className="border-t p-3 space-y-1 text-xs">
-          <Link
-            to="/profile"
-            className="flex items-center gap-2 rounded-xl px-3 py-2 font-medium text-muted-foreground hover:bg-accent hover:text-foreground transition"
-          >
-            <ShieldCheck className="h-4 w-4 text-primary" />
-            <span>My Account Profile</span>
-          </Link>
-
+        <div className="border-t border-border p-3 space-y-1 text-xs">
           <Link
             to="/"
             className="flex items-center gap-2 rounded-xl px-3 py-2 font-medium text-muted-foreground hover:bg-accent hover:text-foreground transition"
@@ -598,7 +598,7 @@ export function AdminPanel() {
               logout();
               navigate({ to: "/" });
             }}
-            className="flex w-full items-center gap-2 rounded-xl px-3 py-2 font-medium text-destructive hover:bg-destructive/10 transition"
+            className="flex w-full items-center gap-2 rounded-xl px-3 py-2 font-medium text-primary hover:bg-primary/10 transition"
           >
             <LogOut className="h-4 w-4" />
             <span>Sign Out</span>
@@ -607,15 +607,15 @@ export function AdminPanel() {
       </aside>
 
       {/* ------------------------------------------------------------- */}
-      {/* MAIN CONTENT AREA                                             */}
+      {/* MAIN DASHBOARD CANVAS                                         */}
       {/* ------------------------------------------------------------- */}
       <div className="flex flex-1 flex-col overflow-hidden">
         {/* Top Header Bar */}
-        <header className="flex h-16 items-center justify-between border-b bg-card/60 px-4 backdrop-blur md:px-8">
+        <header className="flex h-16 items-center justify-between border-b border-border bg-card px-4 md:px-8">
           <div className="flex items-center gap-3">
             <button
               onClick={() => setSidebarOpen(true)}
-              className="rounded-lg border p-2 text-foreground md:hidden"
+              className="rounded-lg border border-border p-2 text-foreground md:hidden"
               aria-label="Open sidebar"
             >
               <Menu className="h-5 w-5" />
@@ -625,7 +625,7 @@ export function AdminPanel() {
               {activeTab === "analytics" && "Web Page Traffic & Analytics"}
               {activeTab === "enquiries" && "Client Enquiries & Fast Outreach"}
               {activeTab === "media" && "Media Asset Library"}
-              {activeTab === "accounts" && "Accounts & Permissions"}
+              {activeTab === "account" && "Host Account & Profile Settings"}
               {activeTab === "settings" && "Website & Booking Settings"}
               {activeTab === "support" && "Developer Support & Assistance"}
             </h1>
@@ -633,28 +633,28 @@ export function AdminPanel() {
 
           <div className="flex items-center gap-3">
             {/* Availability status badge */}
-            <div className="hidden sm:flex items-center gap-2 rounded-full border border-emerald-500/30 bg-emerald-500/10 px-3 py-1 text-xs font-bold text-emerald-500">
-              <span className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse" />
+            <div className="hidden sm:flex items-center gap-2 rounded-full border border-border bg-accent px-3 py-1 text-xs font-bold text-foreground">
+              <span className="h-2 w-2 rounded-full bg-primary animate-pulse" />
               <span>Accepting Stage Dates</span>
             </div>
 
             {/* Neon DB indicator */}
             <Link
               to="/db-status"
-              className="hidden lg:flex items-center gap-1.5 rounded-full border border-amber-500/30 bg-amber-500/10 px-2.5 py-1 text-[11px] font-semibold text-amber-500 hover:bg-amber-500/20"
+              className="hidden lg:flex items-center gap-1.5 rounded-full border border-primary/30 bg-primary/10 px-2.5 py-1 text-[11px] font-bold text-primary hover:bg-primary/20"
             >
               <Database className="h-3 w-3" />
-              <span>NeonDB Status</span>
+              <span>NeonDB Connected</span>
             </Link>
 
             {/* Account Icon */}
-            <Link
-              to="/profile"
-              className="grid h-8 w-8 place-items-center rounded-full bg-primary/20 text-xs font-bold text-primary border border-primary/40 hover:scale-105 transition"
-              title="View Account Profile"
+            <button
+              onClick={() => setActiveTab("account")}
+              className="grid h-8 w-8 place-items-center rounded-full bg-primary/15 text-xs font-bold text-primary border border-primary/30 hover:scale-105 transition"
+              title="Open Account & Profile"
             >
               SM
-            </Link>
+            </button>
           </div>
         </header>
 
@@ -665,9 +665,9 @@ export function AdminPanel() {
           {/* ========================================================= */}
           {activeTab === "overview" && (
             <div className="space-y-6">
-              {/* Metric Cards */}
+              {/* Metric Cards (Strict White, Red, Black) */}
               <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-                <div className="rounded-2xl border bg-card p-5 shadow-sm">
+                <div className="rounded-2xl border border-border bg-card p-5 shadow-sm">
                   <div className="flex items-center justify-between text-muted-foreground mb-2">
                     <span className="text-xs font-bold uppercase tracking-wider">New Enquiries</span>
                     <Inbox className="h-4 w-4 text-primary" />
@@ -678,40 +678,40 @@ export function AdminPanel() {
                   </p>
                 </div>
 
-                <div className="rounded-2xl border bg-card p-5 shadow-sm">
+                <div className="rounded-2xl border border-border bg-card p-5 shadow-sm">
                   <div className="flex items-center justify-between text-muted-foreground mb-2">
                     <span className="text-xs font-bold uppercase tracking-wider">Historical Shows</span>
-                    <Calendar className="h-4 w-4 text-amber-500" />
+                    <Calendar className="h-4 w-4 text-foreground" />
                   </div>
                   <p className="text-3xl font-black font-display text-foreground">600+</p>
                   <p className="text-xs text-muted-foreground mt-1">15+ Years Live Experience</p>
                 </div>
 
-                <div className="rounded-2xl border bg-card p-5 shadow-sm">
+                <div className="rounded-2xl border border-border bg-card p-5 shadow-sm">
                   <div className="flex items-center justify-between text-muted-foreground mb-2">
                     <span className="text-xs font-bold uppercase tracking-wider">Audience Reach</span>
-                    <Users className="h-4 w-4 text-emerald-500" />
+                    <Users className="h-4 w-4 text-foreground" />
                   </div>
                   <p className="text-3xl font-black font-display text-foreground">1.2M+</p>
-                  <p className="text-xs text-emerald-500 font-semibold mt-1">Tech summits, festivals, galas</p>
+                  <p className="text-xs text-muted-foreground mt-1">Tech summits, festivals, galas</p>
                 </div>
 
-                <div className="rounded-2xl border bg-card p-5 shadow-sm">
+                <div className="rounded-2xl border border-border bg-card p-5 shadow-sm">
                   <div className="flex items-center justify-between text-muted-foreground mb-2">
                     <span className="text-xs font-bold uppercase tracking-wider">Pipeline Est.</span>
-                    <TrendingUp className="h-4 w-4 text-sky-500" />
+                    <TrendingUp className="h-4 w-4 text-primary" />
                   </div>
-                  <p className="text-3xl font-black font-display text-foreground">₹24.5 L</p>
+                  <p className="text-3xl font-black font-display text-primary">₹24.5 L</p>
                   <p className="text-xs text-muted-foreground mt-1">Q4 Active Booking Discussions</p>
                 </div>
               </div>
 
-              {/* Priority Attention: Speed-to-lead alert */}
+              {/* Speed-to-lead alert */}
               {pendingCount > 0 && (
-                <div className="rounded-2xl border border-primary/30 bg-primary/5 p-5 shadow-md flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                <div className="rounded-2xl border border-primary/40 bg-primary/10 p-5 shadow-sm flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                   <div className="flex items-start gap-3">
-                    <div className="rounded-xl bg-primary/20 p-2.5 text-primary">
-                      <Sparkles className="h-5 w-5" />
+                    <div className="rounded-xl bg-primary/20 p-2.5 text-primary border border-primary/30">
+                      <Inbox className="h-5 w-5" />
                     </div>
                     <div>
                       <h3 className="text-sm font-bold text-foreground">
@@ -733,7 +733,7 @@ export function AdminPanel() {
               )}
 
               {/* Recent Enquiries Table Preview */}
-              <div className="rounded-2xl border bg-card p-6 shadow-sm">
+              <div className="rounded-2xl border border-border bg-card p-6 shadow-sm">
                 <div className="flex items-center justify-between mb-4">
                   <div>
                     <h3 className="text-base font-bold text-foreground">Recent Booking Inquiries</h3>
@@ -749,7 +749,7 @@ export function AdminPanel() {
 
                 <div className="overflow-x-auto">
                   <table className="w-full text-left text-xs">
-                    <thead className="border-b bg-muted/30 text-muted-foreground uppercase tracking-wider">
+                    <thead className="border-b border-border bg-muted/30 text-muted-foreground uppercase tracking-wider">
                       <tr>
                         <th className="p-3">Ref</th>
                         <th className="p-3">Event & Organizer</th>
@@ -759,7 +759,7 @@ export function AdminPanel() {
                         <th className="p-3 text-right">Quick Contact</th>
                       </tr>
                     </thead>
-                    <tbody className="divide-y divide-border/60">
+                    <tbody className="divide-y divide-border">
                       {enquiries.slice(0, 4).map((e) => (
                         <tr key={e.id} className="hover:bg-accent/40 transition">
                           <td className="p-3 font-mono font-bold text-primary">{e.id}</td>
@@ -777,9 +777,9 @@ export function AdminPanel() {
                               className={`rounded-full px-2 py-0.5 text-[10px] font-bold ${
                                 e.status === "New"
                                   ? "bg-primary/20 text-primary border border-primary/30"
-                                  : e.status === "In Discussion"
-                                  ? "bg-amber-500/20 text-amber-500 border border-amber-500/30"
-                                  : "bg-emerald-500/20 text-emerald-500 border border-emerald-500/30"
+                                  : e.status === "Confirmed"
+                                  ? "bg-white text-black font-bold"
+                                  : "bg-muted text-foreground border border-border"
                               }`}
                             >
                               {e.status}
@@ -788,21 +788,21 @@ export function AdminPanel() {
                           <td className="p-3 text-right space-x-1.5 whitespace-nowrap">
                             <button
                               onClick={() => handleWhatsAppReply(e)}
-                              className="rounded-lg bg-emerald-600/15 p-1.5 text-emerald-500 hover:bg-emerald-600/30 transition"
+                              className="rounded-lg bg-primary/15 border border-primary/30 p-1.5 text-primary hover:bg-primary/30 transition"
                               title="Chat on WhatsApp"
                             >
                               <MessageCircle className="h-3.5 w-3.5" />
                             </button>
                             <button
                               onClick={() => handlePhoneCall(e)}
-                              className="rounded-lg bg-sky-600/15 p-1.5 text-sky-500 hover:bg-sky-600/30 transition"
+                              className="rounded-lg bg-muted border border-border p-1.5 text-foreground hover:bg-accent transition"
                               title="Direct Phone Call"
                             >
                               <Phone className="h-3.5 w-3.5" />
                             </button>
                             <button
                               onClick={() => handleEmailReply(e)}
-                              className="rounded-lg bg-primary/15 p-1.5 text-primary hover:bg-primary/30 transition"
+                              className="rounded-lg bg-primary/15 border border-primary/30 p-1.5 text-primary hover:bg-primary/30 transition"
                               title="Send Email"
                             >
                               <Mail className="h-3.5 w-3.5" />
@@ -823,31 +823,31 @@ export function AdminPanel() {
           {activeTab === "analytics" && (
             <div className="space-y-6">
               <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
-                <div className="rounded-2xl border bg-card p-4">
+                <div className="rounded-2xl border border-border bg-card p-4">
                   <span className="text-xs font-bold text-muted-foreground uppercase">Unique Visitors</span>
                   <p className="text-2xl font-black font-display text-foreground mt-1">42,500</p>
-                  <p className="text-[11px] text-emerald-500 font-semibold">↑ 18.2% this month</p>
+                  <p className="text-[11px] text-primary font-semibold">↑ 18.2% this month</p>
                 </div>
-                <div className="rounded-2xl border bg-card p-4">
+                <div className="rounded-2xl border border-border bg-card p-4">
                   <span className="text-xs font-bold text-muted-foreground uppercase">Total Pageviews</span>
                   <p className="text-2xl font-black font-display text-foreground mt-1">118,200</p>
-                  <p className="text-[11px] text-emerald-500 font-semibold">↑ 24.6% this month</p>
+                  <p className="text-[11px] text-primary font-semibold">↑ 24.6% this month</p>
                 </div>
-                <div className="rounded-2xl border bg-card p-4">
+                <div className="rounded-2xl border border-border bg-card p-4">
                   <span className="text-xs font-bold text-muted-foreground uppercase">Avg. Time on Site</span>
                   <p className="text-2xl font-black font-display text-foreground mt-1">2m 48s</p>
-                  <p className="text-[11px] text-muted-foreground">High engagement</p>
+                  <p className="text-[11px] text-muted-foreground">High audience retention</p>
                 </div>
-                <div className="rounded-2xl border bg-card p-4">
+                <div className="rounded-2xl border border-border bg-card p-4">
                   <span className="text-xs font-bold text-muted-foreground uppercase">Enquiry Conversion</span>
                   <p className="text-2xl font-black font-display text-primary mt-1">4.2%</p>
-                  <p className="text-[11px] text-primary font-semibold">Top quartile for artists</p>
+                  <p className="text-[11px] text-primary font-semibold">High booking intent</p>
                 </div>
               </div>
 
               {/* Section Popularity Breakdown */}
               <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
-                <div className="rounded-2xl border bg-card p-6 shadow-sm">
+                <div className="rounded-2xl border border-border bg-card p-6 shadow-sm">
                   <h3 className="text-base font-bold text-foreground mb-4">Most Visited Sections</h3>
                   <div className="space-y-3">
                     <div>
@@ -866,7 +866,7 @@ export function AdminPanel() {
                         <span className="text-muted-foreground">28% (33,096 views)</span>
                       </div>
                       <div className="h-2 w-full rounded-full bg-muted overflow-hidden">
-                        <div className="h-full bg-amber-500 rounded-full" style={{ width: "28%" }} />
+                        <div className="h-full bg-foreground rounded-full" style={{ width: "28%" }} />
                       </div>
                     </div>
 
@@ -876,7 +876,7 @@ export function AdminPanel() {
                         <span className="text-muted-foreground">15% (17,730 views)</span>
                       </div>
                       <div className="h-2 w-full rounded-full bg-muted overflow-hidden">
-                        <div className="h-full bg-emerald-500 rounded-full" style={{ width: "15%" }} />
+                        <div className="h-full bg-primary/70 rounded-full" style={{ width: "15%" }} />
                       </div>
                     </div>
 
@@ -886,24 +886,24 @@ export function AdminPanel() {
                         <span className="text-muted-foreground">12% (14,184 views)</span>
                       </div>
                       <div className="h-2 w-full rounded-full bg-muted overflow-hidden">
-                        <div className="h-full bg-sky-500 rounded-full" style={{ width: "12%" }} />
+                        <div className="h-full bg-muted-foreground rounded-full" style={{ width: "12%" }} />
                       </div>
                     </div>
                   </div>
                 </div>
 
-                <div className="rounded-2xl border bg-card p-6 shadow-sm">
+                <div className="rounded-2xl border border-border bg-card p-6 shadow-sm">
                   <h3 className="text-base font-bold text-foreground mb-4">Traffic Referral Channels</h3>
                   <div className="space-y-3">
-                    <div className="flex items-center justify-between border-b pb-2 text-xs">
+                    <div className="flex items-center justify-between border-b border-border pb-2 text-xs">
                       <span className="font-semibold text-foreground">Direct & Bookmark</span>
                       <span className="font-mono text-muted-foreground">38%</span>
                     </div>
-                    <div className="flex items-center justify-between border-b pb-2 text-xs">
+                    <div className="flex items-center justify-between border-b border-border pb-2 text-xs">
                       <span className="font-semibold text-foreground">Instagram (@siddwhizz)</span>
-                      <span className="font-mono text-muted-foreground">32%</span>
+                      <span className="font-mono text-primary font-bold">32%</span>
                     </div>
-                    <div className="flex items-center justify-between border-b pb-2 text-xs">
+                    <div className="flex items-center justify-between border-b border-border pb-2 text-xs">
                       <span className="font-semibold text-foreground">LinkedIn (Siddharth Maurya)</span>
                       <span className="font-mono text-muted-foreground">20%</span>
                     </div>
@@ -957,7 +957,7 @@ export function AdminPanel() {
                 {/* List Column */}
                 <div className={`space-y-3 ${selectedEnquiry ? "lg:col-span-7" : "lg:col-span-12"}`}>
                   {filteredEnquiries.length === 0 ? (
-                    <div className="rounded-2xl border bg-card p-12 text-center">
+                    <div className="rounded-2xl border border-border bg-card p-12 text-center">
                       <Inbox className="mx-auto h-8 w-8 text-muted-foreground mb-2" />
                       <p className="font-bold text-foreground">No enquiries found</p>
                       <p className="text-xs text-muted-foreground">Try adjusting your search query or filter.</p>
@@ -981,9 +981,9 @@ export function AdminPanel() {
                                 className={`rounded-full px-2 py-0.5 text-[10px] font-bold ${
                                   e.status === "New"
                                     ? "bg-primary/20 text-primary border border-primary/30"
-                                    : e.status === "In Discussion"
-                                    ? "bg-amber-500/20 text-amber-500 border border-amber-500/30"
-                                    : "bg-emerald-500/20 text-emerald-500 border border-emerald-500/30"
+                                    : e.status === "Confirmed"
+                                    ? "bg-white text-black font-bold"
+                                    : "bg-muted text-foreground border border-border"
                                 }`}
                               >
                                 {e.status}
@@ -1004,7 +1004,7 @@ export function AdminPanel() {
                         <p className="mt-2 text-xs text-muted-foreground line-clamp-2">{e.brief}</p>
 
                         {/* Action buttons inside card */}
-                        <div className="mt-4 flex flex-wrap items-center justify-between gap-2 border-t pt-3">
+                        <div className="mt-4 flex flex-wrap items-center justify-between gap-2 border-t border-border pt-3">
                           <span className="text-[11px] text-muted-foreground flex items-center gap-1">
                             <MapPin className="h-3.5 w-3.5 text-primary" /> {e.city}
                           </span>
@@ -1015,7 +1015,7 @@ export function AdminPanel() {
                                 ev.stopPropagation();
                                 handleWhatsAppReply(e);
                               }}
-                              className="flex items-center gap-1 rounded-lg bg-emerald-600/15 px-2.5 py-1 text-xs font-bold text-emerald-500 hover:bg-emerald-600/30 transition"
+                              className="flex items-center gap-1 rounded-lg bg-primary/15 border border-primary/30 px-2.5 py-1 text-xs font-bold text-primary hover:bg-primary/30 transition"
                             >
                               <MessageCircle className="h-3.5 w-3.5" />
                               <span>WhatsApp</span>
@@ -1026,7 +1026,7 @@ export function AdminPanel() {
                                 ev.stopPropagation();
                                 handlePhoneCall(e);
                               }}
-                              className="flex items-center gap-1 rounded-lg bg-sky-600/15 px-2.5 py-1 text-xs font-bold text-sky-500 hover:bg-sky-600/30 transition"
+                              className="flex items-center gap-1 rounded-lg bg-muted border border-border px-2.5 py-1 text-xs font-bold text-foreground hover:bg-accent transition"
                             >
                               <Phone className="h-3.5 w-3.5" />
                               <span>Call</span>
@@ -1037,7 +1037,7 @@ export function AdminPanel() {
                                 ev.stopPropagation();
                                 handleEmailReply(e);
                               }}
-                              className="flex items-center gap-1 rounded-lg bg-primary/15 px-2.5 py-1 text-xs font-bold text-primary hover:bg-primary/30 transition"
+                              className="flex items-center gap-1 rounded-lg bg-primary/15 border border-primary/30 px-2.5 py-1 text-xs font-bold text-primary hover:bg-primary/30 transition"
                             >
                               <Mail className="h-3.5 w-3.5" />
                               <span>Email</span>
@@ -1049,10 +1049,10 @@ export function AdminPanel() {
                   )}
                 </div>
 
-                {/* Detailed Enquiry Drawer / Sidebar */}
+                {/* Detailed Enquiry Drawer */}
                 {selectedEnquiry && (
-                  <div className="lg:col-span-5 rounded-2xl border bg-card p-6 shadow-xl space-y-5 sticky top-20">
-                    <div className="flex items-start justify-between border-b pb-4">
+                  <div className="lg:col-span-5 rounded-2xl border border-border bg-card p-6 shadow-xl space-y-5 sticky top-20">
+                    <div className="flex items-start justify-between border-b border-border pb-4">
                       <div>
                         <span className="font-mono text-xs font-bold text-primary">{selectedEnquiry.id}</span>
                         <h3 className="text-lg font-bold text-foreground mt-0.5">{selectedEnquiry.eventName}</h3>
@@ -1060,7 +1060,7 @@ export function AdminPanel() {
                       </div>
                       <button
                         onClick={() => setSelectedEnquiry(null)}
-                        className="rounded-lg p-1 text-muted-foreground hover:bg-accent"
+                        className="rounded-lg p-1 text-muted-foreground hover:bg-accent hover:text-foreground"
                         aria-label="Close"
                       >
                         <X className="h-4 w-4" />
@@ -1080,7 +1080,7 @@ export function AdminPanel() {
                             className={`rounded-lg py-1.5 text-xs font-bold transition ${
                               selectedEnquiry.status === st
                                 ? "bg-primary text-primary-foreground shadow"
-                                : "border bg-background text-muted-foreground hover:bg-accent"
+                                : "border border-border bg-background text-muted-foreground hover:bg-accent"
                             }`}
                           >
                             {st}
@@ -1095,21 +1095,21 @@ export function AdminPanel() {
                       <div className="grid grid-cols-3 gap-2">
                         <button
                           onClick={() => handleWhatsAppReply(selectedEnquiry)}
-                          className="flex flex-col items-center justify-center rounded-xl bg-emerald-600/20 p-2 text-emerald-500 hover:bg-emerald-600/30 transition text-center"
+                          className="flex flex-col items-center justify-center rounded-xl bg-primary/20 border border-primary/30 p-2 text-primary hover:bg-primary/30 transition text-center"
                         >
                           <MessageCircle className="h-4 w-4 mb-1" />
                           <span className="text-[11px] font-bold">WhatsApp</span>
                         </button>
                         <button
                           onClick={() => handlePhoneCall(selectedEnquiry)}
-                          className="flex flex-col items-center justify-center rounded-xl bg-sky-600/20 p-2 text-sky-500 hover:bg-sky-600/30 transition text-center"
+                          className="flex flex-col items-center justify-center rounded-xl bg-muted border border-border p-2 text-foreground hover:bg-accent transition text-center"
                         >
                           <Phone className="h-4 w-4 mb-1" />
                           <span className="text-[11px] font-bold">Direct Call</span>
                         </button>
                         <button
                           onClick={() => handleEmailReply(selectedEnquiry)}
-                          className="flex flex-col items-center justify-center rounded-xl bg-primary/20 p-2 text-primary hover:bg-primary/30 transition text-center"
+                          className="flex flex-col items-center justify-center rounded-xl bg-primary/20 border border-primary/30 p-2 text-primary hover:bg-primary/30 transition text-center"
                         >
                           <Mail className="h-4 w-4 mb-1" />
                           <span className="text-[11px] font-bold">Send Mail</span>
@@ -1118,48 +1118,48 @@ export function AdminPanel() {
                     </div>
 
                     {/* Event Specifications */}
-                    <div className="space-y-2 text-xs border-t pt-3">
-                      <div className="flex justify-between py-1 border-b border-border/50">
+                    <div className="space-y-2 text-xs border-t border-border pt-3">
+                      <div className="flex justify-between py-1 border-b border-border">
                         <span className="text-muted-foreground">Target Date:</span>
                         <span className="font-semibold text-foreground">{selectedEnquiry.date}</span>
                       </div>
-                      <div className="flex justify-between py-1 border-b border-border/50">
+                      <div className="flex justify-between py-1 border-b border-border">
                         <span className="text-muted-foreground">City & Venue:</span>
                         <span className="font-semibold text-foreground text-right">{selectedEnquiry.venue}, {selectedEnquiry.city}</span>
                       </div>
-                      <div className="flex justify-between py-1 border-b border-border/50">
+                      <div className="flex justify-between py-1 border-b border-border">
                         <span className="text-muted-foreground">Event Format:</span>
                         <span className="font-semibold text-foreground">{selectedEnquiry.format}</span>
                       </div>
-                      <div className="flex justify-between py-1 border-b border-border/50">
+                      <div className="flex justify-between py-1 border-b border-border">
                         <span className="text-muted-foreground">Audience Size:</span>
                         <span className="font-semibold text-foreground">{selectedEnquiry.crowdSize}</span>
                       </div>
-                      <div className="flex justify-between py-1 border-b border-border/50">
+                      <div className="flex justify-between py-1 border-b border-border">
                         <span className="text-muted-foreground">Budget Indicator:</span>
                         <span className="font-mono font-bold text-foreground">{selectedEnquiry.budget}</span>
                       </div>
                     </div>
 
                     {/* Special Brief */}
-                    <div className="border-t pt-3">
+                    <div className="border-t border-border pt-3">
                       <p className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground mb-1">
                         Organizer Event Brief
                       </p>
-                      <p className="text-xs text-foreground bg-background/50 p-3 rounded-xl border leading-relaxed">
+                      <p className="text-xs text-foreground bg-background p-3 rounded-xl border border-border leading-relaxed">
                         {selectedEnquiry.brief}
                       </p>
                     </div>
 
                     {/* Internal Notes */}
-                    <div className="border-t pt-3 space-y-2">
+                    <div className="border-t border-border pt-3 space-y-2">
                       <p className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground">
                         Internal Management Notes
                       </p>
                       {selectedEnquiry.notes && selectedEnquiry.notes.length > 0 ? (
                         <div className="space-y-1">
                           {selectedEnquiry.notes.map((n, idx) => (
-                            <div key={idx} className="rounded-lg bg-accent/40 p-2 text-xs text-foreground flex items-start gap-2">
+                            <div key={idx} className="rounded-lg bg-accent p-2 text-xs text-foreground flex items-start gap-2">
                               <span className="text-primary font-bold">•</span>
                               <span>{n}</span>
                             </div>
@@ -1204,7 +1204,7 @@ export function AdminPanel() {
                     className={`rounded-xl px-3.5 py-1.5 text-xs font-bold transition ${
                       mediaTypeFilter === "all"
                         ? "bg-primary text-primary-foreground shadow"
-                        : "border bg-card text-muted-foreground hover:bg-accent hover:text-foreground"
+                        : "border border-border bg-card text-muted-foreground hover:bg-accent hover:text-foreground"
                     }`}
                   >
                     All Media ({mediaItems.length})
@@ -1214,7 +1214,7 @@ export function AdminPanel() {
                     className={`rounded-xl px-3.5 py-1.5 text-xs font-bold flex items-center gap-1.5 transition ${
                       mediaTypeFilter === "image"
                         ? "bg-primary text-primary-foreground shadow"
-                        : "border bg-card text-muted-foreground hover:bg-accent hover:text-foreground"
+                        : "border border-border bg-card text-muted-foreground hover:bg-accent hover:text-foreground"
                     }`}
                   >
                     <ImageIcon className="h-3.5 w-3.5" /> Stage Photos
@@ -1224,7 +1224,7 @@ export function AdminPanel() {
                     className={`rounded-xl px-3.5 py-1.5 text-xs font-bold flex items-center gap-1.5 transition ${
                       mediaTypeFilter === "video"
                         ? "bg-primary text-primary-foreground shadow"
-                        : "border bg-card text-muted-foreground hover:bg-accent hover:text-foreground"
+                        : "border border-border bg-card text-muted-foreground hover:bg-accent hover:text-foreground"
                     }`}
                   >
                     <Video className="h-3.5 w-3.5" /> Showreel Videos
@@ -1234,7 +1234,7 @@ export function AdminPanel() {
                     className={`rounded-xl px-3.5 py-1.5 text-xs font-bold flex items-center gap-1.5 transition ${
                       mediaTypeFilter === "audio"
                         ? "bg-primary text-primary-foreground shadow"
-                        : "border bg-card text-muted-foreground hover:bg-accent hover:text-foreground"
+                        : "border border-border bg-card text-muted-foreground hover:bg-accent hover:text-foreground"
                     }`}
                   >
                     <Music className="h-3.5 w-3.5" /> Audio Intros
@@ -1244,7 +1244,7 @@ export function AdminPanel() {
                     className={`rounded-xl px-3.5 py-1.5 text-xs font-bold flex items-center gap-1.5 transition ${
                       mediaTypeFilter === "document"
                         ? "bg-primary text-primary-foreground shadow"
-                        : "border bg-card text-muted-foreground hover:bg-accent hover:text-foreground"
+                        : "border border-border bg-card text-muted-foreground hover:bg-accent hover:text-foreground"
                     }`}
                   >
                     <FileText className="h-3.5 w-3.5" /> Tech Riders & PDFs
@@ -1264,7 +1264,7 @@ export function AdminPanel() {
                 {filteredMedia.map((m) => (
                   <div
                     key={m.id}
-                    className="group rounded-2xl border bg-card p-4 shadow-sm hover:border-primary/50 transition flex flex-col justify-between"
+                    className="group rounded-2xl border border-border bg-card p-4 shadow-sm hover:border-primary/50 transition flex flex-col justify-between"
                   >
                     <div>
                       {/* Media Header Badge */}
@@ -1272,12 +1272,8 @@ export function AdminPanel() {
                         <span
                           className={`rounded-full px-2 py-0.5 text-[10px] font-bold uppercase ${
                             m.type === "image"
-                              ? "bg-primary/20 text-primary"
-                              : m.type === "video"
-                              ? "bg-amber-500/20 text-amber-500"
-                              : m.type === "audio"
-                              ? "bg-emerald-500/20 text-emerald-500"
-                              : "bg-sky-500/20 text-sky-500"
+                              ? "bg-primary/20 text-primary border border-primary/30"
+                              : "bg-muted text-foreground border border-border"
                           }`}
                         >
                           {m.type}
@@ -1286,11 +1282,11 @@ export function AdminPanel() {
                       </div>
 
                       {/* Icon Thumbnail Preview */}
-                      <div className="h-28 w-full rounded-xl bg-ink/30 border border-border/60 flex items-center justify-center text-muted-foreground group-hover:text-primary transition mb-3">
-                        {m.type === "image" && <ImageIcon className="h-10 w-10 text-primary/70" />}
-                        {m.type === "video" && <Video className="h-10 w-10 text-amber-500/70" />}
-                        {m.type === "audio" && <Music className="h-10 w-10 text-emerald-500/70" />}
-                        {m.type === "document" && <FileText className="h-10 w-10 text-sky-500/70" />}
+                      <div className="h-28 w-full rounded-xl bg-ink border border-border flex items-center justify-center text-muted-foreground group-hover:text-primary transition mb-3">
+                        {m.type === "image" && <ImageIcon className="h-10 w-10 text-primary" />}
+                        {m.type === "video" && <Video className="h-10 w-10 text-foreground" />}
+                        {m.type === "audio" && <Music className="h-10 w-10 text-foreground" />}
+                        {m.type === "document" && <FileText className="h-10 w-10 text-primary" />}
                       </div>
 
                       <h4 className="font-bold text-xs text-foreground line-clamp-2 leading-snug">{m.title}</h4>
@@ -1299,7 +1295,7 @@ export function AdminPanel() {
                       </p>
                     </div>
 
-                    <div className="mt-4 border-t pt-3 flex items-center justify-between">
+                    <div className="mt-4 border-t border-border pt-3 flex items-center justify-between">
                       <span className="text-[10px] text-muted-foreground">{m.createdAt}</span>
                       <button
                         onClick={() => handleCopyLink(m.url)}
@@ -1314,9 +1310,9 @@ export function AdminPanel() {
 
               {/* Upload Modal Simulator */}
               {uploadModalOpen && (
-                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4 backdrop-blur-sm">
-                  <div className="w-full max-w-md rounded-2xl border bg-card p-6 shadow-2xl space-y-4">
-                    <div className="flex items-center justify-between border-b pb-3">
+                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-4 backdrop-blur-sm">
+                  <div className="w-full max-w-md rounded-2xl border border-border bg-card p-6 shadow-2xl space-y-4">
+                    <div className="flex items-center justify-between border-b border-border pb-3">
                       <h3 className="text-base font-bold text-foreground">Upload Media File to Neon Storage</h3>
                       <button onClick={() => setUploadModalOpen(false)} className="text-muted-foreground hover:text-foreground">
                         <X className="h-4 w-4" />
@@ -1350,7 +1346,7 @@ export function AdminPanel() {
                         />
                       </div>
 
-                      <div className="rounded-xl border-2 border-dashed border-border/80 p-6 text-center">
+                      <div className="rounded-xl border-2 border-dashed border-border p-6 text-center">
                         <Upload className="mx-auto h-8 w-8 text-muted-foreground mb-2" />
                         <p className="text-xs font-bold text-foreground">Click to browse or drag file here</p>
                         <p className="text-[10px] text-muted-foreground mt-0.5">JPEG, PNG, MP4, MP3, PDF up to 100MB</p>
@@ -1376,94 +1372,203 @@ export function AdminPanel() {
           )}
 
           {/* ========================================================= */}
-          {/* 5. ACCOUNTS & TEAM VIEW                                   */}
+          {/* 5. MERGED ACCOUNT & PROFILE VIEW                          */}
           {/* ========================================================= */}
-          {activeTab === "accounts" && (
-            <div className="space-y-6">
-              <div className="rounded-2xl border bg-card p-6 shadow-sm space-y-4">
-                <div className="flex items-center justify-between border-b pb-4">
+          {activeTab === "account" && (
+            <div className="space-y-6 max-w-4xl">
+              {/* Host Profile Header Card */}
+              <div className="rounded-2xl border border-border bg-card p-6 shadow-sm">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-border pb-5">
+                  <div className="flex items-center gap-4">
+                    <div className="grid h-16 w-16 place-items-center rounded-2xl bg-primary/20 text-2xl font-black text-primary border border-primary/30">
+                      SM
+                    </div>
+                    <div>
+                      <div className="flex items-center gap-2">
+                        <h2 className="text-xl font-black font-display text-foreground">{adminName}</h2>
+                        <span className="rounded-full bg-primary/20 text-primary px-2 py-0.5 text-[10px] font-bold border border-primary/30">
+                          Super Admin
+                        </span>
+                      </div>
+                      <p className="text-xs text-muted-foreground">{adminTitle}</p>
+                      <p className="text-xs font-mono text-primary mt-0.5">{adminEmail}</p>
+                    </div>
+                  </div>
+
+                  <div className="flex items-center gap-2">
+                    <button
+                      onClick={() => {
+                        logout();
+                        navigate({ to: "/" });
+                      }}
+                      className="btn-outline !py-2 !px-3 text-xs text-primary hover:bg-primary/10"
+                    >
+                      <LogOut className="h-4 w-4" /> Sign Out
+                    </button>
+                  </div>
+                </div>
+
+                {/* Profile Edit Form */}
+                <form onSubmit={handleSaveAccount} className="mt-5 space-y-4 text-xs">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div>
+                      <label className="font-bold text-muted-foreground block mb-1">Full Legal Name</label>
+                      <input
+                        type="text"
+                        required
+                        value={adminName}
+                        onChange={(e) => setAdminName(e.target.value)}
+                        className="w-full rounded-xl border border-input bg-background py-2 px-3 text-xs text-foreground focus:border-primary focus:outline-none"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="font-bold text-muted-foreground block mb-1">Official Host Email</label>
+                      <input
+                        type="email"
+                        required
+                        value={adminEmail}
+                        onChange={(e) => setAdminEmail(e.target.value)}
+                        className="w-full rounded-xl border border-input bg-background py-2 px-3 text-xs text-foreground focus:border-primary focus:outline-none"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div>
+                      <label className="font-bold text-muted-foreground block mb-1">Direct Mobile (WhatsApp)</label>
+                      <input
+                        type="text"
+                        value={adminPhone}
+                        onChange={(e) => setAdminPhone(e.target.value)}
+                        className="w-full rounded-xl border border-input bg-background py-2 px-3 text-xs text-foreground focus:border-primary focus:outline-none"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="font-bold text-muted-foreground block mb-1">Display Title</label>
+                      <input
+                        type="text"
+                        value={adminTitle}
+                        onChange={(e) => setAdminTitle(e.target.value)}
+                        className="w-full rounded-xl border border-input bg-background py-2 px-3 text-xs text-foreground focus:border-primary focus:outline-none"
+                      />
+                    </div>
+                  </div>
+
                   <div>
-                    <h3 className="text-base font-bold text-foreground">Management & Team Profiles</h3>
-                    <p className="text-xs text-muted-foreground">Control who has access to booking inquiries, commercial rate cards, and media assets.</p>
+                    <label className="font-bold text-muted-foreground block mb-1">Host Bio Summary</label>
+                    <textarea
+                      rows={2}
+                      value={adminBio}
+                      onChange={(e) => setAdminBio(e.target.value)}
+                      className="w-full rounded-xl border border-input bg-background py-2 px-3 text-xs text-foreground focus:border-primary focus:outline-none"
+                    />
+                  </div>
+
+                  <div className="pt-2">
+                    <button type="submit" className="btn-red !py-2 !px-5 text-xs">
+                      Save Profile Information
+                    </button>
+                  </div>
+                </form>
+              </div>
+
+              {/* Password & Security Card */}
+              <div className="rounded-2xl border border-border bg-card p-6 shadow-sm space-y-4">
+                <div className="flex items-center gap-2 border-b border-border pb-3">
+                  <Lock className="h-4 w-4 text-primary" />
+                  <h3 className="text-sm font-bold text-foreground">Password & Account Security</h3>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs">
+                  <div>
+                    <label className="font-bold text-muted-foreground block mb-1">Current Password</label>
+                    <input
+                      type="password"
+                      value={currentPassword}
+                      onChange={(e) => setCurrentPassword(e.target.value)}
+                      placeholder="••••••••"
+                      className="w-full rounded-xl border border-input bg-background py-2 px-3 text-xs text-foreground focus:border-primary focus:outline-none"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="font-bold text-muted-foreground block mb-1">New Password</label>
+                    <input
+                      type="password"
+                      value={newPassword}
+                      onChange={(e) => setNewPassword(e.target.value)}
+                      placeholder="••••••••"
+                      className="w-full rounded-xl border border-input bg-background py-2 px-3 text-xs text-foreground focus:border-primary focus:outline-none"
+                    />
+                  </div>
+                </div>
+
+                <button
+                  type="button"
+                  onClick={() => {
+                    toast.success("Security credentials updated successfully!");
+                    setCurrentPassword("");
+                    setNewPassword("");
+                  }}
+                  className="btn-outline !py-2 !px-4 text-xs"
+                >
+                  Update Password
+                </button>
+              </div>
+
+              {/* Management Team Members */}
+              <div className="rounded-2xl border border-border bg-card p-6 shadow-sm space-y-4">
+                <div className="flex items-center justify-between border-b border-border pb-3">
+                  <div>
+                    <h3 className="text-sm font-bold text-foreground">Team Permissions & Management</h3>
+                    <p className="text-xs text-muted-foreground">Authorized team members with access to the Admin Panel.</p>
                   </div>
                   <button
-                    onClick={() => toast.info("New team member invitation link created.")}
+                    onClick={() => toast.info("Invitation link generated for team manager.")}
                     className="btn-outline !py-1.5 !px-3 text-xs flex items-center gap-1.5"
                   >
-                    <Plus className="h-3.5 w-3.5" /> Invite Manager
+                    <Plus className="h-3.5 w-3.5" /> Add Team Member
                   </button>
                 </div>
 
                 <div className="overflow-x-auto">
                   <table className="w-full text-left text-xs">
-                    <thead className="border-b bg-muted/30 text-muted-foreground uppercase tracking-wider">
+                    <thead className="border-b border-border bg-muted/30 text-muted-foreground uppercase tracking-wider">
                       <tr>
                         <th className="p-3">User</th>
                         <th className="p-3">Role</th>
                         <th className="p-3">Access Level</th>
-                        <th className="p-3">Last Active</th>
-                        <th className="p-3 text-right">Actions</th>
+                        <th className="p-3 text-right">Status</th>
                       </tr>
                     </thead>
-                    <tbody className="divide-y divide-border/60">
-                      <tr className="hover:bg-accent/40">
+                    <tbody className="divide-y divide-border">
+                      <tr>
                         <td className="p-3">
                           <p className="font-bold text-foreground">Siddharth Maurya</p>
-                          <p className="text-[11px] text-muted-foreground">admin@siddwhizz.com</p>
+                          <p className="text-[11px] text-muted-foreground font-mono">admin@siddwhizz.com</p>
                         </td>
-                        <td className="p-3">
-                          <span className="rounded-full bg-primary/20 text-primary px-2 py-0.5 text-[10px] font-bold">
-                            Site Owner / Host
-                          </span>
-                        </td>
-                        <td className="p-3 text-muted-foreground">Super Admin (Full Access)</td>
-                        <td className="p-3 text-emerald-500 font-semibold">Now (Active)</td>
+                        <td className="p-3 font-semibold text-primary">Super Admin (Host)</td>
+                        <td className="p-3 text-muted-foreground">Full Permissions</td>
                         <td className="p-3 text-right">
-                          <span className="text-muted-foreground text-[11px]">Primary Owner</span>
+                          <span className="rounded-full bg-primary/20 text-primary px-2 py-0.5 text-[10px] font-bold border border-primary/30">
+                            Active
+                          </span>
                         </td>
                       </tr>
 
-                      <tr className="hover:bg-accent/40">
+                      <tr>
                         <td className="p-3">
                           <p className="font-bold text-foreground">Neha Sharma</p>
-                          <p className="text-[11px] text-muted-foreground">neha.bookings@siddwhizz.com</p>
+                          <p className="text-[11px] text-muted-foreground font-mono">neha.bookings@siddwhizz.com</p>
                         </td>
-                        <td className="p-3">
-                          <span className="rounded-full bg-amber-500/20 text-amber-500 px-2 py-0.5 text-[10px] font-bold">
-                            Booking Manager
-                          </span>
-                        </td>
+                        <td className="p-3 font-semibold text-foreground">Booking Manager</td>
                         <td className="p-3 text-muted-foreground">Enquiries & Contracts</td>
-                        <td className="p-3 text-muted-foreground">2 hours ago</td>
                         <td className="p-3 text-right">
-                          <button
-                            onClick={() => toast.info("Permissions updated for Neha.")}
-                            className="text-primary hover:underline text-[11px] font-semibold"
-                          >
-                            Edit
-                          </button>
-                        </td>
-                      </tr>
-
-                      <tr className="hover:bg-accent/40">
-                        <td className="p-3">
-                          <p className="font-bold text-foreground">Rohan Verma</p>
-                          <p className="text-[11px] text-muted-foreground">rohan.tech@siddwhizz.com</p>
-                        </td>
-                        <td className="p-3">
-                          <span className="rounded-full bg-sky-500/20 text-sky-500 px-2 py-0.5 text-[10px] font-bold">
-                            Technical Director
+                          <span className="rounded-full bg-muted text-foreground px-2 py-0.5 text-[10px] font-bold border border-border">
+                            Active
                           </span>
-                        </td>
-                        <td className="p-3 text-muted-foreground">Stage Riders & Media Assets</td>
-                        <td className="p-3 text-muted-foreground">Yesterday</td>
-                        <td className="p-3 text-right">
-                          <button
-                            onClick={() => toast.info("Permissions updated for Rohan.")}
-                            className="text-primary hover:underline text-[11px] font-semibold"
-                          >
-                            Edit
-                          </button>
                         </td>
                       </tr>
                     </tbody>
@@ -1478,7 +1583,7 @@ export function AdminPanel() {
           {/* ========================================================= */}
           {activeTab === "settings" && (
             <div className="space-y-6 max-w-4xl">
-              <div className="rounded-2xl border bg-card p-6 shadow-sm space-y-6">
+              <div className="rounded-2xl border border-border bg-card p-6 shadow-sm space-y-6">
                 <div>
                   <h3 className="text-base font-bold text-foreground">Website & Booking Configuration</h3>
                   <p className="text-xs text-muted-foreground">Control public calendar availability and lead routing rules.</p>
@@ -1486,7 +1591,7 @@ export function AdminPanel() {
 
                 <div className="space-y-4 text-xs">
                   {/* Availability switch */}
-                  <div className="flex items-center justify-between border-b pb-4">
+                  <div className="flex items-center justify-between border-b border-border pb-4">
                     <div>
                       <p className="font-bold text-foreground">Live Booking Acceptance</p>
                       <p className="text-muted-foreground mt-0.5">Show "Accepting Bookings" on the homepage and contact form.</p>
@@ -1497,7 +1602,7 @@ export function AdminPanel() {
                         toast.success(`Booking status changed to ${!bookingAvailable ? "Active" : "Paused"}`);
                       }}
                       className={`relative inline-flex h-6 w-11 items-center rounded-full transition ${
-                        bookingAvailable ? "bg-emerald-500" : "bg-muted"
+                        bookingAvailable ? "bg-primary" : "bg-muted"
                       }`}
                     >
                       <span
@@ -1509,7 +1614,7 @@ export function AdminPanel() {
                   </div>
 
                   {/* WhatsApp Alerts switch */}
-                  <div className="flex items-center justify-between border-b pb-4">
+                  <div className="flex items-center justify-between border-b border-border pb-4">
                     <div>
                       <p className="font-bold text-foreground">Instant WhatsApp Lead Alerts</p>
                       <p className="text-muted-foreground mt-0.5">Send immediate notification to host phone when new high-value enquiry lands.</p>
@@ -1532,7 +1637,7 @@ export function AdminPanel() {
                   </div>
 
                   {/* Auto-reply email */}
-                  <div className="flex items-center justify-between border-b pb-4">
+                  <div className="flex items-center justify-between border-b border-border pb-4">
                     <div>
                       <p className="font-bold text-foreground">Automated Organizer Acknowledgment Email</p>
                       <p className="text-muted-foreground mt-0.5">Instantly email organizer with host tech rider and showreel link.</p>
@@ -1563,6 +1668,23 @@ export function AdminPanel() {
                       className="w-full max-w-sm rounded-xl border border-input bg-background py-2 px-3 text-xs text-foreground focus:border-primary focus:outline-none"
                     />
                   </div>
+
+                  {/* Neon Database Status */}
+                  <div className="rounded-xl border border-border bg-background p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                    <div className="flex items-center gap-3">
+                      <div className="rounded-xl bg-primary/20 p-2 text-primary border border-primary/30">
+                        <Database className="h-5 w-5" />
+                      </div>
+                      <div>
+                        <p className="font-bold text-foreground">Neon PostgreSQL Database</p>
+                        <p className="text-[11px] text-muted-foreground">Connected via DATABASE_URL (.env)</p>
+                      </div>
+                    </div>
+
+                    <Link to="/db-status" className="btn-outline !py-1.5 !px-3 text-xs">
+                      Diagnostics →
+                    </Link>
+                  </div>
                 </div>
               </div>
             </div>
@@ -1574,13 +1696,13 @@ export function AdminPanel() {
           {activeTab === "support" && (
             <div className="space-y-6 max-w-4xl">
               {/* Dedicated Developer Hotline Card */}
-              <div className="rounded-2xl border border-amber-500/30 bg-amber-500/5 p-6 shadow-sm space-y-4">
+              <div className="rounded-2xl border border-primary/30 bg-primary/5 p-6 shadow-sm space-y-4">
                 <div className="flex items-start gap-4">
-                  <div className="rounded-2xl bg-amber-500/20 p-3 text-amber-500 border border-amber-500/30">
+                  <div className="rounded-2xl bg-primary/20 p-3 text-primary border border-primary/30">
                     <HelpCircle className="h-8 w-8" />
                   </div>
                   <div>
-                    <span className="text-[10px] font-black uppercase tracking-wider text-amber-500 bg-amber-500/20 px-2 py-0.5 rounded">
+                    <span className="text-[10px] font-black uppercase tracking-wider text-primary bg-primary/20 px-2 py-0.5 rounded border border-primary/30">
                       Direct Developer Support Channel
                     </span>
                     <h3 className="text-xl font-black font-display text-foreground mt-1">
@@ -1597,7 +1719,7 @@ export function AdminPanel() {
                     href="https://wa.me/919999999999?text=Hi%20Developer,%20I%20need%20support%20with%20SiddWhizz%20portfolio%20website"
                     target="_blank"
                     rel="noreferrer"
-                    className="flex items-center gap-2 rounded-xl bg-emerald-600/20 border border-emerald-600/30 p-3 text-emerald-500 hover:bg-emerald-600/30 transition text-xs font-bold"
+                    className="flex items-center gap-2 rounded-xl bg-primary/20 border border-primary/40 p-3 text-primary hover:bg-primary/30 transition text-xs font-bold"
                   >
                     <MessageCircle className="h-4 w-4" />
                     <span>WhatsApp Developer</span>
@@ -1605,7 +1727,7 @@ export function AdminPanel() {
 
                   <a
                     href="mailto:support@siddwhizz.com?subject=Developer%20Support%20Request%20-%20SiddWhizz"
-                    className="flex items-center gap-2 rounded-xl bg-primary/20 border border-primary/30 p-3 text-primary hover:bg-primary/30 transition text-xs font-bold"
+                    className="flex items-center gap-2 rounded-xl bg-muted border border-border p-3 text-foreground hover:bg-accent transition text-xs font-bold"
                   >
                     <Mail className="h-4 w-4" />
                     <span>Email Technical Lead</span>
@@ -1613,7 +1735,7 @@ export function AdminPanel() {
 
                   <Link
                     to="/db-status"
-                    className="flex items-center gap-2 rounded-xl bg-amber-500/20 border border-amber-500/30 p-3 text-amber-500 hover:bg-amber-500/30 transition text-xs font-bold"
+                    className="flex items-center gap-2 rounded-xl bg-primary/10 border border-primary/30 p-3 text-primary hover:bg-primary/20 transition text-xs font-bold"
                   >
                     <Database className="h-4 w-4" />
                     <span>Neon Database Check</span>
@@ -1622,22 +1744,22 @@ export function AdminPanel() {
               </div>
 
               {/* System Diagnostics */}
-              <div className="rounded-2xl border bg-card p-6 shadow-sm space-y-4">
+              <div className="rounded-2xl border border-border bg-card p-6 shadow-sm space-y-4">
                 <h4 className="text-sm font-bold text-foreground">System Health & Runtime Diagnostics</h4>
                 <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 text-xs">
-                  <div className="p-3 rounded-xl bg-background border">
+                  <div className="p-3 rounded-xl bg-background border border-border">
                     <p className="text-[10px] text-muted-foreground uppercase font-bold">Framework</p>
                     <p className="font-semibold text-foreground mt-0.5">TanStack Start v1.168</p>
                   </div>
-                  <div className="p-3 rounded-xl bg-background border">
+                  <div className="p-3 rounded-xl bg-background border border-border">
                     <p className="text-[10px] text-muted-foreground uppercase font-bold">Engine</p>
                     <p className="font-semibold text-foreground mt-0.5">Vite 8 & Nitro SSR</p>
                   </div>
-                  <div className="p-3 rounded-xl bg-background border">
+                  <div className="p-3 rounded-xl bg-background border border-border">
                     <p className="text-[10px] text-muted-foreground uppercase font-bold">Database</p>
-                    <p className="font-semibold text-emerald-500 mt-0.5">Neon PostgreSQL</p>
+                    <p className="font-semibold text-primary mt-0.5">Neon PostgreSQL</p>
                   </div>
-                  <div className="p-3 rounded-xl bg-background border">
+                  <div className="p-3 rounded-xl bg-background border border-border">
                     <p className="text-[10px] text-muted-foreground uppercase font-bold">Production Node</p>
                     <p className="font-semibold text-foreground mt-0.5">v22.16 LTS</p>
                   </div>
@@ -1645,7 +1767,7 @@ export function AdminPanel() {
               </div>
 
               {/* Submit Ticket Form */}
-              <div className="rounded-2xl border bg-card p-6 shadow-sm space-y-4">
+              <div className="rounded-2xl border border-border bg-card p-6 shadow-sm space-y-4">
                 <h4 className="text-sm font-bold text-foreground">Log an Issue or Feature Request to Developer</h4>
                 <form onSubmit={handleSubmitTicket} className="space-y-3 text-xs">
                   <div>

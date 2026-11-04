@@ -24,7 +24,7 @@ function OrganizerRouteComponent() {
     return (
       <div className="flex min-h-screen items-center justify-center bg-background px-4">
         <div className="w-full max-w-md rounded-2xl border bg-card p-8 text-center shadow-xl space-y-4">
-          <div className="mx-auto grid h-12 w-12 place-items-center rounded-2xl bg-amber-500/15 text-amber-500 border border-amber-500/30">
+          <div className="mx-auto grid h-12 w-12 place-items-center rounded-2xl bg-primary/15 text-primary border border-primary/30">
             <Briefcase className="h-6 w-6" />
           </div>
           <h2 className="text-xl font-black font-display text-foreground">Event Organizer Access Required</h2>
@@ -46,3 +46,4 @@ function OrganizerRouteComponent() {
 
   return <OrganizerPanel />;
 }
+
