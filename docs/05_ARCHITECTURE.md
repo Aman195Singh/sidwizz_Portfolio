@@ -1,53 +1,69 @@
-# 05 — Technical Architecture
+# 05 — Technical Architecture (TanStack Start + Vite)
 
-## Selected stack
-Next.js App Router + React + TypeScript; Tailwind + shadcn/ui; Neon PostgreSQL; Drizzle ORM/Kit; Better Auth; Neon Object Storage (S3 API); Vercel.
+## 1. Selected Stack & Engine
+- **Frontend & Fullstack Runtime:** TanStack Start (`@tanstack/react-start`) running on Vite 8 and Nitro.
+- **Client Routing:** TanStack Router (`@tanstack/react-router`) with full TypeScript route inference.
+- **Styling:** Tailwind CSS v4 (`@tailwindcss/vite` + `tw-animate-css`).
+- **UI Primitives:** Radix UI primitives (`@radix-ui/react-*`), Lucide React icons.
+- **State Management:** TanStack React Query (`@tanstack/react-query`) wired in router context.
+- **Hosting / Deployment:** Vercel (or Cloudflare / Node Nitro targets).
 
-## Runtime
-Browser → Next.js server → Better Auth session verification / application authorization → Drizzle queries → Neon PostgreSQL.
-File upload: Browser requests upload permission → Next.js server authorizes owner and creates short-lived presigned upload URL (or streams file server-side) → Neon Object Storage → server verifies upload metadata → DB stores object key/metadata.
+---
 
-## Folder map
+## 2. Directory & Component Map
+
 ```text
-src/
-  app/
-    (public)/...
-    (auth)/admin/login/page.tsx
-    admin/(protected)/...
-    api/auth/[...all]/route.ts
-    api/uploads/presign/route.ts
-    api/health/route.ts
-    sitemap.ts
-    robots.ts
-  components/{ui,public,admin,forms,booking}/
-  db/
-    client.ts
-    schema/
-      auth-schema.ts
-      content-schema.ts
-      relations.ts
-  lib/
-    auth/{auth,session,require-owner}.ts
-    storage/{s3-client,presign,validation}.ts
-    validation/
-    queries/
-    actions/
-    email/
-    seo/
-    security/
-  types/
-drizzle/
-tests/{unit,integration,e2e}/
+c:\Users\Aman Singh\OneDrive\Desktop\Saas\Portfolio-web\SiddWhizz_Portfolio\
+├── public/                     # Static web assets (favicons, robots.txt, og-image.png)
+│   ├── favicon.ico             # Multi-resolution ICO (16x16, 32x32, 48x48)
+│   ├── favicon.png             # 512x512 transparent PNG
+│   ├── og-image.png            # 1200x630 social share banner
+│   └── robots.txt
+├── src/
+│   ├── assets/                 # 26 cinematic images imported as ES modules
+│   │   ├── hero-home.jpg       # Main stage backdrop
+│   │   ├── tech-summit.jpg     # Summit photo
+│   │   ├── avatar-priya.jpg    # Testimonial avatar
+│   │   └── ...
+│   ├── components/
+│   │   ├── site.tsx            # Unified cinematic site components (PageHero, Nav, Footer, Lightbox, etc.)
+│   │   └── ui/                 # Radix shadcn UI primitives (button, dialog, accordion, etc.)
+│   ├── hooks/                  # Custom React hooks (use-mobile.tsx)
+│   ├── lib/                    # Utilities (utils.ts, error-capture.ts)
+│   ├── routes/                 # File-based routes
+│   │   ├── __root.tsx          # Root HTML shell, meta links, <Outlet />, <Scripts />
+│   │   ├── index.tsx           # Homepage (/)
+│   │   ├── about.tsx           # About page (/about)
+│   │   ├── services.tsx        # Services page (/services)
+│   │   ├── portfolio.tsx       # Portfolio & video showreel (/portfolio)
+│   │   ├── gallery.tsx         # Stage photos & Lightbox (/gallery)
+│   │   └── contact.tsx         # Booking enquiry form (/contact)
+│   ├── routeTree.gen.ts        # Auto-generated TanStack Router route tree
+│   ├── router.tsx              # Router instantiation with QueryClient
+│   ├── server.ts               # SSR error handling & server entry
+│   ├── start.ts                # TanStack Start client entry point
+│   ├── styles.css              # Tailwind v4 import & OKLCH design tokens
+│   └── test/                   # Vitest tests (app-routing.test.tsx)
+├── vite.config.ts              # Vite & TanStack Start config
+├── tsconfig.json               # Strict TypeScript configuration
+└── package.json                # Dependencies & scripts
 ```
 
-## Server/client boundaries
-Server Components by default. Client Components only for menu, filters, lightbox, calendar and form interactions. Database drivers, Better Auth secret and S3 credentials remain server-only. Every server action and route handler independently verifies owner authorization.
+---
 
-## Database connection
-Use Neon pooled connection string for app traffic; direct connection string for migrations/admin tasks when required. Keep `DATABASE_URL` and `DIRECT_URL` server-side. Confirm selected driver/ORM compatibility and pooling behaviour. Do not instantiate unbounded pools in serverless functions.
+## 3. Server-Side Rendering & Hydration Flow
+1. **Request:** Browser sends GET request to server (e.g. `http://localhost:8080/services`).
+2. **Nitro / Vite SSR:** TanStack Start matches the route in `src/routes/services.tsx`, evaluates loaders/meta, and renders initial HTML using `src/routes/__root.tsx`.
+3. **Delivery:** Fast static HTML + CSS is streamed to the browser with zero layout shifts.
+4. **Hydration:** Client bundles take over via `src/start.ts`, enabling instant SPA-like transitions between pages via `@tanstack/react-router`.
 
-## Caching
-Public published content may be cached with explicit revalidation after publish/unpublish. Admin data, sessions, preview and private enquiries must be dynamic/no-store. Never share private cache between users.
+---
 
-## Error handling
-Stable codes: VALIDATION, UNAUTHENTICATED, FORBIDDEN, NOT_FOUND, CONFLICT, RATE_LIMITED, UPLOAD_REJECTED, PROVIDER_FAILURE, INTERNAL. Public messages must not expose stack traces or SQL/provider secrets.
+## 4. Asset Bundling & Performance Architecture
+- **Direct ES Module Image Imports:** Photos in `src/assets/*.jpg` are imported directly:
+  ```tsx
+  import heroHome from "@/assets/hero-home.jpg";
+  <img src={heroHome} alt="..." />
+  ```
+  Vite automatically optimizes, hashes, and code-splits these assets. This eliminates broken paths, ensures 100% cacheability on CDNs, and guarantees sub-second page loads.
+- **Font Optimization:** Google Fonts (`Montserrat`, `DM Sans`) are preconnected in `<head>` and loaded asynchronously without blocking first paint.

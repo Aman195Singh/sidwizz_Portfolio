@@ -1,40 +1,63 @@
-# Sidd.Whizz V1 — Repository Agent Rules
+# Sidd.Whizz V1 — Repository Agent Rules (TanStack Start + Vite)
 
-Read README and relevant docs/ADRs before work. Inspect repository before assuming state.
-If asked to audit/plan, do not code.
-Implement only approved phase. Do not silently add SaaS, payments, calendar sync, WhatsApp API or page builder.
+Read `README.md` and relevant docs before work. Always inspect the codebase before making assumptions.
+Do not invent unrequested backend microservices or rewrite the working frontend architecture.
 
-## Development Data Policy
-For the entire development and testing period, use ONLY fictional, synthetic and dummy data.
-Do not request real owner content during development; real owner information will be provided at the final content integration stage immediately before production launch.
-Separate demo data from application logic:
-- `src/data/demo/` for frontend demo fixtures.
-- `database/seeds/` for synthetic database seed scripts.
-- `docs/DEMO_DATA_STRATEGY.md` defines the data policy.
-- `docs/FINAL_CONTENT_MIGRATION.md` defines the real-content replacement protocol.
-All synthetic events, names, organizations, statistics and testimonials must be visibly marked as `[DEMO]`.
-Do not invent real achievements or imply fictional brands are associated with Siddharth Maurya.
-Use royalty-free, licensed placeholder imagery or neutral local placeholders. Do not generate or imply real photographs of the actual owner.
-Seed scripts must be deterministic, idempotent, and MUST reject execution if targeted against production (`NODE_ENV === 'production'` or `DEMO_MODE !== 'true'`).
+---
 
-## Architecture & Code Standards
-Use TypeScript strict. Next.js App Router (React 19 / Next.js 15+).
-Server Components by default; client components strictly for interactivity.
-In Next.js 15, `headers()`, `cookies()`, and route `params` are asynchronous Promises — always await them.
-Keep DB/auth/storage SDKs server-only. Never expose database URLs, Better Auth secret, or S3 credentials to the client.
-Every Server Action and Route Handler independently verifies Better Auth session and owner role (`requireOwner()`).
-Disable public signup in Better Auth (`disableSignUp: true`); provision owner via `scripts/seed-owner.ts`.
-Provide authenticated draft preview route handlers (`/api/draft/preview`, `/api/draft/disable`).
+## 1. Verified Architecture & Runtime Standards
+- **Framework:** TanStack Start (`@tanstack/react-start` 1.168.x) with Vite 8 + Nitro SSR engine.
+- **Routing:** TanStack Router (`@tanstack/react-router` 1.170.x) — strict file-based routing in `src/routes/`.
+- **Language:** TypeScript 5.8+ with `strict: true`.
+- **Styling:** Tailwind CSS v4 configured via `@tailwindcss/vite` and `@theme inline` inside `src/styles.css`.
+- **UI System:** Radix UI primitives (`src/components/ui/`) + custom cinematic components (`src/components/site.tsx`).
+- **Icons:** `lucide-react`.
+- **Dev Port:** `http://localhost:8080/`.
 
-## Database & Storage Safety
-Application traffic uses Neon pooled endpoint (`DATABASE_URL`) via `drizzle-orm/postgres-js` with `postgres(url, { prepare: false })` to support full interactive transactions for Better Auth and application workflows.
-Migration tooling (`drizzle-kit`) must use the unpooled direct connection (`DIRECT_URL`).
-Neon Object Storage integration with AWS SDK v3 must configure `forcePathStyle: true` server-only.
-Use short-lived presigned URLs (PUT for upload, GET for private access) and server-side `HeadObjectCommand` verification.
-Media deletion must verify zero foreign key references before deleting S3 objects.
-Design system tokens must strictly satisfy WCAG 2.2 AA contrast requirements (use `--primary-text: #E879F9` for body/normal text).
+---
 
-## Execution Process
-Use explicit public projections. Keep private enquiries, internal notes, and unpublished drafts strictly private.
-For each task: objective → inspect → file plan → implement small slice → tests/lint/typecheck/build → report verified results and gaps → stop at phase gate. Do not claim completion without evidence.
+## 2. Agent Routing & Coding Rules
 
+### A. Routing Conventions
+1. All route definitions live in `src/routes/`. Do NOT create `src/app/`, `pages/`, or `src/pages/`.
+2. App shell is defined in `src/routes/__root.tsx`. Always keep `<HeadContent />`, `<Outlet />`, and `<Scripts />` inside `RootShell`.
+3. Route components declare files with `export const Route = createFileRoute("/...")({ component: MyComponent, head: ... })`.
+4. Route links MUST use `<Link to="..." />` from `@tanstack/react-router`. Never use `<a>` for client-side navigation.
+5. Dynamic segments must use the bare dollar convention (e.g., `src/routes/portfolio/$slug.tsx`), not square brackets.
+
+### B. Styling & Design Tokens
+1. Tailwind CSS v4 does NOT use `tailwind.config.ts`. All tokens, color variables, and font bindings are defined inside `src/styles.css` using the `@theme inline` block.
+2. Official palette:
+   - `--primary`: Crimson Red / Magenta `oklch(0.58 0.235 27)` (`#E5233B`)
+   - `--primary-deep`: Deep Crimson `oklch(0.45 0.19 27)`
+   - `--ink`: Concert Stage Black `oklch(0.12 0.015 285)` (`#0C0712`)
+   - `--ink-foreground`: Clean Off-White `oklch(0.99 0 0)`
+   - `--gold`: Spotlight Gold Accent `oklch(0.85 0.16 85)`
+3. Typography:
+   - Headings & Titles: `font-display` (`Montserrat`, bold/black weight)
+   - Body & Prose: `font-sans` (`DM Sans`, normal/medium weight)
+4. Animations:
+   - Scroll reveals: Wrap sections with `<Reveal delay={...}>` (powered by `IntersectionObserver`).
+   - Glowing elements: Use `.glow-accent` or `.btn-red`.
+
+### C. Imagery & Assets
+1. All hero backdrops, event photos, and portraits live in `src/assets/*.jpg` and are imported into components as ES modules to guarantee zero-layout-shift and optimal bundling by Vite.
+2. Web root assets (favicons, apple-touch-icon, Open Graph images `og-image.png`, `robots.txt`) live in `public/`.
+3. Every `<img>` tag must have explicit, descriptive `alt` text and appropriate `loading="lazy"` where below the fold.
+
+---
+
+## 3. Data & Lead Management Policy
+1. For development and testing, use realistic synthetic enquiry submissions.
+2. Contact and booking submissions must validate user input (name, email, phone, date, event type, message) with strict Zod validation schemas.
+3. Private organizer details, enquiry budgets, and messages must remain strictly private. Never expose them via unauthenticated client endpoints.
+
+---
+
+## 4. Execution & Verification Flow
+For every feature or modification:
+1. **Inspect:** Check existing route files (`src/routes/`) and components (`src/components/site.tsx`).
+2. **Implement:** Write minimal, clean, type-safe code that matches the existing design system.
+3. **Verify Build:** Execute `npm run build` — must complete with 0 errors across client, SSR, and Nitro environments.
+4. **Verify Tests:** Execute `npm test` — must pass 100%.
+5. **Verify Dev Server:** Confirm server runs smoothly on `http://localhost:8080/`.

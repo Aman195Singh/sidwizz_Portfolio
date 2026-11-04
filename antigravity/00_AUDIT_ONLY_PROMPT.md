@@ -1,22 +1,20 @@
-# Sidd.Whizz V1 — Audit Only, No Coding
+# Sidd.Whizz V1 — Audit Only, No Coding (TanStack Start + Vite)
 
-Read root AGENTS.md and all pack documentation. Inspect repository and verify current official docs/package versions.
+Read root `AGENTS.md` and all documentation. Inspect the repository and verify current official documentation and package versions.
 
-Do not create or modify application code, run hosted migrations or change Neon storage settings.
+Do not create or modify application code or install unapproved packages during an audit.
 
 Report:
-1. Doc inventory and repo status.
-2. Requirement traceability route → data → server action → test.
-3. Next.js/Neon/Drizzle/Better Auth compatibility and recommended drivers.
-4. Whether Better Auth should use Drizzle adapter with Neon driver or another supported Postgres adapter.
-5. Generated auth schema plan and separation from app tables.
-6. Neon pooled/direct URL usage.
-7. Neon Object Storage endpoint, bucket visibility, credential scope, presigned upload support, region, plan pricing and egress checks.
-8. Threat model and private-data controls.
-9. Booking date/time and concurrency gaps.
-10. Admin CMS and publishing gaps.
-11. SEO/accessibility/performance and testing gaps.
-12. CI/CD, backup, object backup and rollback gaps.
-13. Owner content and unresolved decisions.
-14. Phased plan with exact files, tests and exit gates.
-Rank risks Critical/High/Medium/Low. Wait for owner approval before coding.
+1. Documentation inventory and repo status.
+2. Route traceability: URL → `src/routes/*.tsx` → components (`src/components/site.tsx`, `src/components/ui/`) → test.
+3. TanStack Start / Vite / Nitro SSR compatibility and build output verification.
+4. Tailwind CSS v4 `@theme` tokens, contrast ratios (WCAG 2.2 AA), and responsive breakpoints (320px to 1920px).
+5. Asset inventory in `src/assets/` and public assets in `public/` (favicons, `og-image.png`, `robots.txt`).
+6. Open Graph and Twitter Card metadata across all public routes.
+7. Booking enquiry and contact form validation (Zod schemas, input handling, status toasts).
+8. Accessibility (keyboard focus visible, ARIA labels, semantic landmark elements).
+9. Performance & Core Web Vitals (LCP hero image priority, CLS prevention, code splitting).
+10. Testing suite status (`vitest run` in `src/test/app-routing.test.tsx`).
+11. Phased plan with exact files, tests, and exit gates.
+
+Rank risks as Critical / High / Medium / Low. Wait for owner approval before writing code.

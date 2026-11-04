@@ -1,19 +1,24 @@
-# 10 — Deployment, CI and Backup
+# 10 — Deployment, CI & Release (TanStack Start + Vite)
 
-## Environments
-Local → Preview → Production. Use separate Neon branches/projects and credentials where practical. Do not let preview mutate production data.
+## 1. Vercel Production Deployment
+This repository is connected to **Vercel** (`sidwizz-portfolio.vercel.app`):
+- **Framework Preset:** Vite / Other (TanStack Start)
+- **Build Command:** `npm run build` (`vite build`)
+- **Output Directory:** `.output/public`
+- **Install Command:** `npm install`
+- **Automated Deployments:** Pushing commits to the `main` branch of `https://github.com/Aman195Singh/sidwizz_Portfolio.git` triggers automated zero-downtime builds and instant edge deployment.
 
-## CI gates
-Install from lockfile; lint; typecheck; unit/integration tests; build; secret scan; dependency audit; migration review; E2E smoke.
+---
 
-## Migration deployment
-Generate and commit migration. Review SQL. Test on dev branch. Test on preview branch. Confirm backup/recovery. Apply production migration under owner approval. Do not use schema push as production process.
-
-## Backup/recovery
-Confirm Neon plan's restore/PITR retention and limits in Console; do not assume. Export essential content and media metadata on a defined cadence. Object storage files need a separate backup/export plan. Test database and object restoration before relying on it.
-
-## Rollback
-Application rollback: redeploy previous build. Database: prefer forward fix; destructive rollback requires explicit plan/backup. Storage: versioning/backup strategy must be verified; do not assume object versioning exists.
-
-## Incident
-Contain, rotate compromised keys, preserve logs, assess affected data, restore, notify as required, document root cause and remediation.
+## 2. Release & Pre-Push Checklist
+Before pushing any change to `origin/main`:
+1. **Typecheck & Lint:** Verify zero TypeScript compilation errors.
+2. **Build Verification:** Run `npm run build` and ensure all client and SSR assets compile with 0 errors.
+3. **Run Tests:** Execute `npm test` and verify that all test suites pass.
+4. **Inspect Port 8080:** Verify dev server loads without console errors or broken assets.
+5. **Commit & Push:**
+   ```sh
+   git add -A
+   git commit -m "feat: description of change"
+   git push origin main
+   ```

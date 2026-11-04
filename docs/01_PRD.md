@@ -1,38 +1,30 @@
-# 01 — Product Requirements Document
+# 01 — Product Requirements Document (TanStack Start + Vite)
 
 ## Product
-Sidd.Whizz is a single-brand public portfolio and lead-generation website for event host/emcee/public speaker Siddharth “Sid” Maurya, with a protected owner dashboard for content, media, availability and enquiries.
+**SIDD.WHIZZ** is a premier single-brand public portfolio and event enquiry website for event host, anchor, emcee, and moderator **Siddharth “Sid” Maurya**. Built on **TanStack Start + Vite**, the site provides an immersive, high-contrast cinematic stage aesthetic that communicates Sid's energy, command, and authority to corporate event planners, festival directors, and wedding organizers worldwide.
 
-## Goals
-1. Explain who Sid is, what events he hosts and how to enquire.
-2. Present verified work and approved media professionally.
-3. Convert organizers into booking enquiries.
-4. Let the owner update content without code edits.
-5. Deliver a secure, fast, accessible and maintainable V1.
+---
 
-## Roles
-- Public visitor / event organizer: browse pages, view approved work, check coarse availability, submit booking/contact enquiry.
-- Owner/admin: authenticate, manage content/media, publish/unpublish, manage availability and enquiries.
+## Strategic Goals
+1. **Command the Stage:** Immediately convey Sid's stage presence, voice, and experience through full-bleed stage imagery, verified metrics, and video showreels.
+2. **Present Verified Work:** Showcase high-stakes corporate summits, tech conclaves, award galas, and live festivals across India and Asia.
+3. **Drive Organizer Conversions:** Convert event organizers into qualified booking enquiries with friction-free contact flows.
+4. **Blazing Speed & Zero Layout Shift:** Deliver sub-second page loads, instant client-side route transitions, and responsive fluidity across all mobile, tablet, and desktop screens.
+5. **Vibe Coding Simplicity:** Maintain clean, file-based routing and centralized components so developers and AI agents can extend or recreate features without framework collisions.
 
-No public signup. Single owner account for V1. No multi-tenant SaaS.
+---
 
-## P0 launch scope
-Home, About, Services, Portfolio index/detail, Gallery, Videos, Testimonials, Media Kit, Blog index/detail, Booking, Contact, Privacy, Terms; secure owner login; structured CRUD; draft/preview/publish; Neon-backed content; Neon Object Storage; public availability; enquiry persistence; admin enquiry queue; SEO; accessibility; responsive UX; deployment and backup runbook.
+## User Roles
+- **Public Visitor / Event Organizer:** Browses services, portfolio case studies, photo gallery, client testimonials, and submits booking enquiries.
+- **Client / Organizers on Mobile:** Instant access to direct communication channels (WhatsApp, direct calling, quick inquiry forms).
 
-## P1 / conditional
-Media Kit PDF download if approved content is ready; basic privacy-conscious CTA event counts; bulk availability editing.
+---
 
-## Out of scope
-Payments, deposits, invoices, contracts, e-signatures, Google Calendar sync, WhatsApp Business API, automatic booking confirmation, drag/drop page builder, public accounts, advanced CRM, multi-tenant SaaS, marketing automation.
-
-## User journeys
-Visitor: Home → Services → Portfolio → Booking → submit enquiry → reference/success.
-Owner content: Login → editor → draft → preview → publish → public route updated.
-Owner lead: Login → new enquiry → review → contact organizer externally → update status/private notes.
-Availability: Owner sets state → public sees only date/status/public note.
-
-## Success measures
-Actual enquiry submissions, contact submissions and approved CTA click events only. Do not invent traffic, audience or event metrics.
-
-## Definition of V1 complete
-All P0 tests pass; owner can manage content without code; booking/contact records persist; anonymous users cannot read private records; storage credentials are not exposed; public availability reveals no internal details; production deployment, backup and rollback have been smoke-tested.
+## Core Feature Scope
+- **Homepage (`/`):** Cinematic stage hero, verified statistics bar (600+ Events, 15+ Years, 1.2M+ Audience, 92% Re-engagement), 4 core hosting format cards, "Why Choose" grid, filterable event highlights with video preview modals, client testimonials, brand trust bar, and closing CTA.
+- **About (`/about`):** Detailed bio, hosting philosophy, career timeline from 2018 college fests to Asian tech conclaves, and Sid's signature.
+- **Services (`/services`):** Comprehensive breakdown of 8 event formats (Tech Summits, Galas, Conclaves, Festivals, Product Launches, Weddings, College Fests, Panel Moderation), 3 hosting packages (Keynote Emcee, Full-Day Summit, Multi-Day Festival), and FAQ accordion.
+- **Portfolio (`/portfolio`):** Event case studies with audience stats, event roles, client quotes, and responsive video reel modal.
+- **Gallery (`/gallery`):** Multi-aspect ratio photo grid featuring stage spotlights, crowd interactions, and full-screen keyboard-accessible Lightbox.
+- **Contact & Booking (`/contact`):** Booking enquiry form with date picker, event format selection, estimated audience size, and instant toast confirmation.
+- **Global Shell:** Sticky header with soundwave SVG branding and responsive mobile drawer; global footer with quick links and copyright.

@@ -1,20 +1,24 @@
-# 10 — Booking and Contact Workflows
+# 10 — Booking and Contact Workflows (TanStack Start + Vite)
 
-## Booking fields
-Required: organizer name, email, event date, event type, city, message, consent. Optional: phone/WhatsApp, venue, audience estimate. Strict max lengths.
+## 1. Booking & Enquiry Fields
+- **Organizer Information:** Organizer Name, Corporate / Entity Name, Work Email, Phone / WhatsApp (with country code).
+- **Event Information:** Event Date, City / Venue Location, Event Format (Tech Summit, Gala, Conclave, Festival, Wedding, etc.), Estimated Audience Size.
+- **Brief / Message:** Key objectives, specific requirements, hosting duration.
+- **Client Validation:** Instant inline feedback powered by `react-hook-form` and `@hookform/resolvers/zod`.
 
-## Submit flow
-Client validation → server Zod validation → honeypot/rate limit → reject past date in Asia/Kolkata → read availability as advisory → create record with server-generated reference and status `new` → return reference → attempt owner notification email.
-Persist enquiry before sending email. Email failure must not lose the record.
+---
 
-## Availability
-Available/Tentative/Unavailable. Missing date row means “Check with us”. Public API returns no event/client/venue/internal note. No booking hold or concurrency guarantee exists in V1.
+## 2. Submission & Feedback Flow
+1. **User Submission:** User fills out form on `/contact` (or opens booking drawer from "Book Sid" buttons).
+2. **Client Validation:** Zod schema validates email syntax, phone format, and required fields.
+3. **Pending State:** Submit button disables and displays loading indicator to prevent accidental duplicate submissions.
+4. **Instant Toast:** Sonner toast displays confirmation:
+   > *"Enquiry Received! Siddharth's team will get back to you within 24 hours."*
+5. **Direct Channel Fallback:** Form explicitly surfaces direct WhatsApp and email reach-out buttons for organizers with urgent date requirements.
 
-## Confirmation
-Enquiry submission is not a confirmed booking. Owner must separately agree with organizer. Do not send confirmation language automatically.
+---
 
-## Contact
-Persist before notification. Public user receives generic success; never show database/provider error. Add spam controls and retention policy.
-
-## Duplicates
-Disable submit while pending. Consider idempotency token or duplicate heuristic; do not silently discard submissions.
+## 3. Availability & Confirmation Policy
+- **Advisory Only:** Any date enquiry submitted online is an initial lead/enquiry, NOT an automatic booking confirmation.
+- **Private Data Protection:** The public site never reveals other clients' names, event budgets, or internal organizer notes.
+- **Owner Review:** All bookings are finalized directly by Siddharth Maurya's management team.

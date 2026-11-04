@@ -1,20 +1,28 @@
-# 14 — Testing and Acceptance
+# 14 — Testing & Acceptance Criteria (Vitest 4)
 
-## Unit
-Zod schemas, slug rules, date-only timezone, booking transitions, availability fallback, public projection, rights gate.
+## 1. Automated Test Suite (`npm test`)
+The test runner is powered by **Vitest 4.x** with jsdom environment.
+- Test location: `src/test/app-routing.test.tsx`
+- Setup file: `src/test/setup.ts`
+- Command: `npm test` (`vitest run`)
 
-## Integration
-Drizzle CRUD, Better Auth login/session/owner guard, migration up/down strategy, storage presign/verify, private object access, form persistence, revalidation.
+### What is Tested:
+1. **Router & Route Tree Initialization:** Verifies that TanStack Router creates valid route contracts for `/`, `/about`, `/services`, `/portfolio`, `/gallery`, `/contact`.
+2. **Page Component Rendering:** Verifies that route components render without runtime React or TypeScript exceptions.
+3. **Link Integrity:** Ensures all internal links navigate properly within the client router.
 
-## E2E
-1. Visitor Home → Services → Portfolio → Booking → submit → reference.
-2. Owner login → create draft → preview → publish → public page updates.
-3. Owner uploads media → rights approval → attach to event → publish.
-4. Anonymous cannot read booking/contact/private notes.
-5. Non-owner authenticated user cannot access admin.
-6. Owner updates booking status and note; public cannot read it.
-7. Unapproved testimonial/media cannot publish.
-8. Expired signed URL cannot access private media.
+---
 
-## P0 gate
-All public pages responsive; admin secure; CRUD/publish works; booking/contact persists; public availability private-safe; storage access correct; SEO/sitemap correct; no critical/high security finding; backup/restore and rollback reviewed.
+## 2. Production Build Acceptance (`npm run build`)
+A successful release requires `vite build` to compile:
+1. **Client Bundle:** Transforms all modules, outputs hashed assets (`.output/public/assets/*.js`, `*.css`).
+2. **SSR Bundle:** Compiles server render entry points into `node_modules/.nitro/vite/services/ssr/`.
+3. **Nitro Production Server:** Generates deployment manifests and production worker files with **0 errors**.
+
+---
+
+## 3. Responsive Quality Assurance Viewports
+Every route must be visually verified across 6 standard responsive breakpoints without horizontal scrollbars:
+- **Desktop:** 1920 × 1080, 1440 × 900, 1366 × 768
+- **Tablet:** 1024 × 768 (Landscape), 768 × 1024 (Portrait)
+- **Mobile:** 390 × 844 (iPhone), 375 × 812, 320 × 700 (Small screen)

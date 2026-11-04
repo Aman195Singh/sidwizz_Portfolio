@@ -1,12 +1,24 @@
-# 16 — Dependency and Version Policy
+# 16 — Dependency Version Policy
 
-Do not freeze guessed package versions in this pack. At Phase 0:
-1. Check current official Next.js, Node, Better Auth, Drizzle and Neon docs.
-2. Pin stable versions in lockfile and Node version file.
-3. Choose npm or pnpm once.
-4. Use current Better Auth Drizzle adapter import path and CLI output.
-5. Use Neon serverless driver/Drizzle adapter or supported node-postgres integration based on runtime and Better Auth compatibility.
-6. App traffic: Neon pooled URL. Migrations: direct URL if required by migration tool.
-7. Verify whether selected driver supports transactions/session features required by Better Auth.
-8. Keep `drizzle-kit push` to disposable local experimentation; use generated migrations for preview/production.
-9. Avoid adding packages without clear need.
+## 1. Locked Production Stack
+
+| Package | Version | Purpose |
+|---|---|---|
+| `@tanstack/react-start` | `1.168.60` | Fullstack SSR framework engine |
+| `@tanstack/react-router` | `1.170.41` | Type-safe client router and route matcher |
+| `react` & `react-dom` | `^19.2.0` | UI render engine |
+| `@tailwindcss/vite` & `tailwindcss` | `^4.2.1` | Next-generation utility CSS engine |
+| `vite` | `8.1.5` | Bundler, HMR engine and dev server |
+| `typescript` | `^5.8.3` | Type checking and strict code safety |
+| `vitest` | `^4.1.10` | Unit and integration test runner |
+| `lucide-react` | `^0.575.0` | Vector icon system |
+| `@radix-ui/react-*` | Latest stable | Accessible headless UI primitives |
+| `zod` | `^3.25.76` | Schema validation |
+| `sonner` | `^2.0.7` | Toast notification system |
+
+---
+
+## 2. Upgrade Guidelines
+- Do NOT downgrade packages or mix legacy Next.js dependencies into this repository.
+- Tailwind CSS v4 eliminates the legacy `tailwind.config.ts` file; do not reinstall `@tailwindcss/postcss` or Tailwind v3 plugins.
+- Always run `npm run build` and `npm test` after adding or updating any npm package.
