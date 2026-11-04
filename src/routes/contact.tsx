@@ -154,9 +154,9 @@ function Contact() {
       </section>
 
       <section className="container-x">
-        <Reveal className="grid items-center gap-6 md:grid-cols-[200px_1fr]">
+        <Reveal className="grid items-center gap-6 lg:grid-cols-[200px_1fr]">
           <h2 className="eyebrow !text-xl !normal-case">Events I Host</h2>
-          <div className="grid grid-cols-3 gap-y-6 sm:grid-cols-4 md:grid-cols-7">
+          <div className="grid grid-cols-2 gap-y-6 sm:grid-cols-4 lg:grid-cols-7">
             {[
               { i: Briefcase, t: "Corporate Summits" }, { i: Trophy, t: "Awards & Gala Nights" }, { i: Users, t: "Conclaves & Forums" },
               { i: Music, t: "Festivals & Live Shows" }, { i: Heart, t: "Weddings & Socials" }, { i: Rocket, t: "Product Launches" },
@@ -172,7 +172,7 @@ function Contact() {
       </section>
 
       <section className="container-x pt-8">
-        <Reveal className="grid items-center gap-6 rounded-2xl bg-accent p-6 md:grid-cols-4">
+        <Reveal className="grid items-center gap-6 rounded-2xl bg-accent p-6 sm:grid-cols-2 lg:grid-cols-4">
           <div className="flex items-center gap-3">
             <Zap className="h-10 w-10 fill-primary text-primary" />
             <p className="display text-2xl normal-case">Quick Response</p>
@@ -182,7 +182,7 @@ function Contact() {
             { i: CalendarDays, t: "Discuss Availability & Requirements" },
             { i: Handshake, t: "Custom Hosting for Your Event Format" },
           ].map((q) => (
-            <div key={q.t} className="flex items-center gap-4 md:border-l md:pl-6">
+            <div key={q.t} className="flex items-center gap-4 lg:border-l lg:pl-6">
               <q.i className="h-9 w-9 shrink-0 text-primary" />
               <p className="font-semibold">{q.t}</p>
             </div>

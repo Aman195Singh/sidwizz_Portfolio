@@ -11,6 +11,12 @@
  * bidirectional synchronization with Neon PostgreSQL via HTTP queries.
  */
 
+import hostPurple from "@/assets/host-purple.jpg";
+import confettiConcert from "@/assets/confetti-concert.jpg";
+import hostBowtie from "@/assets/host-bowtie.jpg";
+import stageBeams from "@/assets/stage-beams.jpg";
+import festivalCrowd from "@/assets/festival-crowd.jpg";
+
 export interface Enquiry {
   id: string;
   eventName: string;
@@ -189,7 +195,7 @@ const DEFAULT_MEDIA: MediaItem[] = [
     category: "Showreels",
     size: "42.5 MB",
     duration: "2:15 min",
-    url: "https://sidwizz-portfolio.vercel.app/assets/video-fintech.mp4",
+    url: "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
     createdAt: "2026-10-20",
   },
   {
@@ -199,7 +205,7 @@ const DEFAULT_MEDIA: MediaItem[] = [
     category: "Portraits",
     size: "2.4 MB",
     dimensions: "3840 x 2160",
-    url: "https://sidwizz-portfolio.vercel.app/assets/host-purple.jpg",
+    url: hostPurple,
     createdAt: "2026-10-15",
   },
   {
@@ -209,7 +215,7 @@ const DEFAULT_MEDIA: MediaItem[] = [
     category: "Festivals",
     size: "3.1 MB",
     dimensions: "4000 x 2667",
-    url: "https://sidwizz-portfolio.vercel.app/assets/confetti-concert.jpg",
+    url: confettiConcert,
     createdAt: "2026-10-18",
   },
   {
@@ -218,7 +224,7 @@ const DEFAULT_MEDIA: MediaItem[] = [
     type: "document",
     category: "Riders & Specs",
     size: "1.2 MB",
-    url: "https://sidwizz-portfolio.vercel.app/assets/siddharth-rider.pdf",
+    url: "https://www.w3.org/WAI/ER/tests/xhtml/testfiles/resources/pdf/dummy.pdf",
     createdAt: "2026-11-01",
   },
   {
@@ -228,7 +234,7 @@ const DEFAULT_MEDIA: MediaItem[] = [
     category: "Audio Clips",
     size: "4.8 MB",
     duration: "0:42 sec",
-    url: "https://sidwizz-portfolio.vercel.app/assets/sid-voiceover-intro.mp3",
+    url: "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3",
     createdAt: "2026-09-12",
   },
   {
@@ -238,8 +244,28 @@ const DEFAULT_MEDIA: MediaItem[] = [
     category: "Headshots",
     size: "1.8 MB",
     dimensions: "2400 x 3000",
-    url: "https://sidwizz-portfolio.vercel.app/assets/host-bowtie.jpg",
+    url: hostBowtie,
     createdAt: "2026-10-05",
+  },
+  {
+    id: "med-7",
+    title: "Live Concert Arena Stage Beams",
+    type: "image",
+    category: "Stage Moments",
+    size: "2.8 MB",
+    dimensions: "3840 x 2160",
+    url: stageBeams,
+    createdAt: "2026-10-25",
+  },
+  {
+    id: "med-8",
+    title: "Sunburn Arena Massive Crowd Atmosphere",
+    type: "image",
+    category: "Festivals",
+    size: "3.5 MB",
+    dimensions: "3840 x 2400",
+    url: festivalCrowd,
+    createdAt: "2026-10-30",
   },
 ];
 
@@ -374,7 +400,25 @@ export function getStoredMedia(): MediaItem[] {
       localStorage.setItem(MEDIA_KEY, JSON.stringify(DEFAULT_MEDIA));
       return DEFAULT_MEDIA;
     }
-    return JSON.parse(raw);
+    const parsed: MediaItem[] = JSON.parse(raw);
+    let migrated = false;
+    const cleanList = parsed.map((item) => {
+      if (item.url && item.url.includes("sidwizz-portfolio.vercel.app")) {
+        migrated = true;
+        if (item.id === "med-2" || item.url.includes("host-purple")) return { ...item, url: hostPurple };
+        if (item.id === "med-3" || item.url.includes("confetti-concert")) return { ...item, url: confettiConcert };
+        if (item.id === "med-6" || item.url.includes("host-bowtie")) return { ...item, url: hostBowtie };
+        if (item.id === "med-7" || item.url.includes("stage-beams")) return { ...item, url: stageBeams };
+        if (item.url.includes(".pdf")) return { ...item, url: "https://www.w3.org/WAI/ER/tests/xhtml/testfiles/resources/pdf/dummy.pdf" };
+        if (item.url.includes(".mp3")) return { ...item, url: "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3" };
+        return { ...item, url: stageBeams };
+      }
+      return item;
+    });
+    if (migrated) {
+      localStorage.setItem(MEDIA_KEY, JSON.stringify(cleanList));
+    }
+    return cleanList;
   } catch {
     return DEFAULT_MEDIA;
   }

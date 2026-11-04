@@ -170,7 +170,13 @@ function Portfolio() {
                 tabIndex={0}
                 key={s.src}
                 onClick={() => setLb(i)}
-                className={`img-zoom relative cursor-pointer overflow-hidden rounded-lg ${i === 0 ? "col-span-2 row-span-2" : ""}`}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter" || e.key === " ") {
+                    e.preventDefault();
+                    setLb(i);
+                  }
+                }}
+                className={`img-zoom relative cursor-pointer overflow-hidden rounded-lg focus-visible:ring-2 focus-visible:ring-primary outline-none ${i === 0 ? "col-span-2 row-span-2" : ""}`}
               >
                 <img src={s.src} alt={s.alt} loading="lazy" className="h-full min-h-28 w-full object-cover" />
                 {i === 0 && (

@@ -104,7 +104,7 @@ function About() {
 
       <section className="container-x py-12">
         <SectionHead eyebrow="Hosting Philosophy" title="Stage principles that guide me." />
-        <div className="mt-7 grid grid-cols-2 gap-4 md:grid-cols-5">
+        <div className="mt-7 grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-5">
           {PRINCIPLES.map((p, i) => (
             <Reveal key={p.t} delay={i * 90}>
               <div className="card-lift h-full p-5 text-center">
@@ -152,9 +152,9 @@ function About() {
             ))}
           </div>
         </Reveal>
-        <Reveal delay={150} className="rounded-2xl border p-8">
+        <Reveal delay={150} className="rounded-2xl border p-6 sm:p-8">
           <p className="eyebrow">Professional Strengths</p>
-          <ul className="mt-5 grid gap-4 sm:grid-cols-2">
+          <ul className="mt-5 grid gap-4 sm:grid-cols-2 md:grid-cols-1 lg:grid-cols-2">
             {STRENGTHS.map((s) => (
               <li key={s} className="flex items-center gap-3 text-sm font-semibold">
                 <CheckCircle2 className="h-5 w-5 shrink-0 fill-primary text-primary-foreground" /> {s}

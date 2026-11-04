@@ -23,6 +23,7 @@ import {
   Sparkles,
   ShieldCheck,
   Briefcase,
+  LayoutDashboard,
 } from "lucide-react";
 import {
   DropdownMenu,
@@ -167,7 +168,7 @@ export function Header() {
         </Link>
 
         {/* Middle: Primary Pages + More Dropdown */}
-        <nav className="hidden items-center gap-6 md:flex">
+        <nav className="hidden items-center gap-6 lg:flex">
           {PRIMARY_NAV.map((n) => (
             <Link
               key={n.to}
@@ -250,88 +251,118 @@ export function Header() {
           </DropdownMenu>
         </nav>
 
-        {/* Right: Auth Profile Icon & "Book Sid" Button */}
-        <div className="hidden items-center gap-3 md:flex">
+        {/* Right: "Book Sid" Button (Shifted 75% Left) & Auth Profile / Login Capsule */}
+        <div className="hidden items-center lg:flex">
+          <Link
+            to="/contact"
+            className="btn-red !px-4 !py-2 !normal-case relative -translate-x-3/4 whitespace-nowrap transition-transform"
+          >
+            <CalendarDays className="h-4 w-4" /> Book Sid <ArrowRight className="h-4 w-4" />
+          </Link>
+
           {user ? (
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <button
                   type="button"
-                  className="flex items-center gap-2 rounded-full border border-border/70 bg-card/60 px-3 py-1.5 text-xs font-semibold text-foreground backdrop-blur transition hover:border-primary/50 hover:bg-card focus-visible:ring-2 focus-visible:ring-primary outline-none"
+                  className="grid h-10 w-10 shrink-0 place-items-center rounded-full border-2 border-border bg-card font-display text-sm font-extrabold text-foreground shadow-sm transition hover:border-primary hover:text-primary focus-visible:ring-2 focus-visible:ring-primary outline-none overflow-hidden cursor-pointer"
                   aria-label="User profile options"
+                  title={`${user.name} (${user.role})`}
                 >
                   {user.avatar ? (
-                    <img src={user.avatar} alt={user.name} className="h-6 w-6 rounded-full object-cover border border-primary/40 shrink-0" />
+                    <img src={user.avatar} alt={user.name} className="h-full w-full rounded-full object-cover" />
                   ) : (
-                    <div className="grid h-6 w-6 place-items-center rounded-full bg-primary/15 text-[11px] font-bold text-primary shrink-0">
-                      {user.name.charAt(0).toUpperCase()}
-                    </div>
+                    <span>{user.name.charAt(0).toUpperCase()}</span>
                   )}
-                  <span className="max-w-[90px] truncate">{user.name.split(" ")[0]}</span>
-                  <span
-                    className={`rounded-full px-1.5 py-0.2 text-[9px] font-bold uppercase tracking-wide ${
-                      user.role === "admin"
-                        ? "bg-primary/20 text-primary border border-primary/30"
-                        : user.role === "client"
-                        ? "bg-white/10 text-white border border-white/20"
-                        : "bg-muted text-muted-foreground border border-border"
-                    }`}
-                  >
-                    {user.role}
-                  </span>
-                  <ChevronDown className="h-3.5 w-3.5 text-muted-foreground" />
                 </button>
               </DropdownMenuTrigger>
               <DropdownMenuContent
                 align="end"
-                className="w-60 p-2 bg-card/95 backdrop-blur border border-border shadow-2xl rounded-xl z-50"
+                className="w-72 p-4 bg-card/98 backdrop-blur-md border border-border shadow-2xl rounded-2xl z-50 animate-in fade-in-50 zoom-in-95 data-[side=bottom]:slide-in-from-top-2"
               >
-                <div className="px-2 py-1.5">
-                  <p className="text-xs font-bold text-foreground truncate">{user.name}</p>
-                  <p className="text-[11px] text-muted-foreground truncate">{user.email}</p>
-                  <div className="mt-1 flex items-center gap-1.5">
-                    <span
-                      className={`rounded-full px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wide ${
-                        user.role === "admin"
-                          ? "bg-primary/20 text-primary"
-                          : user.role === "client"
-                          ? "bg-white/10 text-white"
-                          : "bg-muted text-muted-foreground"
-                      }`}
-                    >
-                      Role: {user.role === "admin" ? "Site Admin / Sid" : user.role === "client" ? "Event Organizer" : "Member"}
-                    </span>
+                {/* Header row: Avatar + Name + Email */}
+                <div className="flex items-center gap-3">
+                  <div className="grid h-12 w-12 shrink-0 place-items-center rounded-full bg-primary/20 text-primary border border-primary/30 font-display text-base font-black overflow-hidden shadow-sm">
+                    {user.avatar ? (
+                      <img src={user.avatar} alt={user.name} className="h-full w-full object-cover" />
+                    ) : (
+                      <span>{user.name.charAt(0).toUpperCase()}</span>
+                    )}
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <p className="font-display text-base font-extrabold text-foreground truncate">{user.name}</p>
+                    <p className="text-xs text-muted-foreground truncate">{user.email}</p>
                   </div>
                 </div>
-                <DropdownMenuSeparator className="my-1" />
-                {user.role === "admin" ? (
+
+                {/* Role Badge Pill */}
+                <div className="mt-3">
+                  <span className="inline-flex items-center gap-1.5 rounded-full bg-primary/10 border border-primary/25 px-2.5 py-1 font-display text-[11px] font-extrabold uppercase tracking-wider text-primary">
+                    {user.role === "admin" ? (
+                      <>👑 SUPER ADMIN</>
+                    ) : user.role === "client" ? (
+                      <>🏢 EVENT ORGANIZER</>
+                    ) : (
+                      <>🎟️ MEMBER PASS</>
+                    )}
+                  </span>
+                </div>
+
+                <div className="my-3 border-t border-border" />
+
+                {/* Menu items */}
+                <div className="space-y-1">
+                  {user.role === "admin" ? (
+                    <DropdownMenuItem asChild>
+                      <Link
+                        to="/admin"
+                        className="flex items-center gap-3 rounded-xl px-3 py-2 text-sm font-semibold text-foreground cursor-pointer transition-colors hover:bg-accent hover:text-foreground focus:bg-accent focus:text-foreground"
+                      >
+                        <LayoutDashboard className="h-4 w-4 text-foreground/80" />
+                        <span>Admin Dashboard</span>
+                      </Link>
+                    </DropdownMenuItem>
+                  ) : user.role === "client" ? (
+                    <DropdownMenuItem asChild>
+                      <Link
+                        to="/organizer"
+                        className="flex items-center gap-3 rounded-xl px-3 py-2 text-sm font-semibold text-foreground cursor-pointer transition-colors hover:bg-accent hover:text-foreground focus:bg-accent focus:text-foreground"
+                      >
+                        <LayoutDashboard className="h-4 w-4 text-foreground/80" />
+                        <span>Organiser Dashboard</span>
+                      </Link>
+                    </DropdownMenuItem>
+                  ) : (
+                    <DropdownMenuItem asChild>
+                      <Link
+                        to="/profile"
+                        className="flex items-center gap-3 rounded-xl px-3 py-2 text-sm font-semibold text-foreground cursor-pointer transition-colors hover:bg-accent hover:text-foreground focus:bg-accent focus:text-foreground"
+                      >
+                        <LayoutDashboard className="h-4 w-4 text-foreground/80" />
+                        <span>Attendee Portal</span>
+                      </Link>
+                    </DropdownMenuItem>
+                  )}
+
                   <DropdownMenuItem asChild>
-                    <Link to="/admin" className="flex items-center gap-2 px-2 py-1.5 text-xs font-bold text-primary cursor-pointer hover:bg-muted">
-                      <ShieldCheck className="h-3.5 w-3.5 text-primary" />
-                      <span>Admin Panel & Account</span>
+                    <Link
+                      to={user.role === "admin" ? "/admin" : user.role === "client" ? "/organizer" : "/profile"}
+                      className="flex items-center gap-3 rounded-xl px-3 py-2 text-sm font-semibold text-foreground cursor-pointer transition-colors hover:bg-accent hover:text-foreground focus:bg-accent focus:text-foreground"
+                    >
+                      <ShieldCheck className="h-4 w-4 text-foreground/80" />
+                      <span>My Account & Security</span>
                     </Link>
                   </DropdownMenuItem>
-                ) : user.role === "client" ? (
-                  <DropdownMenuItem asChild>
-                    <Link to="/organizer" className="flex items-center gap-2 px-2 py-1.5 text-xs font-bold text-white cursor-pointer hover:bg-muted">
-                      <Briefcase className="h-3.5 w-3.5 text-white" />
-                      <span>Organiser Portal & Account</span>
-                    </Link>
-                  </DropdownMenuItem>
-                ) : (
-                  <DropdownMenuItem asChild>
-                    <Link to="/profile" className="flex items-center gap-2 px-2 py-1.5 text-xs font-medium cursor-pointer hover:bg-muted">
-                      <User className="h-3.5 w-3.5 text-muted-foreground" />
-                      <span>My Account</span>
-                    </Link>
-                  </DropdownMenuItem>
-                )}
-                <DropdownMenuSeparator className="my-1" />
+                </div>
+
+                <div className="my-2 border-t border-border" />
+
+                {/* Sign Out in Red */}
                 <DropdownMenuItem
                   onClick={logout}
-                  className="flex items-center gap-2 px-2 py-1.5 text-xs font-medium text-destructive cursor-pointer focus:bg-destructive/15 focus:text-destructive"
+                  className="flex items-center gap-3 rounded-xl px-3 py-2 text-sm font-bold text-primary cursor-pointer transition-colors hover:bg-primary/10 hover:text-primary focus:bg-primary/10 focus:text-primary"
                 >
-                  <LogOut className="h-3.5 w-3.5" />
+                  <LogOut className="h-4 w-4 text-primary" />
                   <span>Sign Out</span>
                 </DropdownMenuItem>
               </DropdownMenuContent>
@@ -339,24 +370,22 @@ export function Header() {
           ) : (
             <Link
               to="/login"
-              className="flex items-center gap-1.5 rounded-full border border-border/80 px-3.5 py-1.5 text-xs font-semibold text-foreground/90 transition hover:border-primary/60 hover:text-primary focus-visible:ring-2 focus-visible:ring-primary"
+              className="flex items-center gap-2 rounded-full border border-border bg-card px-4 py-2 text-sm font-bold text-foreground shadow-sm transition hover:border-primary hover:text-primary focus-visible:ring-2 focus-visible:ring-primary cursor-pointer whitespace-nowrap"
+              aria-label="Login"
+              title="Login / Sign Up"
             >
-              <User className="h-3.5 w-3.5 text-primary" />
+              <User className="h-4 w-4 text-primary" />
               <span>Login</span>
             </Link>
           )}
-
-          <Link to="/contact" className="btn-red !px-4 !py-2 !normal-case">
-            <CalendarDays className="h-4 w-4" /> Book Sid <ArrowRight className="h-4 w-4" />
-          </Link>
         </div>
 
-        {/* Mobile Hamburger Button */}
-        <div className="flex items-center gap-2 md:hidden">
+        {/* Mobile Hamburger & Profile / Login Capsule */}
+        <div className="flex items-center gap-2.5 lg:hidden">
           {user ? (
             <Link
-              to="/profile"
-              className="grid h-8 w-8 place-items-center rounded-full bg-primary/15 text-xs font-bold text-primary border border-primary/30 overflow-hidden"
+              to={user.role === "admin" ? "/admin" : user.role === "client" ? "/organizer" : "/profile"}
+              className="grid h-10 w-10 place-items-center rounded-full border-2 border-border bg-card font-display text-sm font-extrabold text-foreground overflow-hidden"
               aria-label="Profile"
             >
               {user.avatar ? (
@@ -368,10 +397,11 @@ export function Header() {
           ) : (
             <Link
               to="/login"
-              className="grid h-8 w-8 place-items-center rounded-full border border-border text-foreground"
+              className="flex items-center gap-1.5 rounded-full border border-border bg-card px-3 py-1.5 text-xs font-bold text-foreground transition hover:border-primary hover:text-primary"
               aria-label="Login"
             >
-              <User className="h-4 w-4" />
+              <User className="h-4 w-4 text-primary" />
+              <span>Login</span>
             </Link>
           )}
 
@@ -387,7 +417,7 @@ export function Header() {
 
       {/* Mobile Drawer */}
       <div
-        className={`grid overflow-hidden border-t bg-background transition-all duration-500 md:hidden ${
+        className={`grid overflow-hidden border-t bg-background transition-all duration-500 lg:hidden ${
           open ? "grid-rows-[1fr]" : "grid-rows-[0fr] border-transparent"
         }`}
       >
@@ -776,15 +806,15 @@ export function CtaBanner({
             className="absolute inset-0 h-full w-full object-cover object-left"
           />
           <div className="cta-fade absolute inset-0" />
-          <div className="relative grid gap-6 px-6 py-10 md:grid-cols-[1fr_auto] md:items-center md:py-12 md:pl-[34%] md:pr-10">
-            <div>
+          <div className="relative grid gap-6 px-6 py-10 md:py-12 lg:grid-cols-[1fr_auto] lg:items-center lg:pl-[34%] lg:pr-10">
+            <div className="min-w-0">
               <h2 className="display text-2xl md:text-[34px]">
                 {title}
                 {red && <span className="block text-primary">{red}</span>}
               </h2>
               <p className="mt-3 text-ink-muted md:text-lg">{sub}</p>
             </div>
-            <div className="flex flex-col gap-3 md:w-64 [&_a]:whitespace-nowrap">
+            <div className="flex flex-col gap-3 sm:flex-row lg:w-64 lg:flex-col [&_a]:whitespace-nowrap">
               <Link to="/contact" className="btn-red !normal-case !text-base">
                 <CalendarDays className="h-4 w-4" /> {primaryLabel} <ArrowRight className="h-4 w-4" />
               </Link>

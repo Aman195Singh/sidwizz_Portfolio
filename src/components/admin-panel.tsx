@@ -38,6 +38,12 @@ import {
   Trash2,
   KeyRound,
   Check,
+  IndianRupee,
+  Play,
+  Maximize2,
+  Volume2,
+  Download,
+  AlertTriangle,
 } from "lucide-react";
 import { useAuth } from "@/lib/auth";
 import { toast } from "sonner";
@@ -53,6 +59,9 @@ import {
 import hostBowtie from "@/assets/host-bowtie.jpg";
 import hostPurple from "@/assets/host-purple.jpg";
 import hostSmileRed from "@/assets/host-smile-red.jpg";
+import stageBeams from "@/assets/stage-beams.jpg";
+import confettiConcert from "@/assets/confetti-concert.jpg";
+import festivalCrowd from "@/assets/festival-crowd.jpg";
 
 export type AdminTab =
   | "overview"
@@ -199,9 +208,9 @@ const INITIAL_MEDIA_ITEMS: MediaItem[] = [
     title: "Sid Stage Crowd Beams — Conclave 2026",
     type: "image",
     category: "Stage Moments",
-    size: "2.4 MB",
+    size: "2.8 MB",
     dimensions: "3840 x 2160",
-    url: "https://sidwizz-portfolio.vercel.app/assets/stage-beams.jpg",
+    url: stageBeams,
     createdAt: "2026-10-15",
   },
   {
@@ -216,12 +225,12 @@ const INITIAL_MEDIA_ITEMS: MediaItem[] = [
   },
   {
     id: "med-3",
-    title: "Concert Finale Confetti Blast",
+    title: "Concert Finale Confetti Blast Arena",
     type: "image",
     category: "Festivals",
     size: "3.1 MB",
     dimensions: "4000 x 2667",
-    url: "https://sidwizz-portfolio.vercel.app/assets/confetti-concert.jpg",
+    url: confettiConcert,
     createdAt: "2026-10-18",
   },
   {
@@ -230,7 +239,7 @@ const INITIAL_MEDIA_ITEMS: MediaItem[] = [
     type: "document",
     category: "Riders & Specs",
     size: "1.2 MB",
-    url: "https://sidwizz-portfolio.vercel.app/assets/siddharth-rider.pdf",
+    url: "https://www.w3.org/WAI/ER/tests/xhtml/testfiles/resources/pdf/dummy.pdf",
     createdAt: "2026-11-01",
   },
   {
@@ -240,7 +249,7 @@ const INITIAL_MEDIA_ITEMS: MediaItem[] = [
     category: "Audio Clips",
     size: "4.8 MB",
     duration: "0:42 sec",
-    url: "https://sidwizz-portfolio.vercel.app/assets/sid-voiceover-intro.mp3",
+    url: "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3",
     createdAt: "2026-09-12",
   },
   {
@@ -250,26 +259,27 @@ const INITIAL_MEDIA_ITEMS: MediaItem[] = [
     category: "Headshots",
     size: "1.8 MB",
     dimensions: "2400 x 3000",
-    url: "https://sidwizz-portfolio.vercel.app/assets/host-bowtie.jpg",
+    url: hostBowtie,
     createdAt: "2026-10-05",
   },
   {
     id: "med-7",
-    title: "Tech Summit Keynote Moderation Highlight Reel",
-    type: "video",
-    category: "Showreels",
-    size: "62.4 MB",
-    duration: "1:30 min",
-    url: "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
+    title: "Sunburn Arena Massive Crowd Atmosphere",
+    type: "image",
+    category: "Festivals",
+    size: "3.5 MB",
+    dimensions: "3840 x 2400",
+    url: festivalCrowd,
     createdAt: "2026-10-22",
   },
   {
     id: "med-8",
-    title: "Official Media Press Kit & Bio 2026 (PDF)",
-    type: "document",
-    category: "Media Kit",
-    size: "4.5 MB",
-    url: "https://sidwizz-portfolio.vercel.app/assets/sid-media-kit-2026.pdf",
+    title: "Purple Stage Lighting Anchor Portrait",
+    type: "image",
+    category: "Headshots",
+    size: "2.4 MB",
+    dimensions: "3840 x 2160",
+    url: hostPurple,
     createdAt: "2026-11-02",
   },
 ];
@@ -278,6 +288,7 @@ export function AdminPanel({ initialTab = "overview" }: { initialTab?: AdminTab 
   const { user, logout, updateProfilePhoto, updatePassword, updateProfile } = useAuth();
   const navigate = useNavigate();
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const mediaFileInputRef = useRef<HTMLInputElement>(null);
 
   const [activeTab, setActiveTab] = useState<AdminTab>(initialTab);
   const [sidebarOpen, setSidebarOpen] = useState(false);
@@ -289,12 +300,28 @@ export function AdminPanel({ initialTab = "overview" }: { initialTab?: AdminTab 
   const [selectedEnquiry, setSelectedEnquiry] = useState<Enquiry | null>(null);
   const [newNoteText, setNewNoteText] = useState("");
 
+  // Communication draft modals
+  const [emailModalEnquiry, setEmailModalEnquiry] = useState<Enquiry | null>(null);
+  const [emailSubject, setEmailSubject] = useState("");
+  const [emailBody, setEmailBody] = useState("");
+  const [whatsappModalEnquiry, setWhatsappModalEnquiry] = useState<Enquiry | null>(null);
+  const [whatsappMessage, setWhatsappMessage] = useState("");
+
   // Media live state synced with persistent DataStore
   const [mediaItems, setMediaItems] = useState<MediaItem[]>(getStoredMedia);
   const [mediaTypeFilter, setMediaTypeFilter] = useState<string>("all");
   const [uploadModalOpen, setUploadModalOpen] = useState(false);
   const [newMediaTitle, setNewMediaTitle] = useState("");
   const [newMediaType, setNewMediaType] = useState<"image" | "video" | "audio" | "document">("image");
+  const [selectedMediaFile, setSelectedMediaFile] = useState<File | null>(null);
+  const [selectedMediaPreview, setSelectedMediaPreview] = useState<string | null>(null);
+  const [isDraggingMedia, setIsDraggingMedia] = useState(false);
+
+  // Media viewing modal state (Lightbox)
+  const [viewingMedia, setViewingMedia] = useState<MediaItem | null>(null);
+
+  // Media delete confirmation modal state
+  const [mediaToDelete, setMediaToDelete] = useState<MediaItem | null>(null);
 
   // Account merged state
   const [adminName, setAdminName] = useState(user?.name || "Siddharth Maurya");
@@ -394,12 +421,20 @@ export function AdminPanel({ initialTab = "overview" }: { initialTab?: AdminTab 
     toast.success("Host profile & contact details updated and saved successfully!");
   };
 
-  // WhatsApp reply handler
+  // WhatsApp reply modal handler
   const handleWhatsAppReply = (enquiry: Enquiry) => {
-    const text = `Hello ${enquiry.clientName}, this is Siddharth "Sid" Maurya's management team! We received your booking enquiry for "${enquiry.eventName}" on ${enquiry.date} in ${enquiry.city}. We are pleased to check stage availability and share our rate card with you. Are you available for a brief call today?`;
-    const url = `https://wa.me/${enquiry.cleanPhone}?text=${encodeURIComponent(text)}`;
+    setWhatsappModalEnquiry(enquiry);
+    setWhatsappMessage(
+      `Hello ${enquiry.clientName}! This is Siddharth "Sid" Maurya's management team regarding your stage booking enquiry for "${enquiry.eventName}" on ${enquiry.date} in ${enquiry.city}. We are pleased to check stage availability and discuss Run-of-Show alignment. Are you available for a brief conversation today?`
+    );
+  };
+
+  const handleSendWhatsApp = () => {
+    if (!whatsappModalEnquiry) return;
+    const url = `https://wa.me/${whatsappModalEnquiry.cleanPhone}?text=${encodeURIComponent(whatsappMessage)}`;
     window.open(url, "_blank");
-    toast.success(`Opening WhatsApp chat with ${enquiry.clientName}...`);
+    toast.success(`Opening WhatsApp chat with ${whatsappModalEnquiry.clientName}...`);
+    setWhatsappModalEnquiry(null);
   };
 
   // Direct Phone Call handler
@@ -408,12 +443,37 @@ export function AdminPanel({ initialTab = "overview" }: { initialTab?: AdminTab 
     toast.info(`Dialing ${enquiry.phone}...`);
   };
 
-  // Email reply handler
+  // Email reply modal handler
   const handleEmailReply = (enquiry: Enquiry) => {
-    const subject = `Siddharth Maurya (Emcee) — Availability for ${enquiry.eventName}`;
-    const body = `Hi ${enquiry.clientName},\n\nThank you for reaching out to book Siddharth Maurya for "${enquiry.eventName}" on ${enquiry.date} at ${enquiry.venue}, ${enquiry.city}.\n\nWe have reviewed your event format (${enquiry.format}) and crowd estimation (${enquiry.crowdSize}). We are pleased to confirm that Siddharth is available for this date.\n\nPlease find attached our technical stage rider and commercial proposal.\n\nWarm regards,\nSiddharth Maurya Management Team\nhttps://sidwizz-portfolio.vercel.app`;
-    window.location.href = `mailto:${enquiry.email}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
-    toast.success(`Opening email draft for ${enquiry.email}...`);
+    setEmailModalEnquiry(enquiry);
+    setEmailSubject(`Siddharth Maurya (Emcee) — Availability for ${enquiry.eventName}`);
+    setEmailBody(
+`Hi ${enquiry.clientName},
+
+Thank you for reaching out to book Siddharth Maurya for "${enquiry.eventName}" on ${enquiry.date} at ${enquiry.venue}, ${enquiry.city}.
+
+We have reviewed your event format (${enquiry.format}) and crowd estimation (${enquiry.crowdSize}). We are pleased to confirm that Siddharth is available for this date.
+
+Key Next Steps:
+1. Schedule a brief 10-minute Run-of-Show alignment call.
+2. Technical stage rider & emcee hospitality briefing.
+3. Formal contract execution and advance lock.
+
+Please let us know your preferred time to connect!
+
+Warm regards,
+Siddharth Maurya Stage Management
+SIDD.WHIZZ Official
+Hotline: +91 98200 88776 | admin@siddwhizz.com
+https://sidwizz-portfolio.vercel.app`
+    );
+  };
+
+  const handleSendDraftEmail = () => {
+    if (!emailModalEnquiry) return;
+    window.location.href = `mailto:${emailModalEnquiry.email}?subject=${encodeURIComponent(emailSubject)}&body=${encodeURIComponent(emailBody)}`;
+    toast.success(`Opening default mail app with drafted email for ${emailModalEnquiry.email}...`);
+    setEmailModalEnquiry(null);
   };
 
   // Change Enquiry Status
@@ -446,28 +506,116 @@ export function AdminPanel({ initialTab = "overview" }: { initialTab?: AdminTab 
     toast.success("Internal note added and saved!");
   };
 
-  // Upload Media Simulator
+  // Real Media File Select Handler with Base64 Conversion
+  const handleMediaFileSelect = (file: File) => {
+    setSelectedMediaFile(file);
+    let inferredType: "image" | "video" | "audio" | "document" = "document";
+    if (file.type.startsWith("image/")) inferredType = "image";
+    else if (file.type.startsWith("video/")) inferredType = "video";
+    else if (file.type.startsWith("audio/")) inferredType = "audio";
+    setNewMediaType(inferredType);
+
+    if (!newMediaTitle.trim()) {
+      const cleanName = file.name.replace(/\.[^/.]+$/, "").replace(/[-_]/g, " ");
+      setNewMediaTitle(cleanName);
+    }
+
+    // Convert file to Base64 data URL so it persists permanently in localStorage
+    const reader = new FileReader();
+    reader.onload = () => {
+      const dataUrl = reader.result as string;
+      if (inferredType === "image" && file.size > 800 * 1024) {
+        // Compress large image via canvas to save localStorage space while keeping high resolution
+        const img = new Image();
+        img.onload = () => {
+          const canvas = document.createElement("canvas");
+          const maxDim = 1600;
+          let width = img.width;
+          let height = img.height;
+          if (width > maxDim || height > maxDim) {
+            if (width > height) {
+              height = Math.round((height * maxDim) / width);
+              width = maxDim;
+            } else {
+              width = Math.round((width * maxDim) / height);
+              height = maxDim;
+            }
+          }
+          canvas.width = width;
+          canvas.height = height;
+          const ctx = canvas.getContext("2d");
+          ctx?.drawImage(img, 0, 0, width, height);
+          const compressed = canvas.toDataURL("image/jpeg", 0.82);
+          setSelectedMediaPreview(compressed);
+        };
+        img.src = dataUrl;
+      } else {
+        setSelectedMediaPreview(dataUrl);
+      }
+    };
+    reader.readAsDataURL(file);
+  };
+
+  // Upload Media Handler (Real file + DataStore persistent save)
   const handleUploadMedia = (e: React.FormEvent) => {
     e.preventDefault();
     if (!newMediaTitle.trim()) {
       toast.error("Please enter a media title.");
       return;
     }
+    const fileSizeStr = selectedMediaFile
+      ? (selectedMediaFile.size / (1024 * 1024)).toFixed(1) + " MB"
+      : "2.4 MB";
+
     const newItem: MediaItem = {
-      id: `med-${Date.now()}`,
+      id: `med-${Date.now().toString(36)}`,
       title: newMediaTitle.trim(),
       type: newMediaType,
-      category: newMediaType === "image" ? "Stage Moments" : newMediaType === "video" ? "Showreels" : newMediaType === "audio" ? "Soundtrack" : "Documentation",
-      size: "3.2 MB",
-      dimensions: newMediaType === "image" ? "3840 x 2160" : undefined,
-      duration: newMediaType === "video" ? "2:10 min" : newMediaType === "audio" ? "0:45 sec" : undefined,
-      url: "https://sidwizz-portfolio.vercel.app/assets/stage-beams.jpg",
+      category:
+        newMediaType === "image"
+          ? "Stage Moments"
+          : newMediaType === "video"
+          ? "Showreels"
+          : newMediaType === "audio"
+          ? "Soundtrack"
+          : "Technical Riders",
+      size: fileSizeStr,
+      dimensions: newMediaType === "image" ? "High Resolution" : undefined,
+      duration: newMediaType === "video" ? "Show Clip" : newMediaType === "audio" ? "Audio Clip" : undefined,
+      url: selectedMediaPreview || stageBeams,
       createdAt: new Date().toISOString().split("T")[0],
     };
-    setMediaItems([newItem, ...mediaItems]);
+
+    addMediaItem(newItem);
+    setMediaItems(getStoredMedia());
     setUploadModalOpen(false);
+    setSelectedMediaFile(null);
+    setSelectedMediaPreview(null);
     setNewMediaTitle("");
-    toast.success("Media file uploaded and indexed successfully!");
+    toast.success(`"${newItem.title}" uploaded and indexed into Media Library!`);
+  };
+
+  // Open asset modal for viewing
+  const handleOpenAssetModal = (item: MediaItem) => {
+    setViewingMedia(item);
+  };
+
+  // Delete media click
+  const handleDeleteClick = (e: React.MouseEvent, item: MediaItem) => {
+    e.stopPropagation();
+    setMediaToDelete(item);
+  };
+
+  // Confirm permanent delete
+  const handleConfirmDelete = () => {
+    if (!mediaToDelete) return;
+    deleteMediaItem(mediaToDelete.id);
+    setMediaItems(getStoredMedia());
+    if (viewingMedia?.id === mediaToDelete.id) {
+      setViewingMedia(null);
+    }
+    toast.success(`"${mediaToDelete.title}" permanently deleted from Media Library and database!`);
+    setMediaToDelete(null);
   };
 
   // Copy Media Link
@@ -507,23 +655,31 @@ export function AdminPanel({ initialTab = "overview" }: { initialTab?: AdminTab 
   const pendingCount = enquiries.filter((e) => e.status === "New").length;
 
   return (
-    <div className="flex min-h-screen bg-background text-foreground font-sans">
+    <div className="flex h-screen overflow-hidden bg-background text-foreground font-sans">
+      {/* Mobile Sidebar Backdrop */}
+      {sidebarOpen && (
+        <div
+          className="fixed inset-0 z-40 bg-ink/60 backdrop-blur-xs md:hidden"
+          onClick={() => setSidebarOpen(false)}
+        />
+      )}
+
       {/* ------------------------------------------------------------- */}
-      {/* LEFT NAVIGATION SIDEBAR (Strict White, Red & Black Theme)     */}
+      {/* LEFT NAVIGATION SIDEBAR (Fixed, Non-Scrolling with Page)      */}
       {/* ------------------------------------------------------------- */}
       <aside
-        className={`fixed inset-y-0 left-0 z-50 flex w-64 flex-col border-r border-border bg-card transition-transform duration-300 md:static md:translate-x-0 ${
+        className={`fixed inset-y-0 left-0 z-50 flex w-64 shrink-0 flex-col border-r border-border bg-card transition-transform duration-300 md:static md:h-full md:translate-x-0 ${
           sidebarOpen ? "translate-x-0 shadow-2xl" : "-translate-x-full"
         }`}
       >
         {/* Brand Header */}
-        <div className="flex h-16 items-center justify-between border-b border-border px-5">
+        <div className="flex h-16 shrink-0 items-center justify-between border-b border-border px-5">
           <Link to="/" className="flex items-center gap-2">
             <Logo />
           </Link>
           <button
             onClick={() => setSidebarOpen(false)}
-            className="rounded-lg p-1 text-muted-foreground hover:bg-accent hover:text-foreground md:hidden"
+            className="rounded-lg p-1.5 text-muted-foreground hover:bg-accent hover:text-foreground md:hidden"
             aria-label="Close menu"
           >
             <X className="h-5 w-5" />
@@ -531,33 +687,33 @@ export function AdminPanel({ initialTab = "overview" }: { initialTab?: AdminTab 
         </div>
 
         {/* Admin Tag */}
-        <div className="px-5 py-3 border-b border-border bg-primary/10">
+        <div className="shrink-0 px-5 py-4 border-b border-border bg-primary/10">
           <div className="flex items-center justify-between">
-            <span className="text-[10px] font-black uppercase tracking-wider text-primary flex items-center gap-1.5">
-              <ShieldCheck className="h-3.5 w-3.5" /> Admin Panel
+            <span className="font-display text-xs font-black uppercase tracking-wider text-primary flex items-center gap-1.5">
+              <ShieldCheck className="h-4 w-4" /> Admin Panel
             </span>
-            <span className="rounded-full bg-primary/20 text-primary px-2 py-0.5 text-[9px] font-bold border border-primary/30">
+            <span className="rounded-full bg-primary/20 text-primary px-2.5 py-0.5 text-[11px] font-bold border border-primary/30">
               Active
             </span>
           </div>
-          <p className="text-xs font-bold text-foreground mt-1 truncate">{adminName}</p>
-          <p className="text-[11px] text-muted-foreground truncate">{adminEmail}</p>
+          <p className="font-display text-sm font-extrabold text-foreground mt-1.5 truncate">{adminName}</p>
+          <p className="text-xs text-muted-foreground truncate">{adminEmail}</p>
         </div>
 
-        {/* Navigation Menu (Strict White, Red, Black) */}
-        <nav className="flex-1 space-y-1 overflow-y-auto p-3 text-xs">
+        {/* Navigation Menu */}
+        <nav className="flex-1 space-y-1.5 overflow-y-auto p-3 text-sm">
           <button
             onClick={() => {
               setActiveTab("overview");
               setSidebarOpen(false);
             }}
-            className={`flex w-full items-center justify-between rounded-xl px-3 py-2.5 font-semibold transition ${
+            className={`flex w-full items-center justify-between rounded-xl px-3.5 py-3 font-semibold transition ${
               activeTab === "overview"
-                ? "bg-primary text-primary-foreground shadow-sm"
-                : "text-muted-foreground hover:bg-accent hover:text-foreground"
+                ? "bg-primary text-primary-foreground shadow-sm font-bold"
+                : "text-foreground/80 hover:bg-accent hover:text-foreground"
             }`}
           >
-            <span className="flex items-center gap-2.5">
+            <span className="flex items-center gap-3">
               <LayoutDashboard className="h-4 w-4" /> Overview
             </span>
           </button>
@@ -567,13 +723,13 @@ export function AdminPanel({ initialTab = "overview" }: { initialTab?: AdminTab 
               setActiveTab("analytics");
               setSidebarOpen(false);
             }}
-            className={`flex w-full items-center justify-between rounded-xl px-3 py-2.5 font-semibold transition ${
+            className={`flex w-full items-center justify-between rounded-xl px-3.5 py-3 font-semibold transition ${
               activeTab === "analytics"
-                ? "bg-primary text-primary-foreground shadow-sm"
-                : "text-muted-foreground hover:bg-accent hover:text-foreground"
+                ? "bg-primary text-primary-foreground shadow-sm font-bold"
+                : "text-foreground/80 hover:bg-accent hover:text-foreground"
             }`}
           >
-            <span className="flex items-center gap-2.5">
+            <span className="flex items-center gap-3">
               <BarChart3 className="h-4 w-4" /> Web Analytics
             </span>
           </button>
@@ -583,18 +739,18 @@ export function AdminPanel({ initialTab = "overview" }: { initialTab?: AdminTab 
               setActiveTab("enquiries");
               setSidebarOpen(false);
             }}
-            className={`flex w-full items-center justify-between rounded-xl px-3 py-2.5 font-semibold transition ${
+            className={`flex w-full items-center justify-between rounded-xl px-3.5 py-3 font-semibold transition ${
               activeTab === "enquiries"
-                ? "bg-primary text-primary-foreground shadow-sm"
-                : "text-muted-foreground hover:bg-accent hover:text-foreground"
+                ? "bg-primary text-primary-foreground shadow-sm font-bold"
+                : "text-foreground/80 hover:bg-accent hover:text-foreground"
             }`}
           >
-            <span className="flex items-center gap-2.5">
+            <span className="flex items-center gap-3">
               <Inbox className="h-4 w-4" /> Enquiries
             </span>
             {pendingCount > 0 && (
               <span
-                className={`rounded-full px-2 py-0.5 text-[10px] font-black ${
+                className={`rounded-full px-2 py-0.5 text-xs font-black ${
                   activeTab === "enquiries"
                     ? "bg-white text-primary"
                     : "bg-primary text-primary-foreground"
@@ -610,16 +766,16 @@ export function AdminPanel({ initialTab = "overview" }: { initialTab?: AdminTab 
               setActiveTab("media");
               setSidebarOpen(false);
             }}
-            className={`flex w-full items-center justify-between rounded-xl px-3 py-2.5 font-semibold transition ${
+            className={`flex w-full items-center justify-between rounded-xl px-3.5 py-3 font-semibold transition ${
               activeTab === "media"
-                ? "bg-primary text-primary-foreground shadow-sm"
-                : "text-muted-foreground hover:bg-accent hover:text-foreground"
+                ? "bg-primary text-primary-foreground shadow-sm font-bold"
+                : "text-foreground/80 hover:bg-accent hover:text-foreground"
             }`}
           >
-            <span className="flex items-center gap-2.5">
+            <span className="flex items-center gap-3">
               <FolderOpen className="h-4 w-4" /> Media Library
             </span>
-            <span className="text-[10px] font-bold text-muted-foreground">{mediaItems.length}</span>
+            <span className={`text-xs font-bold ${activeTab === "media" ? "text-primary-foreground" : "text-muted-foreground"}`}>{mediaItems.length}</span>
           </button>
 
           {/* Merged Account & Profile Tab */}
@@ -628,13 +784,13 @@ export function AdminPanel({ initialTab = "overview" }: { initialTab?: AdminTab 
               setActiveTab("account");
               setSidebarOpen(false);
             }}
-            className={`flex w-full items-center justify-between rounded-xl px-3 py-2.5 font-semibold transition ${
+            className={`flex w-full items-center justify-between rounded-xl px-3.5 py-3 font-semibold transition ${
               activeTab === "account"
-                ? "bg-primary text-primary-foreground shadow-sm"
-                : "text-muted-foreground hover:bg-accent hover:text-foreground"
+                ? "bg-primary text-primary-foreground shadow-sm font-bold"
+                : "text-foreground/80 hover:bg-accent hover:text-foreground"
             }`}
           >
-            <span className="flex items-center gap-2.5">
+            <span className="flex items-center gap-3">
               <User className="h-4 w-4" /> Account & Profile
             </span>
           </button>
@@ -644,13 +800,13 @@ export function AdminPanel({ initialTab = "overview" }: { initialTab?: AdminTab 
               setActiveTab("settings");
               setSidebarOpen(false);
             }}
-            className={`flex w-full items-center justify-between rounded-xl px-3 py-2.5 font-semibold transition ${
+            className={`flex w-full items-center justify-between rounded-xl px-3.5 py-3 font-semibold transition ${
               activeTab === "settings"
-                ? "bg-primary text-primary-foreground shadow-sm"
-                : "text-muted-foreground hover:bg-accent hover:text-foreground"
+                ? "bg-primary text-primary-foreground shadow-sm font-bold"
+                : "text-foreground/80 hover:bg-accent hover:text-foreground"
             }`}
           >
-            <span className="flex items-center gap-2.5">
+            <span className="flex items-center gap-3">
               <Settings className="h-4 w-4" /> Settings
             </span>
           </button>
@@ -660,28 +816,32 @@ export function AdminPanel({ initialTab = "overview" }: { initialTab?: AdminTab 
               setActiveTab("support");
               setSidebarOpen(false);
             }}
-            className={`flex w-full items-center justify-between rounded-xl px-3 py-2.5 font-semibold transition ${
+            className={`flex w-full items-center justify-between rounded-xl px-3.5 py-3 font-semibold transition ${
               activeTab === "support"
-                ? "bg-primary text-primary-foreground shadow-sm"
-                : "text-muted-foreground hover:bg-accent hover:text-foreground"
+                ? "bg-primary text-primary-foreground shadow-sm font-bold"
+                : "text-foreground/80 hover:bg-accent hover:text-foreground"
             }`}
           >
-            <span className="flex items-center gap-2.5">
+            <span className="flex items-center gap-3">
               <HelpCircle className="h-4 w-4" /> Support & Help
             </span>
-            <span className="rounded-full bg-primary/15 text-primary px-1.5 py-0.2 text-[9px] font-bold border border-primary/30">
+            <span className={`rounded-full px-2 py-0.5 text-[11px] font-bold border ${
+              activeTab === "support"
+                ? "bg-white/20 text-white border-white/30"
+                : "bg-primary/15 text-primary border-primary/30"
+            }`}>
               Dev
             </span>
           </button>
         </nav>
 
         {/* Sidebar Footer */}
-        <div className="border-t border-border p-3 space-y-1 text-xs">
+        <div className="shrink-0 border-t border-border p-3 space-y-1 text-sm">
           <Link
             to="/"
-            className="flex items-center gap-2 rounded-xl px-3 py-2 font-medium text-muted-foreground hover:bg-accent hover:text-foreground transition"
+            className="flex items-center gap-2.5 rounded-xl px-3.5 py-2.5 font-semibold text-foreground/80 hover:bg-accent hover:text-foreground transition"
           >
-            <ExternalLink className="h-4 w-4" />
+            <ExternalLink className="h-4 w-4 text-primary" />
             <span>View Public Website</span>
           </Link>
 
@@ -690,29 +850,29 @@ export function AdminPanel({ initialTab = "overview" }: { initialTab?: AdminTab 
               logout();
               navigate({ to: "/" });
             }}
-            className="flex w-full items-center gap-2 rounded-xl px-3 py-2 font-medium text-primary hover:bg-primary/10 transition"
+            className="flex w-full items-center gap-2.5 rounded-xl px-3.5 py-2.5 font-semibold text-foreground/80 hover:bg-accent hover:text-foreground transition"
           >
-            <LogOut className="h-4 w-4" />
+            <LogOut className="h-4 w-4 text-primary" />
             <span>Sign Out</span>
           </button>
         </div>
       </aside>
 
       {/* ------------------------------------------------------------- */}
-      {/* MAIN DASHBOARD CANVAS                                         */}
+      {/* MAIN DASHBOARD CANVAS (Fixed Header + Scrollable Content)     */}
       {/* ------------------------------------------------------------- */}
-      <div className="flex flex-1 flex-col overflow-hidden">
-        {/* Top Header Bar */}
-        <header className="flex h-16 items-center justify-between border-b border-border bg-card px-4 md:px-8">
-          <div className="flex items-center gap-3">
+      <div className="flex flex-1 flex-col h-full min-w-0 overflow-hidden">
+        {/* Top Header Bar (Fixed at Top) */}
+        <header className="flex h-16 shrink-0 items-center justify-between border-b border-border bg-card px-4 md:px-8">
+          <div className="flex min-w-0 items-center gap-3">
             <button
               onClick={() => setSidebarOpen(true)}
-              className="rounded-lg border border-border p-2 text-foreground md:hidden"
+              className="shrink-0 rounded-lg border border-border p-2 text-foreground md:hidden"
               aria-label="Open sidebar"
             >
               <Menu className="h-5 w-5" />
             </button>
-            <h1 className="text-lg font-black font-display tracking-tight text-foreground capitalize">
+            <h1 className="truncate font-display text-lg sm:text-xl font-black uppercase tracking-tight text-foreground">
               {activeTab === "overview" && "Dashboard Overview"}
               {activeTab === "analytics" && "Web Page Traffic & Analytics"}
               {activeTab === "enquiries" && "Client Enquiries & Fast Outreach"}
@@ -723,9 +883,9 @@ export function AdminPanel({ initialTab = "overview" }: { initialTab?: AdminTab 
             </h1>
           </div>
 
-          <div className="flex items-center gap-3">
+          <div className="flex shrink-0 items-center gap-3">
             {/* Availability status badge */}
-            <div className="hidden sm:flex items-center gap-2 rounded-full border border-border bg-accent px-3 py-1 text-xs font-bold text-foreground">
+            <div className="hidden sm:flex items-center gap-2 rounded-full border border-border bg-accent px-3.5 py-1.5 text-xs font-bold text-foreground">
               <span className="h-2 w-2 rounded-full bg-primary animate-pulse" />
               <span>Accepting Stage Dates</span>
             </div>
@@ -733,94 +893,101 @@ export function AdminPanel({ initialTab = "overview" }: { initialTab?: AdminTab 
             {/* Neon DB indicator */}
             <Link
               to="/db-status"
-              className="hidden lg:flex items-center gap-1.5 rounded-full border border-primary/30 bg-primary/10 px-2.5 py-1 text-[11px] font-bold text-primary hover:bg-primary/20"
+              className="hidden lg:flex items-center gap-1.5 rounded-full border border-primary/30 bg-primary/10 px-3 py-1.5 text-xs font-bold text-primary hover:bg-primary/20"
             >
-              <Database className="h-3 w-3" />
+              <Database className="h-3.5 w-3.5" />
               <span>NeonDB Connected</span>
             </Link>
 
-            {/* Account Icon */}
+            {/* Circular Account Icon (Far Right) */}
             <button
               onClick={() => setActiveTab("account")}
-              className="grid h-8 w-8 place-items-center rounded-full overflow-hidden border border-primary/30 hover:scale-105 transition cursor-pointer"
+              className="grid h-10 w-10 shrink-0 place-items-center rounded-full overflow-hidden border-2 border-border bg-card font-display text-sm font-extrabold text-foreground hover:border-primary hover:text-primary transition cursor-pointer"
               title="Open Account & Profile"
             >
               {user?.avatar ? (
-                <img src={user.avatar} alt="Avatar" className="h-full w-full object-cover" />
+                <img src={user.avatar} alt="Avatar" className="h-full w-full rounded-full object-cover" />
               ) : (
-                <span className="text-xs font-bold text-primary">SM</span>
+                <span>SM</span>
               )}
             </button>
           </div>
         </header>
 
-        {/* Tab Content Body */}
-        <main className="flex-1 overflow-y-auto p-4 sm:p-6 lg:p-8 space-y-6">
+        {/* Tab Content Body (Independently Scrollable) */}
+        <main className="flex-1 overflow-y-auto p-5 sm:p-6 lg:p-8 space-y-6 bg-background">
           {/* ========================================================= */}
           {/* 1. OVERVIEW VIEW                                          */}
           {/* ========================================================= */}
           {activeTab === "overview" && (
             <div className="space-y-6">
-              {/* Metric Cards (Strict White, Red, Black) */}
+              <div>
+                <p className="eyebrow eyebrow-line">Stage Command Center</p>
+                <h2 className="display mt-2 text-2xl sm:text-3xl">
+                  Performance & <span className="text-primary">Booking Overview.</span>
+                </h2>
+              </div>
+
+              {/* Metric Cards */}
               <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-                <div className="rounded-2xl border border-border bg-card p-5 shadow-sm">
+                <div className="card-lift p-5">
                   <div className="flex items-center justify-between text-muted-foreground mb-2">
-                    <span className="text-xs font-bold uppercase tracking-wider">New Enquiries</span>
-                    <Inbox className="h-4 w-4 text-primary" />
+                    <span className="font-display text-xs font-extrabold uppercase tracking-wider">New Enquiries</span>
+                    <Inbox className="h-5 w-5 text-primary" />
                   </div>
                   <p className="text-3xl font-black font-display text-foreground">{enquiries.length}</p>
-                  <p className="text-xs text-primary font-semibold mt-1">
+                  <p className="text-sm text-primary font-semibold mt-1">
                     {pendingCount} requiring immediate response
                   </p>
                 </div>
 
-                <div className="rounded-2xl border border-border bg-card p-5 shadow-sm">
+                <div className="card-lift p-5">
                   <div className="flex items-center justify-between text-muted-foreground mb-2">
-                    <span className="text-xs font-bold uppercase tracking-wider">Historical Shows</span>
-                    <Calendar className="h-4 w-4 text-foreground" />
+                    <span className="font-display text-xs font-extrabold uppercase tracking-wider">Historical Shows</span>
+                    <Calendar className="h-5 w-5 text-foreground" />
                   </div>
                   <p className="text-3xl font-black font-display text-foreground">600+</p>
-                  <p className="text-xs text-muted-foreground mt-1">15+ Years Live Experience</p>
+                  <p className="text-sm text-muted-foreground mt-1">15+ Years Live Experience</p>
                 </div>
 
-                <div className="rounded-2xl border border-border bg-card p-5 shadow-sm">
+                <div className="card-lift p-5">
                   <div className="flex items-center justify-between text-muted-foreground mb-2">
-                    <span className="text-xs font-bold uppercase tracking-wider">Audience Reach</span>
-                    <Users className="h-4 w-4 text-foreground" />
+                    <span className="font-display text-xs font-extrabold uppercase tracking-wider">Audience Reach</span>
+                    <Users className="h-5 w-5 text-foreground" />
                   </div>
                   <p className="text-3xl font-black font-display text-foreground">1.2M+</p>
-                  <p className="text-xs text-muted-foreground mt-1">Tech summits, festivals, galas</p>
+                  <p className="text-sm text-muted-foreground mt-1">Tech summits, festivals, galas</p>
                 </div>
 
-                <div className="rounded-2xl border border-border bg-card p-5 shadow-sm">
+                <div className="card-lift p-5">
                   <div className="flex items-center justify-between text-muted-foreground mb-2">
-                    <span className="text-xs font-bold uppercase tracking-wider">Pipeline Est.</span>
-                    <TrendingUp className="h-4 w-4 text-primary" />
+                    <span className="font-display text-xs font-extrabold uppercase tracking-wider">Pipeline Est.</span>
+                    <TrendingUp className="h-5 w-5 text-primary" />
                   </div>
                   <p className="text-3xl font-black font-display text-primary">₹24.5 L</p>
-                  <p className="text-xs text-muted-foreground mt-1">Q4 Active Booking Discussions</p>
+                  <p className="text-sm text-muted-foreground mt-1">Q4 Active Booking Discussions</p>
                 </div>
               </div>
 
               {/* Speed-to-lead alert */}
               {pendingCount > 0 && (
-                <div className="rounded-2xl border border-primary/40 bg-primary/10 p-5 shadow-sm flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-                  <div className="flex items-start gap-3">
-                    <div className="rounded-xl bg-primary/20 p-2.5 text-primary border border-primary/30">
-                      <Inbox className="h-5 w-5" />
+                <div className="rounded-2xl border border-primary/40 bg-primary/10 p-6 shadow-sm flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                  <div className="flex items-start gap-4">
+                    <div className="rounded-xl bg-primary/20 p-3 text-primary border border-primary/30 shrink-0">
+                      <Inbox className="h-6 w-6" />
                     </div>
                     <div>
-                      <h3 className="text-sm font-bold text-foreground">
+                      <h3 className="font-display text-base sm:text-lg font-extrabold text-foreground">
                         {pendingCount} Fresh Event Enquiries Need Follow-up
                       </h3>
-                      <p className="text-xs text-muted-foreground mt-0.5">
+                      <p className="text-sm text-foreground/80 mt-1 leading-relaxed">
                         High-value planners from FinTech Summit and Tata Motors are waiting. Reach out via WhatsApp or Direct Call within 15 minutes to maximize booking rate.
                       </p>
                     </div>
                   </div>
                   <button
                     onClick={() => setActiveTab("enquiries")}
-                    className="btn-red !py-2 !px-4 text-xs whitespace-nowrap self-start sm:self-auto flex items-center gap-1.5"
+                    className="btn-red !py-2.5 !px-5 text-sm whitespace-nowrap self-start sm:self-auto"
                   >
                     <span>Open Enquiries</span>
                     <ArrowRight className="h-4 w-4" />
@@ -829,79 +996,80 @@ export function AdminPanel({ initialTab = "overview" }: { initialTab?: AdminTab 
               )}
 
               {/* Recent Enquiries Table Preview */}
-              <div className="rounded-2xl border border-border bg-card p-6 shadow-sm">
-                <div className="flex items-center justify-between mb-4">
+              <div className="rounded-2xl border border-border bg-card p-6 shadow-[var(--shadow-card)]">
+                <div className="flex items-center justify-between mb-5">
                   <div>
-                    <h3 className="text-base font-bold text-foreground">Recent Booking Inquiries</h3>
-                    <p className="text-xs text-muted-foreground">Incoming leads from the website's Contact and Booking forms</p>
+                    <p className="eyebrow">Live Pipeline</p>
+                    <h3 className="font-display text-lg sm:text-xl font-extrabold text-foreground mt-1">Recent Booking Inquiries</h3>
+                    <p className="text-sm text-muted-foreground">Incoming leads from the website's Contact and Booking forms</p>
                   </div>
                   <button
                     onClick={() => setActiveTab("enquiries")}
-                    className="text-xs font-bold text-primary hover:underline flex items-center gap-1"
+                    className="text-sm font-bold text-primary hover:underline flex items-center gap-1"
                   >
                     View All ({enquiries.length}) →
                   </button>
                 </div>
 
                 <div className="overflow-x-auto">
-                  <table className="w-full text-left text-xs">
-                    <thead className="border-b border-border bg-muted/30 text-muted-foreground uppercase tracking-wider">
+                  <table className="w-full text-left text-sm">
+                    <thead className="border-b border-border bg-muted/40 font-display text-xs font-extrabold text-muted-foreground uppercase tracking-wider">
                       <tr>
-                        <th className="p-3">Ref</th>
-                        <th className="p-3">Event & Organizer</th>
-                        <th className="p-3">Date & Venue</th>
-                        <th className="p-3">Budget</th>
-                        <th className="p-3">Status</th>
-                        <th className="p-3 text-right">Quick Contact</th>
+                        <th className="p-3.5">Ref</th>
+                        <th className="p-3.5">Event & Organizer</th>
+                        <th className="p-3.5">Date & Venue</th>
+                        <th className="p-3.5">Budget</th>
+                        <th className="p-3.5">Status</th>
+                        <th className="p-3.5 text-right">Quick Contact</th>
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-border">
                       {enquiries.slice(0, 4).map((e) => (
                         <tr key={e.id} className="hover:bg-accent/40 transition">
-                          <td className="p-3 font-mono font-bold text-primary">{e.id}</td>
-                          <td className="p-3">
-                            <p className="font-bold text-foreground">{e.eventName}</p>
-                            <p className="text-[11px] text-muted-foreground">{e.clientName} • {e.organization}</p>
+                          <td className="p-3.5 font-mono text-sm font-bold text-primary">{e.id}</td>
+                          <td className="p-3.5">
+                            <p className="font-display font-bold text-foreground">{e.eventName}</p>
+                            <p className="text-xs text-muted-foreground mt-0.5">{e.clientName} • {e.organization}</p>
                           </td>
-                          <td className="p-3">
-                            <p className="font-medium text-foreground">{e.date}</p>
-                            <p className="text-[11px] text-muted-foreground">{e.city}</p>
+                          <td className="p-3.5">
+                            <p className="font-semibold text-foreground">{e.date}</p>
+                            <p className="text-xs text-muted-foreground mt-0.5">{e.city}</p>
                           </td>
-                          <td className="p-3 font-mono text-foreground font-semibold">{e.budget}</td>
-                          <td className="p-3">
+                          <td className="p-3.5 font-mono text-sm text-foreground font-bold">{e.budget}</td>
+                          <td className="p-3.5">
                             <span
-                              className={`rounded-full px-2 py-0.5 text-[10px] font-bold ${
+                              className={`rounded-full px-2.5 py-1 text-xs font-bold ${
                                 e.status === "New"
                                   ? "bg-primary/20 text-primary border border-primary/30"
                                   : e.status === "Confirmed"
-                                  ? "bg-white text-black font-bold"
+                                  ? "bg-ink text-ink-foreground font-bold"
                                   : "bg-muted text-foreground border border-border"
                               }`}
                             >
                               {e.status}
                             </span>
                           </td>
-                          <td className="p-3 text-right space-x-1.5 whitespace-nowrap">
+                          <td className="p-3.5 text-right space-x-1.5 whitespace-nowrap">
                             <button
                               onClick={() => handleWhatsAppReply(e)}
-                              className="rounded-lg bg-primary/15 border border-primary/30 p-1.5 text-primary hover:bg-primary/30 transition"
+                              className="inline-flex items-center justify-center rounded-lg border border-border bg-card p-2 text-foreground transition-all duration-200 hover:scale-110 hover:bg-primary hover:text-white hover:border-primary active:scale-95 shadow-2xs cursor-pointer"
                               title="Chat on WhatsApp"
                             >
-                              <MessageCircle className="h-3.5 w-3.5" />
+                              <MessageCircle className="h-4 w-4" />
                             </button>
                             <button
                               onClick={() => handlePhoneCall(e)}
-                              className="rounded-lg bg-muted border border-border p-1.5 text-foreground hover:bg-accent transition"
+                              className="inline-flex items-center justify-center rounded-lg border border-border bg-card p-2 text-foreground transition-all duration-200 hover:scale-110 hover:bg-primary hover:text-white hover:border-primary active:scale-95 shadow-2xs cursor-pointer"
                               title="Direct Phone Call"
                             >
-                              <Phone className="h-3.5 w-3.5" />
+                              <Phone className="h-4 w-4" />
                             </button>
                             <button
                               onClick={() => handleEmailReply(e)}
-                              className="rounded-lg bg-primary/15 border border-primary/30 p-1.5 text-primary hover:bg-primary/30 transition"
+                              className="inline-flex items-center justify-center rounded-lg border border-border bg-card p-2 text-foreground transition-all duration-200 hover:scale-110 hover:bg-primary hover:text-white hover:border-primary active:scale-95 shadow-2xs cursor-pointer"
                               title="Send Email"
                             >
-                              <Mail className="h-3.5 w-3.5" />
+                              <Mail className="h-4 w-4" />
                             </button>
                           </td>
                         </tr>
@@ -918,94 +1086,112 @@ export function AdminPanel({ initialTab = "overview" }: { initialTab?: AdminTab 
           {/* ========================================================= */}
           {activeTab === "analytics" && (
             <div className="space-y-6">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-2 border-b border-border/60">
+                <div>
+                  <p className="eyebrow eyebrow-line">Audience Insights</p>
+                  <h2 className="display mt-2 text-2xl sm:text-3xl">
+                    Website Traffic & <span className="text-primary">Engagement.</span>
+                  </h2>
+                </div>
+                <div className="inline-flex items-center gap-2 rounded-full border border-border/80 bg-card px-3.5 py-1.5 shadow-2xs self-start sm:self-auto">
+                  <span className="relative flex h-2.5 w-2.5">
+                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                    <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-emerald-500"></span>
+                  </span>
+                  <span className="font-mono text-xs font-bold text-foreground">
+                    Live Telemetry Active • {new Date().toLocaleDateString("en-IN", { month: "short", day: "numeric", year: "numeric" })}
+                  </span>
+                </div>
+              </div>
+
               <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
-                <div className="rounded-2xl border border-border bg-card p-4">
-                  <span className="text-xs font-bold text-muted-foreground uppercase">Unique Visitors</span>
-                  <p className="text-2xl font-black font-display text-foreground mt-1">42,500</p>
-                  <p className="text-[11px] text-primary font-semibold">↑ 18.2% this month</p>
+                <div className="card-lift p-5">
+                  <span className="font-display text-xs font-extrabold text-muted-foreground uppercase">Unique Visitors</span>
+                  <p className="text-3xl font-black font-display text-foreground mt-1">42,500</p>
+                  <p className="text-sm text-primary font-semibold mt-1">↑ 18.2% this month</p>
                 </div>
-                <div className="rounded-2xl border border-border bg-card p-4">
-                  <span className="text-xs font-bold text-muted-foreground uppercase">Total Pageviews</span>
-                  <p className="text-2xl font-black font-display text-foreground mt-1">118,200</p>
-                  <p className="text-[11px] text-primary font-semibold">↑ 24.6% this month</p>
+                <div className="card-lift p-5">
+                  <span className="font-display text-xs font-extrabold text-muted-foreground uppercase">Total Pageviews</span>
+                  <p className="text-3xl font-black font-display text-foreground mt-1">118,200</p>
+                  <p className="text-sm text-primary font-semibold mt-1">↑ 24.6% this month</p>
                 </div>
-                <div className="rounded-2xl border border-border bg-card p-4">
-                  <span className="text-xs font-bold text-muted-foreground uppercase">Avg. Time on Site</span>
-                  <p className="text-2xl font-black font-display text-foreground mt-1">2m 48s</p>
-                  <p className="text-[11px] text-muted-foreground">High audience retention</p>
+                <div className="card-lift p-5">
+                  <span className="font-display text-xs font-extrabold text-muted-foreground uppercase">Avg. Time on Site</span>
+                  <p className="text-3xl font-black font-display text-foreground mt-1">2m 48s</p>
+                  <p className="text-sm text-muted-foreground mt-1">High audience retention</p>
                 </div>
-                <div className="rounded-2xl border border-border bg-card p-4">
-                  <span className="text-xs font-bold text-muted-foreground uppercase">Enquiry Conversion</span>
-                  <p className="text-2xl font-black font-display text-primary mt-1">4.2%</p>
-                  <p className="text-[11px] text-primary font-semibold">High booking intent</p>
+                <div className="card-lift p-5">
+                  <span className="font-display text-xs font-extrabold text-muted-foreground uppercase">Enquiry Conversion</span>
+                  <p className="text-3xl font-black font-display text-foreground mt-1">4.2%</p>
+                  <p className="text-sm text-muted-foreground font-semibold mt-1">High booking intent</p>
                 </div>
               </div>
 
               {/* Section Popularity Breakdown */}
               <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
-                <div className="rounded-2xl border border-border bg-card p-6 shadow-sm">
-                  <h3 className="text-base font-bold text-foreground mb-4">Most Visited Sections</h3>
-                  <div className="space-y-3">
+                <div className="rounded-2xl border border-border bg-card p-6 shadow-[var(--shadow-card)]">
+                  <h3 className="font-display text-lg font-extrabold text-foreground mb-5">Most Visited Sections</h3>
+                  <div className="space-y-4">
                     <div>
-                      <div className="flex justify-between text-xs font-bold mb-1">
+                      <div className="flex justify-between text-sm font-bold mb-1.5">
                         <span>Homepage & Hero Showreel (/)</span>
                         <span className="text-muted-foreground">45% (53,190 views)</span>
                       </div>
-                      <div className="h-2 w-full rounded-full bg-muted overflow-hidden">
+                      <div className="h-2.5 w-full rounded-full bg-muted overflow-hidden">
                         <div className="h-full bg-primary rounded-full" style={{ width: "45%" }} />
                       </div>
                     </div>
 
                     <div>
-                      <div className="flex justify-between text-xs font-bold mb-1">
+                      <div className="flex justify-between text-sm font-bold mb-1.5">
                         <span>Portfolio & Summits (/portfolio)</span>
                         <span className="text-muted-foreground">28% (33,096 views)</span>
                       </div>
-                      <div className="h-2 w-full rounded-full bg-muted overflow-hidden">
-                        <div className="h-full bg-foreground rounded-full" style={{ width: "28%" }} />
+                      <div className="h-2.5 w-full rounded-full bg-muted overflow-hidden">
+                        <div className="h-full bg-primary rounded-full" style={{ width: "28%" }} />
                       </div>
                     </div>
 
                     <div>
-                      <div className="flex justify-between text-xs font-bold mb-1">
+                      <div className="flex justify-between text-sm font-bold mb-1.5">
                         <span>Event Formats & Packages (/services)</span>
                         <span className="text-muted-foreground">15% (17,730 views)</span>
                       </div>
-                      <div className="h-2 w-full rounded-full bg-muted overflow-hidden">
-                        <div className="h-full bg-primary/70 rounded-full" style={{ width: "15%" }} />
+                      <div className="h-2.5 w-full rounded-full bg-muted overflow-hidden">
+                        <div className="h-full bg-primary rounded-full" style={{ width: "15%" }} />
                       </div>
                     </div>
 
                     <div>
-                      <div className="flex justify-between text-xs font-bold mb-1">
+                      <div className="flex justify-between text-sm font-bold mb-1.5">
                         <span>Live Stage Moments Gallery (/gallery)</span>
                         <span className="text-muted-foreground">12% (14,184 views)</span>
                       </div>
-                      <div className="h-2 w-full rounded-full bg-muted overflow-hidden">
-                        <div className="h-full bg-muted-foreground rounded-full" style={{ width: "12%" }} />
+                      <div className="h-2.5 w-full rounded-full bg-muted overflow-hidden">
+                        <div className="h-full bg-primary rounded-full" style={{ width: "12%" }} />
                       </div>
                     </div>
                   </div>
                 </div>
 
-                <div className="rounded-2xl border border-border bg-card p-6 shadow-sm">
-                  <h3 className="text-base font-bold text-foreground mb-4">Traffic Referral Channels</h3>
-                  <div className="space-y-3">
-                    <div className="flex items-center justify-between border-b border-border pb-2 text-xs">
+                <div className="rounded-2xl border border-border bg-card p-6 shadow-[var(--shadow-card)]">
+                  <h3 className="font-display text-lg font-extrabold text-foreground mb-5">Traffic Referral Channels</h3>
+                  <div className="space-y-3.5">
+                    <div className="flex items-center justify-between border-b border-border pb-2.5 text-sm">
                       <span className="font-semibold text-foreground">Direct & Bookmark</span>
-                      <span className="font-mono text-muted-foreground">38%</span>
+                      <span className="font-mono font-bold text-muted-foreground">38%</span>
                     </div>
-                    <div className="flex items-center justify-between border-b border-border pb-2 text-xs">
+                    <div className="flex items-center justify-between border-b border-border pb-2.5 text-sm">
                       <span className="font-semibold text-foreground">Instagram (@siddwhizz)</span>
-                      <span className="font-mono text-primary font-bold">32%</span>
+                      <span className="font-mono font-bold text-foreground">32%</span>
                     </div>
-                    <div className="flex items-center justify-between border-b border-border pb-2 text-xs">
+                    <div className="flex items-center justify-between border-b border-border pb-2.5 text-sm">
                       <span className="font-semibold text-foreground">LinkedIn (Siddharth Maurya)</span>
-                      <span className="font-mono text-muted-foreground">20%</span>
+                      <span className="font-mono font-bold text-muted-foreground">20%</span>
                     </div>
-                    <div className="flex items-center justify-between pb-1 text-xs">
+                    <div className="flex items-center justify-between pb-1 text-sm">
                       <span className="font-semibold text-foreground">Word-of-Mouth & Agency Referrals</span>
-                      <span className="font-mono text-muted-foreground">10%</span>
+                      <span className="font-mono font-bold text-muted-foreground">10%</span>
                     </div>
                   </div>
                 </div>
@@ -1018,6 +1204,13 @@ export function AdminPanel({ initialTab = "overview" }: { initialTab?: AdminTab 
           {/* ========================================================= */}
           {activeTab === "enquiries" && (
             <div className="space-y-6">
+              <div>
+                <p className="eyebrow mb-1">Lead & Booking Pipeline</p>
+                <h2 className="display text-2xl sm:text-3xl text-foreground">
+                  Enquiry <span className="text-primary">Management</span>
+                </h2>
+              </div>
+
               {/* Search & Status Filters */}
               <div className="flex flex-col sm:flex-row gap-3 items-stretch sm:items-center justify-between">
                 <div className="relative flex-1 max-w-md">
@@ -1027,16 +1220,16 @@ export function AdminPanel({ initialTab = "overview" }: { initialTab?: AdminTab 
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
                     placeholder="Search by event, client, organization, or city..."
-                    className="w-full rounded-xl border border-input bg-card py-2 pl-10 pr-4 text-xs text-foreground placeholder:text-muted-foreground focus:border-primary focus:outline-none"
+                    className="w-full rounded-xl border border-input bg-card py-2.5 pl-10 pr-4 text-sm text-foreground placeholder:text-muted-foreground focus:border-primary focus:outline-none"
                   />
                 </div>
 
-                <div className="flex flex-wrap gap-1.5">
+                <div className="flex flex-wrap gap-2">
                   {["All", "New", "In Discussion", "Confirmed", "Declined"].map((st) => (
                     <button
                       key={st}
                       onClick={() => setStatusFilter(st)}
-                      className={`rounded-lg px-3 py-1.5 text-xs font-bold transition ${
+                      className={`rounded-lg px-3.5 py-2 text-sm font-bold transition ${
                         statusFilter === st
                           ? "bg-primary text-primary-foreground shadow-sm"
                           : "border border-border bg-card text-muted-foreground hover:bg-accent hover:text-foreground"
@@ -1051,19 +1244,19 @@ export function AdminPanel({ initialTab = "overview" }: { initialTab?: AdminTab 
               {/* Enquiries Grid & Details */}
               <div className="grid grid-cols-1 gap-6 lg:grid-cols-12">
                 {/* List Column */}
-                <div className={`space-y-3 ${selectedEnquiry ? "lg:col-span-7" : "lg:col-span-12"}`}>
+                <div className={`space-y-4 ${selectedEnquiry ? "lg:col-span-7" : "lg:col-span-12"}`}>
                   {filteredEnquiries.length === 0 ? (
                     <div className="rounded-2xl border border-border bg-card p-12 text-center">
                       <Inbox className="mx-auto h-8 w-8 text-muted-foreground mb-2" />
-                      <p className="font-bold text-foreground">No enquiries found</p>
-                      <p className="text-xs text-muted-foreground">Try adjusting your search query or filter.</p>
+                      <p className="text-base font-bold text-foreground">No enquiries found</p>
+                      <p className="text-sm text-muted-foreground">Try adjusting your search query or filter.</p>
                     </div>
                   ) : (
                     filteredEnquiries.map((e) => (
                       <div
                         key={e.id}
                         onClick={() => setSelectedEnquiry(e)}
-                        className={`rounded-2xl border p-5 transition cursor-pointer ${
+                        className={`rounded-2xl border p-6 transition cursor-pointer ${
                           selectedEnquiry?.id === e.id
                             ? "border-primary bg-primary/5 ring-1 ring-primary"
                             : "border-border bg-card hover:border-primary/50"
@@ -1071,10 +1264,10 @@ export function AdminPanel({ initialTab = "overview" }: { initialTab?: AdminTab 
                       >
                         <div className="flex items-start justify-between gap-3">
                           <div>
-                            <div className="flex items-center gap-2">
-                              <span className="font-mono text-xs font-bold text-primary">{e.id}</span>
+                            <div className="flex items-center gap-2.5">
+                              <span className="font-mono text-sm font-bold text-primary">{e.id}</span>
                               <span
-                                className={`rounded-full px-2 py-0.5 text-[10px] font-bold ${
+                                className={`rounded-full px-2.5 py-0.5 text-xs font-bold ${
                                   e.status === "New"
                                     ? "bg-primary/20 text-primary border border-primary/30"
                                     : e.status === "Confirmed"
@@ -1085,24 +1278,32 @@ export function AdminPanel({ initialTab = "overview" }: { initialTab?: AdminTab 
                                 {e.status}
                               </span>
                             </div>
-                            <h4 className="text-base font-bold text-foreground mt-1">{e.eventName}</h4>
-                            <p className="text-xs text-muted-foreground font-medium">
-                              {e.clientName} • <span className="text-foreground">{e.organization}</span>
+                            <h4 className="font-display text-lg font-extrabold text-foreground mt-1.5">{e.eventName}</h4>
+                            <p className="text-sm text-muted-foreground font-medium mt-0.5">
+                              {e.clientName} • <span className="text-foreground font-semibold">{e.organization}</span>
                             </p>
                           </div>
 
-                          <div className="text-right">
-                            <p className="font-mono text-xs font-bold text-foreground">{e.budget}</p>
-                            <p className="text-[11px] text-muted-foreground mt-0.5">📅 {e.date}</p>
+                          <div className="flex flex-col items-end gap-1.5 text-right shrink-0">
+                            <div className="inline-flex items-center gap-1.5 rounded-lg border border-border bg-card/90 px-3 py-1 shadow-2xs">
+                              <IndianRupee className="h-4 w-4 text-primary shrink-0" />
+                              <span className="font-mono text-sm sm:text-base font-black tracking-tight text-foreground">
+                                {e.budget.replace(/^₹\s*/, "")}
+                              </span>
+                            </div>
+                            <div className="inline-flex items-center gap-1.5 rounded-md border border-border/60 bg-muted/40 px-2.5 py-0.5 text-xs font-bold text-muted-foreground">
+                              <Calendar className="h-3.5 w-3.5 text-primary shrink-0" />
+                              <span className="font-mono tracking-wide">{e.date}</span>
+                            </div>
                           </div>
                         </div>
 
-                        <p className="mt-2 text-xs text-muted-foreground line-clamp-2">{e.brief}</p>
+                        <p className="mt-2.5 text-sm text-muted-foreground line-clamp-2">{e.brief}</p>
 
                         {/* Action buttons inside card */}
-                        <div className="mt-4 flex flex-wrap items-center justify-between gap-2 border-t border-border pt-3">
-                          <span className="text-[11px] text-muted-foreground flex items-center gap-1">
-                            <MapPin className="h-3.5 w-3.5 text-primary" /> {e.city}
+                        <div className="mt-4 flex flex-wrap items-center justify-between gap-2 border-t border-border pt-3.5">
+                          <span className="text-xs font-medium text-muted-foreground flex items-center gap-1.5">
+                            <MapPin className="h-4 w-4 text-primary" /> {e.city}
                           </span>
 
                           <div className="flex items-center gap-2">
@@ -1111,7 +1312,7 @@ export function AdminPanel({ initialTab = "overview" }: { initialTab?: AdminTab 
                                 ev.stopPropagation();
                                 handleWhatsAppReply(e);
                               }}
-                              className="flex items-center gap-1 rounded-lg bg-primary/15 border border-primary/30 px-2.5 py-1 text-xs font-bold text-primary hover:bg-primary/30 transition"
+                              className="flex items-center gap-1.5 rounded-lg border border-border bg-card px-3 py-1.5 text-xs font-bold text-foreground transition-all duration-200 hover:scale-105 hover:bg-primary hover:text-white hover:border-primary active:scale-95 shadow-2xs cursor-pointer"
                             >
                               <MessageCircle className="h-3.5 w-3.5" />
                               <span>WhatsApp</span>
@@ -1122,7 +1323,7 @@ export function AdminPanel({ initialTab = "overview" }: { initialTab?: AdminTab 
                                 ev.stopPropagation();
                                 handlePhoneCall(e);
                               }}
-                              className="flex items-center gap-1 rounded-lg bg-muted border border-border px-2.5 py-1 text-xs font-bold text-foreground hover:bg-accent transition"
+                              className="flex items-center gap-1.5 rounded-lg border border-border bg-card px-3 py-1.5 text-xs font-bold text-foreground transition-all duration-200 hover:scale-105 hover:bg-primary hover:text-white hover:border-primary active:scale-95 shadow-2xs cursor-pointer"
                             >
                               <Phone className="h-3.5 w-3.5" />
                               <span>Call</span>
@@ -1133,7 +1334,7 @@ export function AdminPanel({ initialTab = "overview" }: { initialTab?: AdminTab 
                                 ev.stopPropagation();
                                 handleEmailReply(e);
                               }}
-                              className="flex items-center gap-1 rounded-lg bg-primary/15 border border-primary/30 px-2.5 py-1 text-xs font-bold text-primary hover:bg-primary/30 transition"
+                              className="flex items-center gap-1.5 rounded-lg border border-border bg-card px-3 py-1.5 text-xs font-bold text-foreground transition-all duration-200 hover:scale-105 hover:bg-primary hover:text-white hover:border-primary active:scale-95 shadow-2xs cursor-pointer"
                             >
                               <Mail className="h-3.5 w-3.5" />
                               <span>Email</span>
@@ -1147,16 +1348,16 @@ export function AdminPanel({ initialTab = "overview" }: { initialTab?: AdminTab 
 
                 {/* Detailed Enquiry Drawer */}
                 {selectedEnquiry && (
-                  <div className="lg:col-span-5 rounded-2xl border border-border bg-card p-6 shadow-xl space-y-5 sticky top-20">
+                  <div className="lg:col-span-5 rounded-2xl border border-border bg-card p-6 shadow-xl space-y-5 sticky top-4 self-start">
                     <div className="flex items-start justify-between border-b border-border pb-4">
                       <div>
-                        <span className="font-mono text-xs font-bold text-primary">{selectedEnquiry.id}</span>
-                        <h3 className="text-lg font-bold text-foreground mt-0.5">{selectedEnquiry.eventName}</h3>
-                        <p className="text-xs text-muted-foreground">{selectedEnquiry.organization}</p>
+                        <span className="font-mono text-sm font-bold text-primary">{selectedEnquiry.id}</span>
+                        <h3 className="font-display text-xl font-extrabold text-foreground mt-0.5">{selectedEnquiry.eventName}</h3>
+                        <p className="text-sm text-muted-foreground">{selectedEnquiry.organization}</p>
                       </div>
                       <button
                         onClick={() => setSelectedEnquiry(null)}
-                        className="rounded-lg p-1 text-muted-foreground hover:bg-accent hover:text-foreground"
+                        className="rounded-lg p-1.5 text-muted-foreground hover:bg-accent hover:text-foreground"
                         aria-label="Close"
                       >
                         <X className="h-4 w-4" />
@@ -1165,15 +1366,15 @@ export function AdminPanel({ initialTab = "overview" }: { initialTab?: AdminTab 
 
                     {/* Status Changer */}
                     <div>
-                      <label className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground mb-1 block">
+                      <label className="text-xs font-bold uppercase tracking-wider text-muted-foreground mb-1.5 block">
                         Update Pipeline Status
                       </label>
-                      <div className="grid grid-cols-3 gap-1.5">
+                      <div className="grid grid-cols-3 gap-2">
                         {(["New", "In Discussion", "Confirmed"] as const).map((st) => (
                           <button
                             key={st}
                             onClick={() => handleStatusChange(selectedEnquiry.id, st)}
-                            className={`rounded-lg py-1.5 text-xs font-bold transition ${
+                            className={`rounded-lg py-2 text-xs font-bold transition ${
                               selectedEnquiry.status === st
                                 ? "bg-primary text-primary-foreground shadow"
                                 : "border border-border bg-background text-muted-foreground hover:bg-accent"
@@ -1186,83 +1387,91 @@ export function AdminPanel({ initialTab = "overview" }: { initialTab?: AdminTab 
                     </div>
 
                     {/* Quick Outreach Tools */}
-                    <div className="rounded-xl border border-primary/30 bg-primary/5 p-4 space-y-2">
-                      <p className="text-xs font-bold text-foreground">Instant Client Outreach</p>
+                    <div className="rounded-xl border border-border bg-background p-4 space-y-2.5">
+                      <p className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Instant Client Outreach</p>
                       <div className="grid grid-cols-3 gap-2">
                         <button
                           onClick={() => handleWhatsAppReply(selectedEnquiry)}
-                          className="flex flex-col items-center justify-center rounded-xl bg-primary/20 border border-primary/30 p-2 text-primary hover:bg-primary/30 transition text-center"
+                          className="flex flex-col items-center justify-center rounded-xl border border-border bg-card p-3 text-foreground transition-all duration-200 hover:scale-105 hover:bg-primary hover:text-white hover:border-primary active:scale-95 text-center cursor-pointer shadow-2xs"
                         >
                           <MessageCircle className="h-4 w-4 mb-1" />
-                          <span className="text-[11px] font-bold">WhatsApp</span>
+                          <span className="text-xs font-bold">WhatsApp</span>
                         </button>
                         <button
                           onClick={() => handlePhoneCall(selectedEnquiry)}
-                          className="flex flex-col items-center justify-center rounded-xl bg-muted border border-border p-2 text-foreground hover:bg-accent transition text-center"
+                          className="flex flex-col items-center justify-center rounded-xl border border-border bg-card p-3 text-foreground transition-all duration-200 hover:scale-105 hover:bg-primary hover:text-white hover:border-primary active:scale-95 text-center cursor-pointer shadow-2xs"
                         >
                           <Phone className="h-4 w-4 mb-1" />
-                          <span className="text-[11px] font-bold">Direct Call</span>
+                          <span className="text-xs font-bold">Direct Call</span>
                         </button>
                         <button
                           onClick={() => handleEmailReply(selectedEnquiry)}
-                          className="flex flex-col items-center justify-center rounded-xl bg-primary/20 border border-primary/30 p-2 text-primary hover:bg-primary/30 transition text-center"
+                          className="flex flex-col items-center justify-center rounded-xl border border-border bg-card p-3 text-foreground transition-all duration-200 hover:scale-105 hover:bg-primary hover:text-white hover:border-primary active:scale-95 text-center cursor-pointer shadow-2xs"
                         >
                           <Mail className="h-4 w-4 mb-1" />
-                          <span className="text-[11px] font-bold">Send Mail</span>
+                          <span className="text-xs font-bold">Send Mail</span>
                         </button>
                       </div>
                     </div>
 
                     {/* Event Specifications */}
-                    <div className="space-y-2 text-xs border-t border-border pt-3">
-                      <div className="flex justify-between py-1 border-b border-border">
-                        <span className="text-muted-foreground">Target Date:</span>
-                        <span className="font-semibold text-foreground">{selectedEnquiry.date}</span>
+                    <div className="space-y-2 text-sm border-t border-border pt-3">
+                      <div className="flex justify-between py-2 border-b border-border items-center">
+                        <span className="text-muted-foreground flex items-center gap-1.5">
+                          <Calendar className="h-4 w-4 text-primary" /> Target Date:
+                        </span>
+                        <span className="font-mono font-bold text-foreground text-sm bg-accent/40 px-2.5 py-0.5 rounded-md border border-border/60">
+                          {selectedEnquiry.date}
+                        </span>
                       </div>
-                      <div className="flex justify-between py-1 border-b border-border">
+                      <div className="flex justify-between py-2 border-b border-border items-center">
                         <span className="text-muted-foreground">City & Venue:</span>
                         <span className="font-semibold text-foreground text-right">{selectedEnquiry.venue}, {selectedEnquiry.city}</span>
                       </div>
-                      <div className="flex justify-between py-1 border-b border-border">
+                      <div className="flex justify-between py-2 border-b border-border items-center">
                         <span className="text-muted-foreground">Event Format:</span>
                         <span className="font-semibold text-foreground">{selectedEnquiry.format}</span>
                       </div>
-                      <div className="flex justify-between py-1 border-b border-border">
+                      <div className="flex justify-between py-2 border-b border-border items-center">
                         <span className="text-muted-foreground">Audience Size:</span>
                         <span className="font-semibold text-foreground">{selectedEnquiry.crowdSize}</span>
                       </div>
-                      <div className="flex justify-between py-1 border-b border-border">
-                        <span className="text-muted-foreground">Budget Indicator:</span>
-                        <span className="font-mono font-bold text-foreground">{selectedEnquiry.budget}</span>
+                      <div className="flex justify-between py-2 border-b border-border items-center">
+                        <span className="text-muted-foreground flex items-center gap-1.5">
+                          <IndianRupee className="h-4 w-4 text-primary" /> Budget Indicator:
+                        </span>
+                        <span className="font-mono font-extrabold text-foreground text-sm sm:text-base bg-accent/40 px-2.5 py-0.5 rounded-md border border-border/60">
+                          {selectedEnquiry.budget}
+                        </span>
                       </div>
                     </div>
 
                     {/* Special Brief */}
                     <div className="border-t border-border pt-3">
-                      <p className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground mb-1">
+                      <p className="text-xs font-bold uppercase tracking-wider text-muted-foreground mb-1.5">
                         Organizer Event Brief
                       </p>
-                      <p className="text-xs text-foreground bg-background p-3 rounded-xl border border-border leading-relaxed">
+                      <p className="text-sm text-foreground bg-background p-3.5 rounded-xl border border-border leading-relaxed">
                         {selectedEnquiry.brief}
                       </p>
                     </div>
 
                     {/* Internal Notes */}
-                    <div className="border-t border-border pt-3 space-y-2">
-                      <p className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground">
+                    <div className="border-t border-border pt-3 space-y-2.5">
+                      <p className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
                         Internal Management Notes
                       </p>
                       {selectedEnquiry.notes && selectedEnquiry.notes.length > 0 ? (
-                        <div className="space-y-1">
+                        <div className="space-y-1.5">
                           {selectedEnquiry.notes.map((n, idx) => (
-                            <div key={idx} className="rounded-lg bg-accent p-2 text-xs text-foreground flex items-start gap-2">
+                            <div key={idx} className="rounded-lg bg-accent p-2.5 text-sm text-foreground flex items-start gap-2">
                               <span className="text-primary font-bold">•</span>
                               <span>{n}</span>
                             </div>
                           ))}
                         </div>
                       ) : (
-                        <p className="text-xs text-muted-foreground">No notes added yet.</p>
+                        <p className="text-sm text-muted-foreground">No notes added yet.</p>
                       )}
 
                       <div className="flex gap-2 mt-2">
@@ -1271,11 +1480,11 @@ export function AdminPanel({ initialTab = "overview" }: { initialTab?: AdminTab 
                           value={newNoteText}
                           onChange={(e) => setNewNoteText(e.target.value)}
                           placeholder="Add private note for Sid..."
-                          className="flex-1 rounded-xl border border-input bg-background py-1.5 px-3 text-xs text-foreground focus:border-primary focus:outline-none"
+                          className="flex-1 rounded-xl border border-input bg-background py-2 px-3 text-sm text-foreground focus:border-primary focus:outline-none"
                         />
                         <button
                           onClick={() => handleAddNote(selectedEnquiry.id)}
-                          className="btn-red !py-1.5 !px-3 text-xs"
+                          className="btn-red !py-2 !px-4 text-sm"
                         >
                           Add
                         </button>
@@ -1292,12 +1501,19 @@ export function AdminPanel({ initialTab = "overview" }: { initialTab?: AdminTab 
           {/* ========================================================= */}
           {activeTab === "media" && (
             <div className="space-y-6">
+              <div>
+                <p className="eyebrow mb-1">Press & Stage Assets</p>
+                <h2 className="display text-2xl sm:text-3xl text-foreground">
+                  Media <span className="text-primary">Library</span>
+                </h2>
+              </div>
+
               {/* Type Filter Chips + Upload Button */}
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                 <div className="flex flex-wrap gap-2">
                   <button
                     onClick={() => setMediaTypeFilter("all")}
-                    className={`rounded-xl px-3.5 py-1.5 text-xs font-bold transition ${
+                    className={`rounded-xl px-4 py-2 text-sm font-bold transition ${
                       mediaTypeFilter === "all"
                         ? "bg-primary text-primary-foreground shadow"
                         : "border border-border bg-card text-muted-foreground hover:bg-accent hover:text-foreground"
@@ -1307,157 +1523,304 @@ export function AdminPanel({ initialTab = "overview" }: { initialTab?: AdminTab 
                   </button>
                   <button
                     onClick={() => setMediaTypeFilter("image")}
-                    className={`rounded-xl px-3.5 py-1.5 text-xs font-bold flex items-center gap-1.5 transition ${
+                    className={`rounded-xl px-4 py-2 text-sm font-bold flex items-center gap-1.5 transition ${
                       mediaTypeFilter === "image"
                         ? "bg-primary text-primary-foreground shadow"
                         : "border border-border bg-card text-muted-foreground hover:bg-accent hover:text-foreground"
                     }`}
                   >
-                    <ImageIcon className="h-3.5 w-3.5" /> Stage Photos
+                    <ImageIcon className="h-4 w-4" /> Stage Photos
                   </button>
                   <button
                     onClick={() => setMediaTypeFilter("video")}
-                    className={`rounded-xl px-3.5 py-1.5 text-xs font-bold flex items-center gap-1.5 transition ${
+                    className={`rounded-xl px-4 py-2 text-sm font-bold flex items-center gap-1.5 transition ${
                       mediaTypeFilter === "video"
                         ? "bg-primary text-primary-foreground shadow"
                         : "border border-border bg-card text-muted-foreground hover:bg-accent hover:text-foreground"
                     }`}
                   >
-                    <Video className="h-3.5 w-3.5" /> Showreel Videos
+                    <Video className="h-4 w-4" /> Showreel Videos
                   </button>
                   <button
                     onClick={() => setMediaTypeFilter("audio")}
-                    className={`rounded-xl px-3.5 py-1.5 text-xs font-bold flex items-center gap-1.5 transition ${
+                    className={`rounded-xl px-4 py-2 text-sm font-bold flex items-center gap-1.5 transition ${
                       mediaTypeFilter === "audio"
                         ? "bg-primary text-primary-foreground shadow"
                         : "border border-border bg-card text-muted-foreground hover:bg-accent hover:text-foreground"
                     }`}
                   >
-                    <Music className="h-3.5 w-3.5" /> Audio Intros
+                    <Music className="h-4 w-4" /> Audio Intros
                   </button>
                   <button
                     onClick={() => setMediaTypeFilter("document")}
-                    className={`rounded-xl px-3.5 py-1.5 text-xs font-bold flex items-center gap-1.5 transition ${
+                    className={`rounded-xl px-4 py-2 text-sm font-bold flex items-center gap-1.5 transition ${
                       mediaTypeFilter === "document"
                         ? "bg-primary text-primary-foreground shadow"
                         : "border border-border bg-card text-muted-foreground hover:bg-accent hover:text-foreground"
                     }`}
                   >
-                    <FileText className="h-3.5 w-3.5" /> Tech Riders & PDFs
+                    <FileText className="h-4 w-4" /> Tech Riders & PDFs
                   </button>
                 </div>
 
                 <button
                   onClick={() => setUploadModalOpen(true)}
-                  className="btn-red !py-2 !px-4 text-xs flex items-center gap-2 self-start sm:self-auto"
+                  className="btn-red !py-2.5 !px-5 text-sm flex items-center gap-2 self-start sm:self-auto"
                 >
                   <Plus className="h-4 w-4" /> Upload Media File
                 </button>
               </div>
 
               {/* Media Grid */}
-              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+              <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-4">
                 {filteredMedia.map((m) => (
                   <div
                     key={m.id}
-                    className="group rounded-2xl border border-border bg-card p-4 shadow-sm hover:border-primary/50 transition flex flex-col justify-between"
+                    onClick={() => handleOpenAssetModal(m)}
+                    className="group card-lift rounded-2xl border border-border bg-card p-4 sm:p-5 shadow-sm hover:border-primary/50 transition-all flex flex-col justify-between cursor-pointer"
                   >
                     <div>
                       {/* Media Header Badge */}
                       <div className="flex items-center justify-between mb-3">
                         <span
-                          className={`rounded-full px-2 py-0.5 text-[10px] font-bold uppercase ${
+                          className={`rounded-full px-2.5 py-0.5 text-xs font-bold uppercase ${
                             m.type === "image"
                               ? "bg-primary/20 text-primary border border-primary/30"
+                              : m.type === "video"
+                              ? "bg-red-500/20 text-red-400 border border-red-500/30"
+                              : m.type === "audio"
+                              ? "bg-amber-500/20 text-amber-400 border border-amber-500/30"
                               : "bg-muted text-foreground border border-border"
                           }`}
                         >
                           {m.type}
                         </span>
-                        <span className="text-[10px] text-muted-foreground font-mono">{m.size}</span>
+                        <span className="text-xs text-muted-foreground font-mono">{m.size}</span>
                       </div>
 
-                      {/* Icon Thumbnail Preview */}
-                      <div className="h-28 w-full rounded-xl bg-ink border border-border flex items-center justify-center text-muted-foreground group-hover:text-primary transition mb-3">
-                        {m.type === "image" && <ImageIcon className="h-10 w-10 text-primary" />}
-                        {m.type === "video" && <Video className="h-10 w-10 text-foreground" />}
-                        {m.type === "audio" && <Music className="h-10 w-10 text-foreground" />}
-                        {m.type === "document" && <FileText className="h-10 w-10 text-primary" />}
+                      {/* Visual Media Thumbnail (Clickable to Open) */}
+                      <div className="relative h-36 w-full rounded-xl overflow-hidden bg-ink/90 border border-border flex items-center justify-center group/thumb mb-3">
+                        {m.type === "image" ? (
+                          m.url ? (
+                            <img
+                              src={m.url}
+                              alt={m.title}
+                              className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
+                              onError={(ev) => {
+                                (ev.target as HTMLImageElement).src = stageBeams;
+                              }}
+                            />
+                          ) : (
+                            <ImageIcon className="h-10 w-10 text-primary" />
+                          )
+                        ) : m.type === "video" ? (
+                          <div className="flex flex-col items-center justify-center gap-1.5 text-foreground">
+                            <div className="grid h-12 w-12 place-items-center rounded-full bg-primary/25 text-primary border border-primary/50 group-hover:scale-110 transition shadow-lg">
+                              <Play className="h-5 w-5 ml-0.5 fill-current" />
+                            </div>
+                            <span className="text-[11px] font-mono font-bold text-muted-foreground">Click to Watch</span>
+                          </div>
+                        ) : m.type === "audio" ? (
+                          <div className="flex flex-col items-center justify-center gap-1.5 text-foreground">
+                            <div className="grid h-12 w-12 place-items-center rounded-full bg-amber-500/20 text-amber-400 border border-amber-500/40 group-hover:scale-110 transition shadow-lg">
+                              <Volume2 className="h-5 w-5" />
+                            </div>
+                            <span className="text-[11px] font-mono font-bold text-muted-foreground">Click to Listen</span>
+                          </div>
+                        ) : (
+                          <div className="flex flex-col items-center justify-center gap-1.5 text-foreground">
+                            <div className="grid h-12 w-12 place-items-center rounded-full bg-primary/20 text-primary border border-primary/40 group-hover:scale-110 transition shadow-lg">
+                              <FileText className="h-5 w-5" />
+                            </div>
+                            <span className="text-[11px] font-mono font-bold text-muted-foreground">Click to Read PDF</span>
+                          </div>
+                        )}
+
+                        {/* Hover Click Action Overlay */}
+                        <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                          <span className="inline-flex items-center gap-1.5 rounded-full bg-primary px-3 py-1.5 text-xs font-bold text-white shadow-xl">
+                            <Maximize2 className="h-3.5 w-3.5" /> View Asset
+                          </span>
+                        </div>
                       </div>
 
-                      <h4 className="font-bold text-xs text-foreground line-clamp-2 leading-snug">{m.title}</h4>
-                      <p className="text-[11px] text-muted-foreground mt-1">
+                      <h4 className="font-display font-bold text-sm text-foreground line-clamp-2 leading-snug group-hover:text-primary transition-colors">
+                        {m.title}
+                      </h4>
+                      <p className="text-xs text-muted-foreground mt-1">
                         {m.category} {m.dimensions ? `• ${m.dimensions}` : m.duration ? `• ${m.duration}` : ""}
                       </p>
                     </div>
 
-                    <div className="mt-4 border-t border-border pt-3 flex items-center justify-between">
-                      <span className="text-[10px] text-muted-foreground">{m.createdAt}</span>
-                      <button
-                        onClick={() => handleCopyLink(m.url)}
-                        className="flex items-center gap-1 text-[11px] font-bold text-primary hover:underline"
-                      >
-                        <Copy className="h-3 w-3" /> Copy Link
-                      </button>
+                    {/* Card Footer: Date, Copy Link & Delete Button */}
+                    <div className="mt-4 border-t border-border pt-3 flex items-center justify-between gap-2">
+                      <span className="text-xs text-muted-foreground font-mono">{m.createdAt}</span>
+
+                      <div className="flex items-center gap-1">
+                        <button
+                          type="button"
+                          onClick={(ev) => {
+                            ev.stopPropagation();
+                            handleCopyLink(m.url);
+                          }}
+                          className="inline-flex items-center gap-1 rounded-md px-2 py-1 text-xs font-bold text-muted-foreground hover:bg-accent hover:text-foreground transition cursor-pointer"
+                          title="Copy Link"
+                        >
+                          <Copy className="h-3.5 w-3.5" />
+                          <span>Copy</span>
+                        </button>
+
+                        <button
+                          type="button"
+                          onClick={(ev) => handleDeleteClick(ev, m)}
+                          className="inline-flex items-center gap-1 rounded-md px-2 py-1 text-xs font-bold text-muted-foreground hover:bg-primary/20 hover:text-primary transition cursor-pointer"
+                          title="Delete Asset from Database"
+                        >
+                          <Trash2 className="h-3.5 w-3.5 text-primary" />
+                          <span>Delete</span>
+                        </button>
+                      </div>
                     </div>
                   </div>
                 ))}
               </div>
 
-              {/* Upload Modal Simulator */}
+              {/* Upload Modal with Real File Drag-and-Drop and Preview */}
               {uploadModalOpen && (
                 <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-4 backdrop-blur-sm">
-                  <div className="w-full max-w-md rounded-2xl border border-border bg-card p-6 shadow-2xl space-y-4">
+                  <div className="w-full max-w-lg rounded-2xl border border-border bg-card p-6 shadow-2xl space-y-4">
                     <div className="flex items-center justify-between border-b border-border pb-3">
-                      <h3 className="text-base font-bold text-foreground">Upload Media File to Neon Storage</h3>
-                      <button onClick={() => setUploadModalOpen(false)} className="text-muted-foreground hover:text-foreground">
-                        <X className="h-4 w-4" />
+                      <div>
+                        <h3 className="font-display text-lg font-extrabold text-foreground">Upload Media Asset</h3>
+                        <p className="text-xs text-muted-foreground">Supported formats: Images, Videos, Audio, PDFs & Documents</p>
+                      </div>
+                      <button
+                        onClick={() => {
+                          setUploadModalOpen(false);
+                          setSelectedMediaFile(null);
+                          setSelectedMediaPreview(null);
+                        }}
+                        className="text-muted-foreground hover:text-foreground p-1 rounded-lg hover:bg-accent"
+                      >
+                        <X className="h-5 w-5" />
                       </button>
                     </div>
 
                     <form onSubmit={handleUploadMedia} className="space-y-4">
-                      <div>
-                        <label className="text-xs font-bold uppercase text-muted-foreground mb-1 block">Media Type</label>
-                        <select
-                          value={newMediaType}
-                          onChange={(e) => setNewMediaType(e.target.value as any)}
-                          className="w-full rounded-xl border border-input bg-background py-2 px-3 text-xs text-foreground focus:border-primary focus:outline-none"
-                        >
-                          <option value="image">Image (Stage photo, portrait)</option>
-                          <option value="video">Video (Showreel, keynote highlight)</option>
-                          <option value="audio">Audio (Host voiceover, intro track)</option>
-                          <option value="document">Document (PDF Rider, commercial kit)</option>
-                        </select>
+                      {/* Hidden file input */}
+                      <input
+                        type="file"
+                        ref={mediaFileInputRef}
+                        onChange={(e) => {
+                          const file = e.target.files?.[0];
+                          if (file) handleMediaFileSelect(file);
+                        }}
+                        accept="image/*,video/*,audio/*,.pdf,.doc,.docx"
+                        className="hidden"
+                      />
+
+                      {/* Interactive Drag & Drop Area */}
+                      <div
+                        onClick={() => mediaFileInputRef.current?.click()}
+                        onDragOver={(e) => {
+                          e.preventDefault();
+                          setIsDraggingMedia(true);
+                        }}
+                        onDragLeave={() => setIsDraggingMedia(false)}
+                        onDrop={(e) => {
+                          e.preventDefault();
+                          setIsDraggingMedia(false);
+                          const file = e.dataTransfer.files?.[0];
+                          if (file) handleMediaFileSelect(file);
+                        }}
+                        className={`rounded-2xl border-2 border-dashed p-6 text-center cursor-pointer transition ${
+                          isDraggingMedia
+                            ? "border-primary bg-primary/10"
+                            : selectedMediaFile
+                            ? "border-emerald-500/60 bg-emerald-500/5"
+                            : "border-border bg-background hover:border-primary/50 hover:bg-accent/30"
+                        }`}
+                      >
+                        {selectedMediaPreview && newMediaType === "image" ? (
+                          <div className="space-y-2">
+                            <img
+                              src={selectedMediaPreview}
+                              alt="Upload preview"
+                              className="mx-auto h-32 max-w-full rounded-xl object-cover border border-border shadow-sm"
+                            />
+                            <p className="text-xs font-bold text-foreground">
+                              {selectedMediaFile?.name} ({(selectedMediaFile?.size ? selectedMediaFile.size / (1024 * 1024) : 0).toFixed(2)} MB)
+                            </p>
+                            <span className="text-[11px] text-primary underline">Click to choose a different file</span>
+                          </div>
+                        ) : selectedMediaFile ? (
+                          <div className="space-y-2 py-2">
+                            <div className="mx-auto grid h-12 w-12 place-items-center rounded-xl bg-primary/20 text-primary">
+                              {newMediaType === "video" ? <Video className="h-6 w-6" /> : newMediaType === "audio" ? <Music className="h-6 w-6" /> : <FileText className="h-6 w-6" />}
+                            </div>
+                            <p className="text-sm font-bold text-foreground">{selectedMediaFile.name}</p>
+                            <p className="text-xs text-muted-foreground font-mono">
+                              {(selectedMediaFile.size / (1024 * 1024)).toFixed(2)} MB • {selectedMediaFile.type || "Document"}
+                            </p>
+                            <span className="text-[11px] text-primary underline">Click to choose a different file</span>
+                          </div>
+                        ) : (
+                          <div className="space-y-2 py-3">
+                            <div className="mx-auto grid h-12 w-12 place-items-center rounded-xl bg-accent text-muted-foreground">
+                              <Upload className="h-6 w-6" />
+                            </div>
+                            <p className="text-sm font-bold text-foreground">
+                              Drag and drop your file here, or <span className="text-primary underline">browse</span>
+                            </p>
+                            <p className="text-xs text-muted-foreground">
+                              Images (JPG, PNG), Videos (MP4), Audio (MP3), Documents (PDF)
+                            </p>
+                          </div>
+                        )}
                       </div>
 
-                      <div>
-                        <label className="text-xs font-bold uppercase text-muted-foreground mb-1 block">File Title</label>
-                        <input
-                          type="text"
-                          required
-                          value={newMediaTitle}
-                          onChange={(e) => setNewMediaTitle(e.target.value)}
-                          placeholder="e.g. Google Cloud Summit 2026 Keynote"
-                          className="w-full rounded-xl border border-input bg-background py-2 px-3 text-xs text-foreground focus:border-primary focus:outline-none"
-                        />
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                        <div>
+                          <label className="text-xs font-bold uppercase text-muted-foreground mb-1.5 block">Media Type</label>
+                          <select
+                            value={newMediaType}
+                            onChange={(e) => setNewMediaType(e.target.value as any)}
+                            className="w-full rounded-xl border border-input bg-background py-2.5 px-3 text-sm text-foreground focus:border-primary focus:outline-none"
+                          >
+                            <option value="image">Image (Stage photo, portrait)</option>
+                            <option value="video">Video (Showreel, keynote highlight)</option>
+                            <option value="audio">Audio (Host voiceover, intro track)</option>
+                            <option value="document">Document (PDF Rider, commercial kit)</option>
+                          </select>
+                        </div>
+
+                        <div>
+                          <label className="text-xs font-bold uppercase text-muted-foreground mb-1.5 block">File Title</label>
+                          <input
+                            type="text"
+                            required
+                            value={newMediaTitle}
+                            onChange={(e) => setNewMediaTitle(e.target.value)}
+                            placeholder="e.g. Jio World Convention Keynote"
+                            className="w-full rounded-xl border border-input bg-background py-2.5 px-3 text-sm text-foreground focus:border-primary focus:outline-none"
+                          />
+                        </div>
                       </div>
 
-                      <div className="rounded-xl border-2 border-dashed border-border p-6 text-center">
-                        <Upload className="mx-auto h-8 w-8 text-muted-foreground mb-2" />
-                        <p className="text-xs font-bold text-foreground">Click to browse or drag file here</p>
-                        <p className="text-[10px] text-muted-foreground mt-0.5">JPEG, PNG, MP4, MP3, PDF up to 100MB</p>
-                      </div>
-
-                      <div className="flex justify-end gap-2 pt-2">
+                      <div className="flex justify-end gap-2 pt-2 border-t border-border">
                         <button
                           type="button"
-                          onClick={() => setUploadModalOpen(false)}
-                          className="btn-outline !py-2 !px-4 text-xs"
+                          onClick={() => {
+                            setUploadModalOpen(false);
+                            setSelectedMediaFile(null);
+                            setSelectedMediaPreview(null);
+                          }}
+                          className="btn-outline !py-2 !px-4 text-sm"
                         >
                           Cancel
                         </button>
-                        <button type="submit" className="btn-red !py-2 !px-4 text-xs">
-                          Upload & Index
+                        <button type="submit" className="btn-red !py-2 !px-5 text-sm flex items-center gap-2">
+                          <Upload className="h-4 w-4" /> Upload & Index
                         </button>
                       </div>
                     </form>
@@ -1472,6 +1835,13 @@ export function AdminPanel({ initialTab = "overview" }: { initialTab?: AdminTab 
           {/* ========================================================= */}
           {activeTab === "account" && (
             <div className="space-y-6 max-w-4xl">
+              <div>
+                <p className="eyebrow mb-1">Host Identity & Security</p>
+                <h2 className="display text-2xl sm:text-3xl text-foreground">
+                  Account & <span className="text-primary">Profile</span>
+                </h2>
+              </div>
+
               {/* Hidden file input for custom profile photo upload */}
               <input
                 type="file"
@@ -1492,10 +1862,10 @@ export function AdminPanel({ initialTab = "overview" }: { initialTab?: AdminTab 
                         <img
                           src={user.avatar}
                           alt={adminName}
-                          className="h-20 w-20 rounded-2xl object-cover border-2 border-primary shadow-xl"
+                          className="h-20 w-20 rounded-full object-cover border-2 border-primary shadow-xl"
                         />
                       ) : (
-                        <div className="grid h-20 w-20 place-items-center rounded-2xl bg-primary/20 text-3xl font-black text-primary border-2 border-primary/30">
+                        <div className="grid h-20 w-20 place-items-center rounded-full bg-primary/20 text-3xl font-black text-primary border-2 border-primary/30">
                           SM
                         </div>
                       )}
@@ -1510,14 +1880,14 @@ export function AdminPanel({ initialTab = "overview" }: { initialTab?: AdminTab 
                     </div>
 
                     <div>
-                      <div className="flex items-center gap-2">
-                        <h2 className="text-xl font-black font-display text-foreground">{adminName}</h2>
-                        <span className="rounded-full bg-primary/20 text-primary px-2.5 py-0.5 text-[10px] font-bold border border-primary/30 uppercase tracking-wider">
+                      <div className="flex flex-wrap items-center gap-2">
+                        <h2 className="font-display text-2xl font-extrabold text-foreground">{adminName}</h2>
+                        <span className="rounded-full bg-primary/20 text-primary px-3 py-0.5 text-xs font-bold border border-primary/30 uppercase tracking-wider">
                           Host & Super Admin
                         </span>
                       </div>
-                      <p className="text-xs text-muted-foreground mt-0.5">{adminTitle}</p>
-                      <p className="text-xs font-mono text-primary mt-0.5">{adminEmail}</p>
+                      <p className="text-sm text-muted-foreground mt-0.5">{adminTitle}</p>
+                      <p className="text-sm font-mono text-primary mt-0.5">{adminEmail}</p>
                     </div>
                   </div>
 
@@ -1527,7 +1897,7 @@ export function AdminPanel({ initialTab = "overview" }: { initialTab?: AdminTab 
                         logout();
                         navigate({ to: "/" });
                       }}
-                      className="btn-outline !py-2 !px-3 text-xs text-primary hover:bg-primary/10"
+                      className="btn-outline !py-2 !px-4 text-sm text-foreground hover:bg-accent"
                     >
                       <LogOut className="h-4 w-4" /> Sign Out
                     </button>
@@ -1535,13 +1905,13 @@ export function AdminPanel({ initialTab = "overview" }: { initialTab?: AdminTab 
                 </div>
 
                 {/* Profile Photo Studio Section */}
-                <div className="rounded-xl border border-border/80 bg-background/60 p-4 space-y-3">
+                <div className="rounded-xl border border-border/80 bg-background/60 p-5 space-y-4">
                   <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
                     <div>
-                      <h4 className="text-xs font-bold uppercase tracking-wider text-foreground flex items-center gap-2">
+                      <h4 className="text-sm font-bold uppercase tracking-wider text-foreground flex items-center gap-2">
                         <ImagePlus className="h-4 w-4 text-primary" /> Profile Photo & Stage Headshot
                       </h4>
-                      <p className="text-[11px] text-muted-foreground mt-0.5">
+                      <p className="text-sm text-muted-foreground mt-0.5">
                         Upload your personal photo or select from Siddharth Maurya's curated stage portfolio presets.
                       </p>
                     </div>
@@ -1549,18 +1919,18 @@ export function AdminPanel({ initialTab = "overview" }: { initialTab?: AdminTab 
                       <button
                         type="button"
                         onClick={() => fileInputRef.current?.click()}
-                        className="btn-red !py-1.5 !px-3 text-xs flex items-center gap-1.5"
+                        className="btn-red !py-2 !px-4 text-sm flex items-center gap-1.5"
                       >
-                        <Upload className="h-3.5 w-3.5" /> Upload File
+                        <Upload className="h-4 w-4" /> Upload File
                       </button>
                       {user?.avatar && (
                         <button
                           type="button"
                           onClick={handleRemovePhoto}
-                          className="btn-outline !py-1.5 !px-2.5 text-xs text-destructive hover:bg-destructive/10"
+                          className="btn-outline !py-2 !px-3 text-sm text-destructive hover:bg-destructive/10"
                           title="Remove custom photo"
                         >
-                          <Trash2 className="h-3.5 w-3.5" />
+                          <Trash2 className="h-4 w-4" />
                         </button>
                       )}
                     </div>
@@ -1568,14 +1938,14 @@ export function AdminPanel({ initialTab = "overview" }: { initialTab?: AdminTab 
 
                   {/* Preset Photo Cards */}
                   <div>
-                    <span className="text-[10px] font-bold uppercase text-muted-foreground block mb-2">
+                    <span className="text-xs font-bold uppercase text-muted-foreground block mb-2.5">
                       Quick Stage Presets:
                     </span>
                     <div className="grid grid-cols-3 gap-3">
                       <button
                         type="button"
                         onClick={() => handleSelectPresetPhoto(hostBowtie)}
-                        className={`group rounded-xl border p-2 flex flex-col items-center gap-2 transition cursor-pointer text-center ${
+                        className={`group rounded-xl border p-3 flex flex-col items-center gap-2 transition cursor-pointer text-center ${
                           user?.avatar === hostBowtie
                             ? "border-primary bg-primary/15 ring-2 ring-primary"
                             : "border-border bg-card hover:border-primary/50"
@@ -1584,9 +1954,9 @@ export function AdminPanel({ initialTab = "overview" }: { initialTab?: AdminTab 
                         <img
                           src={hostBowtie}
                           alt="Gala Bowtie"
-                          className="h-14 w-14 rounded-lg object-cover"
+                          className="h-14 w-14 rounded-full object-cover"
                         />
-                        <span className="text-[11px] font-semibold text-foreground group-hover:text-primary">
+                        <span className="text-xs font-bold text-foreground group-hover:text-primary">
                           Gala Bowtie
                         </span>
                       </button>
@@ -1594,7 +1964,7 @@ export function AdminPanel({ initialTab = "overview" }: { initialTab?: AdminTab 
                       <button
                         type="button"
                         onClick={() => handleSelectPresetPhoto(hostPurple)}
-                        className={`group rounded-xl border p-2 flex flex-col items-center gap-2 transition cursor-pointer text-center ${
+                        className={`group rounded-xl border p-3 flex flex-col items-center gap-2 transition cursor-pointer text-center ${
                           user?.avatar === hostPurple
                             ? "border-primary bg-primary/15 ring-2 ring-primary"
                             : "border-border bg-card hover:border-primary/50"
@@ -1603,9 +1973,9 @@ export function AdminPanel({ initialTab = "overview" }: { initialTab?: AdminTab 
                         <img
                           src={hostPurple}
                           alt="Summit Anchor"
-                          className="h-14 w-14 rounded-lg object-cover"
+                          className="h-14 w-14 rounded-full object-cover"
                         />
-                        <span className="text-[11px] font-semibold text-foreground group-hover:text-primary">
+                        <span className="text-xs font-bold text-foreground group-hover:text-primary">
                           Summit Anchor
                         </span>
                       </button>
@@ -1613,7 +1983,7 @@ export function AdminPanel({ initialTab = "overview" }: { initialTab?: AdminTab 
                       <button
                         type="button"
                         onClick={() => handleSelectPresetPhoto(hostSmileRed)}
-                        className={`group rounded-xl border p-2 flex flex-col items-center gap-2 transition cursor-pointer text-center ${
+                        className={`group rounded-xl border p-3 flex flex-col items-center gap-2 transition cursor-pointer text-center ${
                           user?.avatar === hostSmileRed
                             ? "border-primary bg-primary/15 ring-2 ring-primary"
                             : "border-border bg-card hover:border-primary/50"
@@ -1622,9 +1992,9 @@ export function AdminPanel({ initialTab = "overview" }: { initialTab?: AdminTab 
                         <img
                           src={hostSmileRed}
                           alt="Festival Energy"
-                          className="h-14 w-14 rounded-lg object-cover"
+                          className="h-14 w-14 rounded-full object-cover"
                         />
-                        <span className="text-[11px] font-semibold text-foreground group-hover:text-primary">
+                        <span className="text-xs font-bold text-foreground group-hover:text-primary">
                           Live Energy
                         </span>
                       </button>
@@ -1633,65 +2003,65 @@ export function AdminPanel({ initialTab = "overview" }: { initialTab?: AdminTab 
                 </div>
 
                 {/* Profile Edit Form */}
-                <form onSubmit={handleSaveAccount} className="space-y-4 text-xs">
+                <form onSubmit={handleSaveAccount} className="space-y-4 text-sm">
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div>
-                      <label className="font-bold text-muted-foreground block mb-1">Full Legal Name</label>
+                      <label className="font-bold text-muted-foreground block mb-1.5">Full Legal Name</label>
                       <input
                         type="text"
                         required
                         value={adminName}
                         onChange={(e) => setAdminName(e.target.value)}
-                        className="w-full rounded-xl border border-input bg-background py-2.5 px-3 text-xs text-foreground focus:border-primary focus:outline-none"
+                        className="w-full rounded-xl border border-input bg-background py-2.5 px-3.5 text-sm text-foreground focus:border-primary focus:outline-none"
                       />
                     </div>
 
                     <div>
-                      <label className="font-bold text-muted-foreground block mb-1">Official Host Email</label>
+                      <label className="font-bold text-muted-foreground block mb-1.5">Official Host Email</label>
                       <input
                         type="email"
                         required
                         value={adminEmail}
                         onChange={(e) => setAdminEmail(e.target.value)}
-                        className="w-full rounded-xl border border-input bg-background py-2.5 px-3 text-xs text-foreground focus:border-primary focus:outline-none"
+                        className="w-full rounded-xl border border-input bg-background py-2.5 px-3.5 text-sm text-foreground focus:border-primary focus:outline-none"
                       />
                     </div>
                   </div>
 
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div>
-                      <label className="font-bold text-muted-foreground block mb-1">Direct Mobile (WhatsApp)</label>
+                      <label className="font-bold text-muted-foreground block mb-1.5">Direct Mobile (WhatsApp)</label>
                       <input
                         type="text"
                         value={adminPhone}
                         onChange={(e) => setAdminPhone(e.target.value)}
-                        className="w-full rounded-xl border border-input bg-background py-2.5 px-3 text-xs text-foreground focus:border-primary focus:outline-none"
+                        className="w-full rounded-xl border border-input bg-background py-2.5 px-3.5 text-sm text-foreground focus:border-primary focus:outline-none"
                       />
                     </div>
 
                     <div>
-                      <label className="font-bold text-muted-foreground block mb-1">Display Title</label>
+                      <label className="font-bold text-muted-foreground block mb-1.5">Display Title</label>
                       <input
                         type="text"
                         value={adminTitle}
                         onChange={(e) => setAdminTitle(e.target.value)}
-                        className="w-full rounded-xl border border-input bg-background py-2.5 px-3 text-xs text-foreground focus:border-primary focus:outline-none"
+                        className="w-full rounded-xl border border-input bg-background py-2.5 px-3.5 text-sm text-foreground focus:border-primary focus:outline-none"
                       />
                     </div>
                   </div>
 
                   <div>
-                    <label className="font-bold text-muted-foreground block mb-1">Host Bio Summary</label>
+                    <label className="font-bold text-muted-foreground block mb-1.5">Host Bio Summary</label>
                     <textarea
-                      rows={2}
+                      rows={3}
                       value={adminBio}
                       onChange={(e) => setAdminBio(e.target.value)}
-                      className="w-full rounded-xl border border-input bg-background py-2.5 px-3 text-xs text-foreground focus:border-primary focus:outline-none"
+                      className="w-full rounded-xl border border-input bg-background py-2.5 px-3.5 text-sm text-foreground focus:border-primary focus:outline-none"
                     />
                   </div>
 
                   <div className="pt-2">
-                    <button type="submit" className="btn-red !py-2.5 !px-5 text-xs">
+                    <button type="submit" className="btn-red !py-2.5 !px-5 text-sm">
                       Save Profile Information
                     </button>
                   </div>
@@ -1700,57 +2070,57 @@ export function AdminPanel({ initialTab = "overview" }: { initialTab?: AdminTab 
 
               {/* Password & Security Card */}
               <div className="rounded-2xl border border-border bg-card p-6 shadow-sm space-y-4">
-                <div className="flex items-center gap-2 border-b border-border pb-3">
-                  <KeyRound className="h-4 w-4 text-primary" />
+                <div className="flex items-center gap-2.5 border-b border-border pb-3">
+                  <KeyRound className="h-5 w-5 text-primary" />
                   <div>
-                    <h3 className="text-sm font-bold text-foreground">Change Password & Security</h3>
-                    <p className="text-[11px] text-muted-foreground">Keep your admin authentication credentials secure.</p>
+                    <h3 className="font-display text-lg font-extrabold text-foreground">Change Password & Security</h3>
+                    <p className="text-sm text-muted-foreground">Keep your admin authentication credentials secure.</p>
                   </div>
                 </div>
 
-                <form onSubmit={handlePasswordSubmit} className="space-y-4 text-xs">
+                <form onSubmit={handlePasswordSubmit} className="space-y-4 text-sm">
                   <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                     <div>
-                      <label className="font-bold text-muted-foreground block mb-1">Current Password</label>
+                      <label className="font-bold text-muted-foreground block mb-1.5">Current Password</label>
                       <input
                         type="password"
                         required
                         value={currentPassword}
                         onChange={(e) => setCurrentPassword(e.target.value)}
                         placeholder="••••••••"
-                        className="w-full rounded-xl border border-input bg-background py-2.5 px-3 text-xs text-foreground focus:border-primary focus:outline-none"
+                        className="w-full rounded-xl border border-input bg-background py-2.5 px-3.5 text-sm text-foreground focus:border-primary focus:outline-none"
                       />
-                      <span className="text-[10px] text-muted-foreground mt-0.5 block">Default: sid123</span>
+                      <span className="text-xs text-muted-foreground mt-1 block">Default: sid123</span>
                     </div>
 
                     <div>
-                      <label className="font-bold text-muted-foreground block mb-1">New Password</label>
+                      <label className="font-bold text-muted-foreground block mb-1.5">New Password</label>
                       <input
                         type="password"
                         required
                         value={newPassword}
                         onChange={(e) => setNewPassword(e.target.value)}
                         placeholder="At least 6 characters"
-                        className="w-full rounded-xl border border-input bg-background py-2.5 px-3 text-xs text-foreground focus:border-primary focus:outline-none"
+                        className="w-full rounded-xl border border-input bg-background py-2.5 px-3.5 text-sm text-foreground focus:border-primary focus:outline-none"
                       />
                     </div>
 
                     <div>
-                      <label className="font-bold text-muted-foreground block mb-1">Confirm New Password</label>
+                      <label className="font-bold text-muted-foreground block mb-1.5">Confirm New Password</label>
                       <input
                         type="password"
                         required
                         value={confirmPassword}
                         onChange={(e) => setConfirmPassword(e.target.value)}
                         placeholder="Re-enter new password"
-                        className="w-full rounded-xl border border-input bg-background py-2.5 px-3 text-xs text-foreground focus:border-primary focus:outline-none"
+                        className="w-full rounded-xl border border-input bg-background py-2.5 px-3.5 text-sm text-foreground focus:border-primary focus:outline-none"
                       />
                     </div>
                   </div>
 
                   <button
                     type="submit"
-                    className="btn-red !py-2.5 !px-5 text-xs"
+                    className="btn-red !py-2.5 !px-5 text-sm"
                   >
                     Update Password & Save
                   </button>
@@ -1761,51 +2131,51 @@ export function AdminPanel({ initialTab = "overview" }: { initialTab?: AdminTab 
               <div className="rounded-2xl border border-border bg-card p-6 shadow-sm space-y-4">
                 <div className="flex items-center justify-between border-b border-border pb-3">
                   <div>
-                    <h3 className="text-sm font-bold text-foreground">Team Permissions & Management</h3>
-                    <p className="text-xs text-muted-foreground">Authorized team members with access to the Admin Panel.</p>
+                    <h3 className="font-display text-lg font-extrabold text-foreground">Team Permissions & Management</h3>
+                    <p className="text-sm text-muted-foreground">Authorized team members with access to the Admin Panel.</p>
                   </div>
                   <button
                     onClick={() => toast.info("Invitation link generated for team manager.")}
-                    className="btn-outline !py-1.5 !px-3 text-xs flex items-center gap-1.5"
+                    className="btn-outline !py-2 !px-3.5 text-sm flex items-center gap-1.5"
                   >
-                    <Plus className="h-3.5 w-3.5" /> Add Team Member
+                    <Plus className="h-4 w-4" /> Add Team Member
                   </button>
                 </div>
 
                 <div className="overflow-x-auto">
-                  <table className="w-full text-left text-xs">
-                    <thead className="border-b border-border bg-muted/30 text-muted-foreground uppercase tracking-wider">
+                  <table className="w-full text-left text-sm">
+                    <thead className="border-b border-border bg-muted/30 text-xs font-bold text-muted-foreground uppercase tracking-wider">
                       <tr>
-                        <th className="p-3">User</th>
-                        <th className="p-3">Role</th>
-                        <th className="p-3">Access Level</th>
-                        <th className="p-3 text-right">Status</th>
+                        <th className="p-3.5">User</th>
+                        <th className="p-3.5">Role</th>
+                        <th className="p-3.5">Access Level</th>
+                        <th className="p-3.5 text-right">Status</th>
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-border">
                       <tr>
-                        <td className="p-3">
+                        <td className="p-3.5">
                           <p className="font-bold text-foreground">Siddharth Maurya</p>
-                          <p className="text-[11px] text-muted-foreground font-mono">admin@siddwhizz.com</p>
+                          <p className="text-xs text-muted-foreground font-mono">admin@siddwhizz.com</p>
                         </td>
-                        <td className="p-3 font-semibold text-primary">Super Admin (Host)</td>
-                        <td className="p-3 text-muted-foreground">Full Permissions</td>
-                        <td className="p-3 text-right">
-                          <span className="rounded-full bg-primary/20 text-primary px-2 py-0.5 text-[10px] font-bold border border-primary/30">
+                        <td className="p-3.5 font-semibold text-primary">Super Admin (Host)</td>
+                        <td className="p-3.5 text-muted-foreground">Full Permissions</td>
+                        <td className="p-3.5 text-right">
+                          <span className="rounded-full bg-primary/20 text-primary px-2.5 py-0.5 text-xs font-bold border border-primary/30">
                             Active
                           </span>
                         </td>
                       </tr>
 
                       <tr>
-                        <td className="p-3">
+                        <td className="p-3.5">
                           <p className="font-bold text-foreground">Neha Sharma</p>
-                          <p className="text-[11px] text-muted-foreground font-mono">neha.bookings@siddwhizz.com</p>
+                          <p className="text-xs text-muted-foreground font-mono">neha.bookings@siddwhizz.com</p>
                         </td>
-                        <td className="p-3 font-semibold text-foreground">Booking Manager</td>
-                        <td className="p-3 text-muted-foreground">Enquiries & Contracts</td>
-                        <td className="p-3 text-right">
-                          <span className="rounded-full bg-muted text-foreground px-2 py-0.5 text-[10px] font-bold border border-border">
+                        <td className="p-3.5 font-semibold text-foreground">Booking Manager</td>
+                        <td className="p-3.5 text-muted-foreground">Enquiries & Contracts</td>
+                        <td className="p-3.5 text-right">
+                          <span className="rounded-full bg-muted text-foreground px-2.5 py-0.5 text-xs font-bold border border-border">
                             Active
                           </span>
                         </td>
@@ -1822,13 +2192,20 @@ export function AdminPanel({ initialTab = "overview" }: { initialTab?: AdminTab 
           {/* ========================================================= */}
           {activeTab === "settings" && (
             <div className="space-y-6 max-w-4xl">
+              <div>
+                <p className="eyebrow mb-1">Platform Preferences</p>
+                <h2 className="display text-2xl sm:text-3xl text-foreground">
+                  System <span className="text-primary">Settings</span>
+                </h2>
+              </div>
+
               <div className="rounded-2xl border border-border bg-card p-6 shadow-sm space-y-6">
                 <div>
-                  <h3 className="text-base font-bold text-foreground">Website & Booking Configuration</h3>
-                  <p className="text-xs text-muted-foreground">Control public calendar availability and lead routing rules.</p>
+                  <h3 className="font-display text-lg font-extrabold text-foreground">Website & Booking Configuration</h3>
+                  <p className="text-sm text-muted-foreground">Control public calendar availability and lead routing rules.</p>
                 </div>
 
-                <div className="space-y-4 text-xs">
+                <div className="space-y-4 text-sm">
                   {/* Availability switch */}
                   <div className="flex items-center justify-between border-b border-border pb-4">
                     <div>
@@ -1900,27 +2277,27 @@ export function AdminPanel({ initialTab = "overview" }: { initialTab?: AdminTab 
 
                   {/* Direct Contact Phone */}
                   <div>
-                    <label className="font-bold text-foreground block mb-1">Official Host Booking Hotline</label>
+                    <label className="font-bold text-foreground block mb-1.5">Official Host Booking Hotline</label>
                     <input
                       type="text"
                       defaultValue="+91 98200 88776"
-                      className="w-full max-w-sm rounded-xl border border-input bg-background py-2 px-3 text-xs text-foreground focus:border-primary focus:outline-none"
+                      className="w-full max-w-sm rounded-xl border border-input bg-background py-2.5 px-3.5 text-sm text-foreground focus:border-primary focus:outline-none"
                     />
                   </div>
 
                   {/* Neon Database Status */}
                   <div className="rounded-xl border border-border bg-background p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                     <div className="flex items-center gap-3">
-                      <div className="rounded-xl bg-primary/20 p-2 text-primary border border-primary/30">
+                      <div className="rounded-xl bg-primary/20 p-2.5 text-primary border border-primary/30">
                         <Database className="h-5 w-5" />
                       </div>
                       <div>
                         <p className="font-bold text-foreground">Neon PostgreSQL Database</p>
-                        <p className="text-[11px] text-muted-foreground">Connected via DATABASE_URL (.env)</p>
+                        <p className="text-xs text-muted-foreground">Connected via DATABASE_URL (.env)</p>
                       </div>
                     </div>
 
-                    <Link to="/db-status" className="btn-outline !py-1.5 !px-3 text-xs">
+                    <Link to="/db-status" className="btn-outline !py-2 !px-4 text-sm">
                       Diagnostics →
                     </Link>
                   </div>
@@ -1934,6 +2311,13 @@ export function AdminPanel({ initialTab = "overview" }: { initialTab?: AdminTab 
           {/* ========================================================= */}
           {activeTab === "support" && (
             <div className="space-y-6 max-w-4xl">
+              <div>
+                <p className="eyebrow mb-1">Technical Support</p>
+                <h2 className="display text-2xl sm:text-3xl text-foreground">
+                  Developer <span className="text-primary">Assistance</span>
+                </h2>
+              </div>
+
               {/* Dedicated Developer Hotline Card */}
               <div className="rounded-2xl border border-primary/30 bg-primary/5 p-6 shadow-sm space-y-4">
                 <div className="flex items-start gap-4">
@@ -1941,13 +2325,13 @@ export function AdminPanel({ initialTab = "overview" }: { initialTab?: AdminTab 
                     <HelpCircle className="h-8 w-8" />
                   </div>
                   <div>
-                    <span className="text-[10px] font-black uppercase tracking-wider text-primary bg-primary/20 px-2 py-0.5 rounded border border-primary/30">
+                    <span className="text-xs font-black uppercase tracking-wider text-primary bg-primary/20 px-2.5 py-0.5 rounded border border-primary/30">
                       Direct Developer Support Channel
                     </span>
-                    <h3 className="text-xl font-black font-display text-foreground mt-1">
+                    <h3 className="font-display text-xl font-extrabold text-foreground mt-1.5">
                       Developer & Technical Assistance
                     </h3>
-                    <p className="text-xs text-muted-foreground mt-1 leading-relaxed">
+                    <p className="text-sm text-muted-foreground mt-1 leading-relaxed">
                       Need custom features, database migration, or experiencing any issue on the live website? Your dedicated engineering team is directly accessible via WhatsApp and email.
                     </p>
                   </div>
@@ -1958,7 +2342,7 @@ export function AdminPanel({ initialTab = "overview" }: { initialTab?: AdminTab 
                     href="https://wa.me/919999999999?text=Hi%20Developer,%20I%20need%20support%20with%20SiddWhizz%20portfolio%20website"
                     target="_blank"
                     rel="noreferrer"
-                    className="flex items-center gap-2 rounded-xl bg-primary/20 border border-primary/40 p-3 text-primary hover:bg-primary/30 transition text-xs font-bold"
+                    className="flex items-center gap-2 rounded-xl bg-primary/20 border border-primary/40 p-3.5 text-primary hover:bg-primary/30 transition text-sm font-bold"
                   >
                     <MessageCircle className="h-4 w-4" />
                     <span>WhatsApp Developer</span>
@@ -1966,7 +2350,7 @@ export function AdminPanel({ initialTab = "overview" }: { initialTab?: AdminTab 
 
                   <a
                     href="mailto:support@siddwhizz.com?subject=Developer%20Support%20Request%20-%20SiddWhizz"
-                    className="flex items-center gap-2 rounded-xl bg-muted border border-border p-3 text-foreground hover:bg-accent transition text-xs font-bold"
+                    className="flex items-center gap-2 rounded-xl bg-muted border border-border p-3.5 text-foreground hover:bg-accent transition text-sm font-bold"
                   >
                     <Mail className="h-4 w-4" />
                     <span>Email Technical Lead</span>
@@ -1974,7 +2358,7 @@ export function AdminPanel({ initialTab = "overview" }: { initialTab?: AdminTab 
 
                   <Link
                     to="/db-status"
-                    className="flex items-center gap-2 rounded-xl bg-primary/10 border border-primary/30 p-3 text-primary hover:bg-primary/20 transition text-xs font-bold"
+                    className="flex items-center gap-2 rounded-xl bg-primary/10 border border-primary/30 p-3.5 text-primary hover:bg-primary/20 transition text-sm font-bold"
                   >
                     <Database className="h-4 w-4" />
                     <span>Neon Database Check</span>
@@ -1984,22 +2368,22 @@ export function AdminPanel({ initialTab = "overview" }: { initialTab?: AdminTab 
 
               {/* System Diagnostics */}
               <div className="rounded-2xl border border-border bg-card p-6 shadow-sm space-y-4">
-                <h4 className="text-sm font-bold text-foreground">System Health & Runtime Diagnostics</h4>
-                <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 text-xs">
-                  <div className="p-3 rounded-xl bg-background border border-border">
-                    <p className="text-[10px] text-muted-foreground uppercase font-bold">Framework</p>
+                <h4 className="font-display text-lg font-extrabold text-foreground">System Health & Runtime Diagnostics</h4>
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 text-sm">
+                  <div className="p-3.5 rounded-xl bg-background border border-border">
+                    <p className="text-xs text-muted-foreground uppercase font-bold">Framework</p>
                     <p className="font-semibold text-foreground mt-0.5">TanStack Start v1.168</p>
                   </div>
-                  <div className="p-3 rounded-xl bg-background border border-border">
-                    <p className="text-[10px] text-muted-foreground uppercase font-bold">Engine</p>
+                  <div className="p-3.5 rounded-xl bg-background border border-border">
+                    <p className="text-xs text-muted-foreground uppercase font-bold">Engine</p>
                     <p className="font-semibold text-foreground mt-0.5">Vite 8 & Nitro SSR</p>
                   </div>
-                  <div className="p-3 rounded-xl bg-background border border-border">
-                    <p className="text-[10px] text-muted-foreground uppercase font-bold">Database</p>
+                  <div className="p-3.5 rounded-xl bg-background border border-border">
+                    <p className="text-xs text-muted-foreground uppercase font-bold">Database</p>
                     <p className="font-semibold text-primary mt-0.5">Neon PostgreSQL</p>
                   </div>
-                  <div className="p-3 rounded-xl bg-background border border-border">
-                    <p className="text-[10px] text-muted-foreground uppercase font-bold">Production Node</p>
+                  <div className="p-3.5 rounded-xl bg-background border border-border">
+                    <p className="text-xs text-muted-foreground uppercase font-bold">Production Node</p>
                     <p className="font-semibold text-foreground mt-0.5">v22.16 LTS</p>
                   </div>
                 </div>
@@ -2007,26 +2391,26 @@ export function AdminPanel({ initialTab = "overview" }: { initialTab?: AdminTab 
 
               {/* Submit Ticket Form */}
               <div className="rounded-2xl border border-border bg-card p-6 shadow-sm space-y-4">
-                <h4 className="text-sm font-bold text-foreground">Log an Issue or Feature Request to Developer</h4>
-                <form onSubmit={handleSubmitTicket} className="space-y-3 text-xs">
+                <h4 className="font-display text-lg font-extrabold text-foreground">Log an Issue or Feature Request to Developer</h4>
+                <form onSubmit={handleSubmitTicket} className="space-y-4 text-sm">
                   <div>
-                    <label className="font-bold text-muted-foreground block mb-1">Issue / Feature Summary</label>
+                    <label className="font-bold text-muted-foreground block mb-1.5">Issue / Feature Summary</label>
                     <input
                       type="text"
                       required
                       value={ticketSubject}
                       onChange={(e) => setTicketSubject(e.target.value)}
                       placeholder="e.g. Need to add a new video embed format on portfolio page"
-                      className="w-full rounded-xl border border-input bg-background py-2 px-3 text-xs text-foreground focus:border-primary focus:outline-none"
+                      className="w-full rounded-xl border border-input bg-background py-2.5 px-3.5 text-sm text-foreground focus:border-primary focus:outline-none"
                     />
                   </div>
 
                   <div>
-                    <label className="font-bold text-muted-foreground block mb-1">Priority Level</label>
+                    <label className="font-bold text-muted-foreground block mb-1.5">Priority Level</label>
                     <select
                       value={ticketSeverity}
                       onChange={(e) => setTicketSeverity(e.target.value)}
-                      className="w-full max-w-xs rounded-xl border border-input bg-background py-2 px-3 text-xs text-foreground focus:border-primary focus:outline-none"
+                      className="w-full max-w-xs rounded-xl border border-input bg-background py-2.5 px-3.5 text-sm text-foreground focus:border-primary focus:outline-none"
                     >
                       <option value="Low">Low (General inquiry / suggestion)</option>
                       <option value="Medium">Medium (Feature enhancement)</option>
@@ -2036,21 +2420,386 @@ export function AdminPanel({ initialTab = "overview" }: { initialTab?: AdminTab 
                   </div>
 
                   <div>
-                    <label className="font-bold text-muted-foreground block mb-1">Detailed Description</label>
+                    <label className="font-bold text-muted-foreground block mb-1.5">Detailed Description</label>
                     <textarea
                       required
                       rows={3}
                       value={ticketMessage}
                       onChange={(e) => setTicketMessage(e.target.value)}
                       placeholder="Describe what you want changed or what happened..."
-                      className="w-full rounded-xl border border-input bg-background py-2 px-3 text-xs text-foreground focus:border-primary focus:outline-none"
+                      className="w-full rounded-xl border border-input bg-background py-2.5 px-3.5 text-sm text-foreground focus:border-primary focus:outline-none"
                     />
                   </div>
 
-                  <button type="submit" className="btn-red !py-2 !px-4 text-xs flex items-center gap-2">
-                    <Send className="h-3.5 w-3.5" /> Submit to Engineering Team
+                  <button type="submit" className="btn-red !py-2.5 !px-5 text-sm flex items-center gap-2">
+                    <Send className="h-4 w-4" /> Submit to Engineering Team
                   </button>
                 </form>
+              </div>
+            </div>
+          )}
+
+          {/* ========================================================= */}
+          {/* INTERACTIVE EMAIL DRAFT POPUP MODAL                       */}
+          {/* ========================================================= */}
+          {emailModalEnquiry && (
+            <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-4 backdrop-blur-sm animate-in fade-in-50">
+              <div className="w-full max-w-2xl rounded-2xl border border-border bg-card p-6 shadow-2xl space-y-4">
+                <div className="flex items-start justify-between border-b border-border pb-3">
+                  <div>
+                    <div className="flex items-center gap-2">
+                      <span className="rounded-md bg-primary/20 text-primary px-2 py-0.5 text-xs font-bold font-mono">
+                        {emailModalEnquiry.id}
+                      </span>
+                      <h3 className="font-display text-lg font-extrabold text-foreground">
+                        Draft Email Reply
+                      </h3>
+                    </div>
+                    <p className="text-xs text-muted-foreground mt-0.5">
+                      To: <span className="font-semibold text-foreground">{emailModalEnquiry.clientName}</span> ({emailModalEnquiry.email}) • Event: {emailModalEnquiry.eventName}
+                    </p>
+                  </div>
+                  <button
+                    onClick={() => setEmailModalEnquiry(null)}
+                    className="rounded-lg p-1 text-muted-foreground hover:bg-accent hover:text-foreground cursor-pointer"
+                    aria-label="Close Email Modal"
+                  >
+                    <X className="h-5 w-5" />
+                  </button>
+                </div>
+
+                <div className="space-y-3 text-sm">
+                  <div>
+                    <label className="text-xs font-bold uppercase text-muted-foreground mb-1 block">Subject Line</label>
+                    <input
+                      type="text"
+                      value={emailSubject}
+                      onChange={(e) => setEmailSubject(e.target.value)}
+                      className="w-full rounded-xl border border-input bg-background py-2.5 px-3.5 text-sm text-foreground focus:border-primary focus:outline-none font-medium"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="text-xs font-bold uppercase text-muted-foreground mb-1 block">Email Message Body</label>
+                    <textarea
+                      rows={10}
+                      value={emailBody}
+                      onChange={(e) => setEmailBody(e.target.value)}
+                      className="w-full rounded-xl border border-input bg-background p-3.5 text-sm text-foreground focus:border-primary focus:outline-none font-sans leading-relaxed resize-y"
+                    />
+                  </div>
+                </div>
+
+                <div className="flex flex-wrap items-center justify-between gap-2 border-t border-border pt-3">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      navigator.clipboard.writeText(`Subject: ${emailSubject}\n\n${emailBody}`);
+                      toast.success("Draft email text copied to clipboard!");
+                    }}
+                    className="flex items-center gap-1.5 rounded-lg border border-border bg-accent/60 px-3 py-2 text-xs font-bold text-foreground hover:bg-accent transition cursor-pointer"
+                  >
+                    <Copy className="h-3.5 w-3.5" />
+                    <span>Copy Draft</span>
+                  </button>
+
+                  <div className="flex items-center gap-2">
+                    <button
+                      type="button"
+                      onClick={() => setEmailModalEnquiry(null)}
+                      className="btn-outline !py-2 !px-4 text-xs cursor-pointer"
+                    >
+                      Cancel
+                    </button>
+                    <button
+                      type="button"
+                      onClick={handleSendDraftEmail}
+                      className="btn-red !py-2 !px-5 text-xs flex items-center gap-1.5 cursor-pointer"
+                    >
+                      <Mail className="h-3.5 w-3.5" />
+                      <span>Open in Email App</span>
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* ========================================================= */}
+          {/* INTERACTIVE WHATSAPP DRAFT POPUP MODAL                    */}
+          {/* ========================================================= */}
+          {whatsappModalEnquiry && (
+            <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-4 backdrop-blur-sm animate-in fade-in-50">
+              <div className="w-full max-w-lg rounded-2xl border border-border bg-card p-6 shadow-2xl space-y-4">
+                <div className="flex items-start justify-between border-b border-border pb-3">
+                  <div>
+                    <div className="flex items-center gap-2">
+                      <span className="rounded-md bg-emerald-500/20 text-emerald-400 px-2 py-0.5 text-xs font-bold font-mono">
+                        {whatsappModalEnquiry.id}
+                      </span>
+                      <h3 className="font-display text-lg font-extrabold text-foreground">
+                        Draft WhatsApp Message
+                      </h3>
+                    </div>
+                    <p className="text-xs text-muted-foreground mt-0.5">
+                      Client: <span className="font-semibold text-foreground">{whatsappModalEnquiry.clientName}</span> • Phone: <span className="font-mono text-foreground font-bold">{whatsappModalEnquiry.phone}</span>
+                    </p>
+                  </div>
+                  <button
+                    onClick={() => setWhatsappModalEnquiry(null)}
+                    className="rounded-lg p-1 text-muted-foreground hover:bg-accent hover:text-foreground cursor-pointer"
+                    aria-label="Close WhatsApp Modal"
+                  >
+                    <X className="h-5 w-5" />
+                  </button>
+                </div>
+
+                <div className="space-y-3 text-sm">
+                  <div>
+                    <label className="text-xs font-bold uppercase text-muted-foreground mb-1 block">WhatsApp Message</label>
+                    <textarea
+                      rows={6}
+                      value={whatsappMessage}
+                      onChange={(e) => setWhatsappMessage(e.target.value)}
+                      className="w-full rounded-xl border border-input bg-background p-3.5 text-sm text-foreground focus:border-primary focus:outline-none font-sans leading-relaxed resize-y"
+                    />
+                  </div>
+                </div>
+
+                <div className="flex flex-wrap items-center justify-between gap-2 border-t border-border pt-3">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      navigator.clipboard.writeText(whatsappMessage);
+                      toast.success("WhatsApp message copied to clipboard!");
+                    }}
+                    className="flex items-center gap-1.5 rounded-lg border border-border bg-accent/60 px-3 py-2 text-xs font-bold text-foreground hover:bg-accent transition cursor-pointer"
+                  >
+                    <Copy className="h-3.5 w-3.5" />
+                    <span>Copy Message</span>
+                  </button>
+
+                  <div className="flex items-center gap-2">
+                    <button
+                      type="button"
+                      onClick={() => setWhatsappModalEnquiry(null)}
+                      className="btn-outline !py-2 !px-4 text-xs cursor-pointer"
+                    >
+                      Cancel
+                    </button>
+                    <button
+                      type="button"
+                      onClick={handleSendWhatsApp}
+                      className="btn-red !py-2 !px-5 text-xs flex items-center gap-1.5 cursor-pointer"
+                    >
+                      <MessageCircle className="h-3.5 w-3.5" />
+                      <span>Open in WhatsApp</span>
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* ========================================================= */}
+          {/* FULL MEDIA ASSET VIEWER MODAL (LIGHTBOX)                  */}
+          {/* ========================================================= */}
+          {viewingMedia && (
+            <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/85 p-4 backdrop-blur-md animate-in fade-in-50">
+              <div className="w-full max-w-4xl rounded-2xl border border-border bg-card p-6 shadow-2xl space-y-4 max-h-[92vh] flex flex-col">
+                {/* Header */}
+                <div className="flex items-start justify-between border-b border-border pb-3 shrink-0">
+                  <div>
+                    <div className="flex items-center gap-2">
+                      <span
+                        className={`rounded-full px-2.5 py-0.5 text-xs font-bold uppercase ${
+                          viewingMedia.type === "image"
+                            ? "bg-primary/20 text-primary border border-primary/30"
+                            : viewingMedia.type === "video"
+                            ? "bg-red-500/20 text-red-400 border border-red-500/30"
+                            : viewingMedia.type === "audio"
+                            ? "bg-amber-500/20 text-amber-400 border border-amber-500/30"
+                            : "bg-muted text-foreground border border-border"
+                        }`}
+                      >
+                        {viewingMedia.type}
+                      </span>
+                      <span className="font-mono text-xs text-muted-foreground">
+                        {viewingMedia.size} • Added {viewingMedia.createdAt}
+                      </span>
+                    </div>
+                    <h3 className="font-display text-lg sm:text-xl font-extrabold text-foreground mt-1">
+                      {viewingMedia.title}
+                    </h3>
+                    <p className="text-xs text-muted-foreground">
+                      Category: {viewingMedia.category} {viewingMedia.dimensions ? `• ${viewingMedia.dimensions}` : viewingMedia.duration ? `• ${viewingMedia.duration}` : ""}
+                    </p>
+                  </div>
+
+                  <button
+                    onClick={() => setViewingMedia(null)}
+                    className="rounded-lg p-1.5 text-muted-foreground hover:bg-accent hover:text-foreground cursor-pointer"
+                    aria-label="Close Media Viewer"
+                  >
+                    <X className="h-5 w-5" />
+                  </button>
+                </div>
+
+                {/* Main Media Content Viewer */}
+                <div className="flex-1 overflow-auto rounded-xl bg-ink/80 border border-border flex items-center justify-center p-3 min-h-[300px]">
+                  {viewingMedia.type === "image" ? (
+                    <img
+                      src={viewingMedia.url}
+                      alt={viewingMedia.title}
+                      className="max-h-[62vh] max-w-full rounded-lg object-contain shadow-2xl"
+                    />
+                  ) : viewingMedia.type === "video" ? (
+                    viewingMedia.url.includes("youtube.com") || viewingMedia.url.includes("youtu.be") ? (
+                      <div className="w-full aspect-video rounded-xl overflow-hidden shadow-2xl">
+                        <iframe
+                          src={
+                            viewingMedia.url.includes("watch?v=")
+                              ? viewingMedia.url.replace("watch?v=", "embed/")
+                              : viewingMedia.url.replace("youtu.be/", "www.youtube.com/embed/")
+                          }
+                          title={viewingMedia.title}
+                          className="w-full h-full"
+                          allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                          allowFullScreen
+                        />
+                      </div>
+                    ) : (
+                      <video
+                        src={viewingMedia.url}
+                        controls
+                        autoPlay
+                        className="w-full max-h-[62vh] rounded-xl shadow-2xl bg-black"
+                      />
+                    )
+                  ) : viewingMedia.type === "audio" ? (
+                    <div className="w-full max-w-md p-8 rounded-2xl bg-card border border-border shadow-2xl text-center space-y-4">
+                      <div className="mx-auto grid h-16 w-16 place-items-center rounded-full bg-amber-500/20 text-amber-400 border border-amber-500/30">
+                        <Volume2 className="h-8 w-8" />
+                      </div>
+                      <div>
+                        <p className="font-display text-base font-bold text-foreground">{viewingMedia.title}</p>
+                        <p className="text-xs text-muted-foreground mt-0.5">High-Impact Stage Audio Clip</p>
+                      </div>
+                      <audio src={viewingMedia.url} controls autoPlay className="w-full" />
+                    </div>
+                  ) : (
+                    <div className="w-full max-w-md p-8 rounded-2xl bg-card border border-border shadow-2xl text-center space-y-4">
+                      <div className="mx-auto grid h-16 w-16 place-items-center rounded-full bg-primary/20 text-primary border border-primary/30">
+                        <FileText className="h-8 w-8" />
+                      </div>
+                      <div>
+                        <p className="font-display text-base font-bold text-foreground">{viewingMedia.title}</p>
+                        <p className="text-xs text-muted-foreground mt-0.5">Official Stage Rider & Specification PDF</p>
+                      </div>
+                      <div className="flex justify-center gap-3">
+                        <a
+                          href={viewingMedia.url}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="btn-red !py-2 !px-4 text-xs flex items-center gap-1.5"
+                        >
+                          <ExternalLink className="h-3.5 w-3.5" /> Open Document
+                        </a>
+                        <a
+                          href={viewingMedia.url}
+                          download
+                          className="btn-outline !py-2 !px-4 text-xs flex items-center gap-1.5"
+                        >
+                          <Download className="h-3.5 w-3.5" /> Download
+                        </a>
+                      </div>
+                    </div>
+                  )}
+                </div>
+
+                {/* Footer Controls */}
+                <div className="flex flex-wrap items-center justify-between gap-3 border-t border-border pt-3 shrink-0">
+                  <button
+                    type="button"
+                    onClick={() => setMediaToDelete(viewingMedia)}
+                    className="inline-flex items-center gap-1.5 rounded-lg border border-primary/40 bg-primary/10 px-3 py-2 text-xs font-bold text-primary hover:bg-primary hover:text-white transition cursor-pointer"
+                  >
+                    <Trash2 className="h-3.5 w-3.5" />
+                    <span>Delete from Database</span>
+                  </button>
+
+                  <div className="flex items-center gap-2">
+                    <button
+                      type="button"
+                      onClick={() => handleCopyLink(viewingMedia.url)}
+                      className="btn-outline !py-2 !px-4 text-xs flex items-center gap-1.5 cursor-pointer"
+                    >
+                      <Copy className="h-3.5 w-3.5" />
+                      <span>Copy Link</span>
+                    </button>
+                    <a
+                      href={viewingMedia.url}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="btn-red !py-2 !px-4 text-xs flex items-center gap-1.5"
+                    >
+                      <ExternalLink className="h-3.5 w-3.5" />
+                      <span>Open in New Tab</span>
+                    </a>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* ========================================================= */}
+          {/* DELETE MEDIA ASSET CONFIRMATION MODAL                     */}
+          {/* ========================================================= */}
+          {mediaToDelete && (
+            <div className="fixed inset-0 z-60 flex items-center justify-center bg-black/85 p-4 backdrop-blur-sm animate-in fade-in-50">
+              <div className="w-full max-w-md rounded-2xl border border-border bg-card p-6 shadow-2xl space-y-4">
+                <div className="flex items-center gap-3">
+                  <div className="grid h-12 w-12 place-items-center rounded-full bg-primary/20 text-primary border border-primary/30 shrink-0">
+                    <AlertTriangle className="h-6 w-6" />
+                  </div>
+                  <div>
+                    <h3 className="font-display text-lg font-extrabold text-foreground">
+                      Delete Media Asset?
+                    </h3>
+                    <p className="text-xs text-muted-foreground mt-0.5">
+                      This action cannot be undone.
+                    </p>
+                  </div>
+                </div>
+
+                <div className="rounded-xl border border-border bg-background p-3.5 text-sm space-y-1">
+                  <p className="font-bold text-foreground line-clamp-1">{mediaToDelete.title}</p>
+                  <p className="text-xs text-muted-foreground font-mono">
+                    Type: {mediaToDelete.type.toUpperCase()} • Size: {mediaToDelete.size}
+                  </p>
+                </div>
+
+                <p className="text-xs text-muted-foreground leading-relaxed">
+                  Are you sure you want to permanently delete this media asset from your local and database storage?
+                </p>
+
+                <div className="flex justify-end gap-2 pt-2 border-t border-border">
+                  <button
+                    type="button"
+                    onClick={() => setMediaToDelete(null)}
+                    className="btn-outline !py-2 !px-4 text-xs cursor-pointer"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="button"
+                    onClick={handleConfirmDelete}
+                    className="btn-red !py-2 !px-5 text-xs flex items-center gap-1.5 cursor-pointer"
+                  >
+                    <Trash2 className="h-3.5 w-3.5" />
+                    <span>Permanently Delete</span>
+                  </button>
+                </div>
               </div>
             </div>
           )}

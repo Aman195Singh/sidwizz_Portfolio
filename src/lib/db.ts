@@ -58,6 +58,7 @@ export function getLiveNeonTables() {
     { name: "events", description: "Confirmed summits, corporate galas & festival archives", rows: bookings.length + 10 },
     { name: "media_assets", description: "Stage photos, audio clips & press kit objects", rows: media.length },
     { name: "testimonials", description: "Client recommendations & event organizer quotes", rows: 8 },
+    { name: "support_tickets", description: "Technical tickets & feature requests logged to developer", rows: 1 },
   ];
 }
 
@@ -69,6 +70,7 @@ export const EXPECTED_NEON_TABLES = [
   { name: "events", description: "Confirmed summits, corporate galas & festival archives", rows: 12 },
   { name: "media_assets", description: "Stage photos, audio clips & press kit objects", rows: 6 },
   { name: "testimonials", description: "Client recommendations & event organizer quotes", rows: 8 },
+  { name: "support_tickets", description: "Technical tickets & feature requests logged to developer", rows: 1 },
 ];
 
 /**

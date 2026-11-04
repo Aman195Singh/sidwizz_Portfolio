@@ -239,58 +239,58 @@ export function OrganizerPanel() {
   };
 
   return (
-    <div className="flex min-h-screen bg-background text-white font-sans antialiased selection:bg-primary selection:text-white">
+    <div className="flex h-screen overflow-hidden bg-background text-foreground font-sans antialiased selection:bg-primary selection:text-primary-foreground">
       {/* ------------------------------------------------------------- */}
-      {/* LEFT NAVIGATION SIDEBAR                                       */}
+      {/* LEFT NAVIGATION SIDEBAR (Fixed & Non-Scrolling with Page)     */}
       {/* ------------------------------------------------------------- */}
       <aside
-        className={`fixed inset-y-0 left-0 z-50 flex w-64 flex-col border-r border-border bg-card backdrop-blur-md transition-transform duration-300 md:static md:translate-x-0 ${
+        className={`fixed inset-y-0 left-0 z-50 flex w-64 shrink-0 flex-col border-r border-border bg-card backdrop-blur-md transition-transform duration-300 md:static md:h-full md:translate-x-0 ${
           sidebarOpen ? "translate-x-0 shadow-2xl" : "-translate-x-full"
         }`}
       >
         {/* Brand Header */}
-        <div className="flex h-16 items-center justify-between border-b border-border px-5">
+        <div className="flex h-16 shrink-0 items-center justify-between border-b border-border px-5">
           <Link to="/" className="flex items-center gap-2">
             <Logo />
           </Link>
           <button
             onClick={() => setSidebarOpen(false)}
-            className="rounded-lg p-1 text-muted-foreground hover:bg-accent hover:text-white md:hidden"
+            className="rounded-lg p-1.5 text-muted-foreground hover:bg-accent hover:text-foreground md:hidden"
             aria-label="Close menu"
           >
             <X className="h-5 w-5" />
           </button>
         </div>
 
-        {/* Organizer Badge */}
-        <div className="px-5 py-3 border-b border-border bg-muted/30">
+        {/* Organizer Badge (Matches Admin Sidebar Role Banner) */}
+        <div className="px-5 py-3.5 border-b border-border bg-primary/10 shrink-0">
           <div className="flex items-center justify-between">
-            <span className="text-[10px] font-black uppercase tracking-wider text-white flex items-center gap-1.5">
-              <Building className="h-3.5 w-3.5 text-primary" /> Organiser Portal
+            <span className="text-xs font-black uppercase tracking-wider text-primary flex items-center gap-1.5">
+              <Building className="h-4 w-4 text-primary" /> Organiser Portal
             </span>
-            <span className="rounded-full bg-white/10 text-white border border-border px-2 py-0.5 text-[9px] font-bold">
+            <span className="rounded-full bg-primary/20 text-primary border border-primary/30 px-2 py-0.5 text-[11px] font-bold">
               Verified
             </span>
           </div>
-          <p className="text-xs font-bold text-white mt-1 truncate">{user?.name || "Event Organizer"}</p>
-          <p className="text-[11px] text-muted-foreground truncate">{user?.organization || "Apex Global Summits"}</p>
+          <p className="text-sm font-bold text-foreground mt-1 truncate">{user?.name || "Event Organizer"}</p>
+          <p className="text-xs text-muted-foreground truncate">{user?.organization || "Apex Global Summits"}</p>
         </div>
 
-        {/* Navigation Menu */}
-        <nav className="flex-1 space-y-1 overflow-y-auto p-3 text-xs">
+        {/* Navigation Menu (Matches Admin Sidebar Hover & Active Style) */}
+        <nav className="flex-1 space-y-1.5 overflow-y-auto p-3 text-sm">
           <button
             onClick={() => {
               setActiveTab("overview");
               setSidebarOpen(false);
             }}
-            className={`flex w-full items-center justify-between rounded-xl px-3 py-2.5 font-semibold transition ${
+            className={`flex w-full items-center justify-between rounded-xl px-3.5 py-3 font-semibold transition ${
               activeTab === "overview"
-                ? "bg-primary text-white shadow-md font-bold"
-                : "text-muted-foreground hover:bg-card hover:text-white"
+                ? "bg-primary text-primary-foreground shadow-sm font-bold"
+                : "text-foreground/80 hover:bg-accent hover:text-foreground"
             }`}
           >
-            <span className="flex items-center gap-2.5">
-              <LayoutDashboard className="h-4 w-4" /> Overview
+            <span className="flex items-center gap-3">
+              <LayoutDashboard className="h-4 w-4 shrink-0" /> Overview
             </span>
           </button>
 
@@ -299,16 +299,16 @@ export function OrganizerPanel() {
               setActiveTab("enquiries");
               setSidebarOpen(false);
             }}
-            className={`flex w-full items-center justify-between rounded-xl px-3 py-2.5 font-semibold transition ${
+            className={`flex w-full items-center justify-between rounded-xl px-3.5 py-3 font-semibold transition ${
               activeTab === "enquiries"
-                ? "bg-primary text-white shadow-md font-bold"
-                : "text-muted-foreground hover:bg-card hover:text-white"
+                ? "bg-primary text-primary-foreground shadow-sm font-bold"
+                : "text-foreground/80 hover:bg-accent hover:text-foreground"
             }`}
           >
-            <span className="flex items-center gap-2.5">
-              <Inbox className="h-4 w-4" /> My Enquiries
+            <span className="flex items-center gap-3">
+              <Inbox className="h-4 w-4 shrink-0" /> My Enquiries
             </span>
-            <span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-muted text-white">
+            <span className="text-xs font-bold px-2 py-0.5 rounded-full bg-muted text-foreground">
               {enquiries.length}
             </span>
           </button>
@@ -318,16 +318,16 @@ export function OrganizerPanel() {
               setActiveTab("bookings");
               setSidebarOpen(false);
             }}
-            className={`flex w-full items-center justify-between rounded-xl px-3 py-2.5 font-semibold transition ${
+            className={`flex w-full items-center justify-between rounded-xl px-3.5 py-3 font-semibold transition ${
               activeTab === "bookings"
-                ? "bg-primary text-white shadow-md font-bold"
-                : "text-muted-foreground hover:bg-card hover:text-white"
+                ? "bg-primary text-primary-foreground shadow-sm font-bold"
+                : "text-foreground/80 hover:bg-accent hover:text-foreground"
             }`}
           >
-            <span className="flex items-center gap-2.5">
-              <CalendarCheck className="h-4 w-4" /> My Bookings
+            <span className="flex items-center gap-3">
+              <CalendarCheck className="h-4 w-4 shrink-0" /> My Bookings
             </span>
-            <span className="rounded-full bg-white/10 text-white border border-border px-1.5 py-0.2 text-[9px] font-bold">
+            <span className="rounded-full bg-muted text-foreground border border-border px-2 py-0.5 text-[11px] font-bold">
               1 Active
             </span>
           </button>
@@ -337,14 +337,14 @@ export function OrganizerPanel() {
               setActiveTab("events");
               setSidebarOpen(false);
             }}
-            className={`flex w-full items-center justify-between rounded-xl px-3 py-2.5 font-semibold transition ${
+            className={`flex w-full items-center justify-between rounded-xl px-3.5 py-3 font-semibold transition ${
               activeTab === "events"
-                ? "bg-primary text-white shadow-md font-bold"
-                : "text-muted-foreground hover:bg-card hover:text-white"
+                ? "bg-primary text-primary-foreground shadow-sm font-bold"
+                : "text-foreground/80 hover:bg-accent hover:text-foreground"
             }`}
           >
-            <span className="flex items-center gap-2.5">
-              <Radio className="h-4 w-4" /> Event Details & Rider
+            <span className="flex items-center gap-3">
+              <Radio className="h-4 w-4 shrink-0" /> Event Details & Rider
             </span>
           </button>
 
@@ -353,25 +353,25 @@ export function OrganizerPanel() {
               setActiveTab("account");
               setSidebarOpen(false);
             }}
-            className={`flex w-full items-center justify-between rounded-xl px-3 py-2.5 font-semibold transition ${
+            className={`flex w-full items-center justify-between rounded-xl px-3.5 py-3 font-semibold transition ${
               activeTab === "account"
-                ? "bg-primary text-white shadow-md font-bold"
-                : "text-muted-foreground hover:bg-card hover:text-white"
+                ? "bg-primary text-primary-foreground shadow-sm font-bold"
+                : "text-foreground/80 hover:bg-accent hover:text-foreground"
             }`}
           >
-            <span className="flex items-center gap-2.5">
-              <User className="h-4 w-4" /> My Accounts
+            <span className="flex items-center gap-3">
+              <User className="h-4 w-4 shrink-0" /> My Account
             </span>
           </button>
         </nav>
 
         {/* Sidebar Footer */}
-        <div className="border-t border-border p-3 space-y-1 text-xs">
+        <div className="border-t border-border p-3 space-y-1 text-sm shrink-0">
           <Link
             to="/"
-            className="flex items-center gap-2 rounded-xl px-3 py-2 font-medium text-muted-foreground hover:bg-card hover:text-white transition"
+            className="flex items-center gap-2.5 rounded-xl px-3.5 py-2.5 font-semibold text-foreground/80 hover:bg-accent hover:text-foreground transition"
           >
-            <ExternalLink className="h-4 w-4 text-primary" />
+            <ExternalLink className="h-4 w-4 text-primary shrink-0" />
             <span>Back to Public Website</span>
           </Link>
 
@@ -380,29 +380,29 @@ export function OrganizerPanel() {
               logout();
               navigate({ to: "/" });
             }}
-            className="flex w-full items-center gap-2 rounded-xl px-3 py-2 font-medium text-muted-foreground hover:bg-primary/20 hover:text-primary transition"
+            className="flex w-full items-center gap-2.5 rounded-xl px-3.5 py-2.5 font-semibold text-foreground/80 hover:bg-accent hover:text-foreground transition"
           >
-            <LogOut className="h-4 w-4" />
+            <LogOut className="h-4 w-4 shrink-0" />
             <span>Sign Out</span>
           </button>
         </div>
       </aside>
 
       {/* ------------------------------------------------------------- */}
-      {/* MAIN CONTENT AREA                                             */}
+      {/* MAIN CONTENT AREA (Fixed Header + Scrollable Main Body)       */}
       {/* ------------------------------------------------------------- */}
-      <div className="flex flex-1 flex-col overflow-hidden">
-        {/* Top Header Bar */}
-        <header className="flex h-16 items-center justify-between border-b border-border bg-card px-4 backdrop-blur md:px-8">
-          <div className="flex items-center gap-3">
+      <div className="flex flex-1 flex-col h-full min-w-0 overflow-hidden">
+        {/* Top Header Bar (Fixed / Non-Scrolling) */}
+        <header className="flex h-16 shrink-0 items-center justify-between border-b border-border bg-card px-4 backdrop-blur md:px-8">
+          <div className="flex min-w-0 items-center gap-3">
             <button
               onClick={() => setSidebarOpen(true)}
-              className="rounded-lg border border-border p-2 text-white md:hidden"
+              className="shrink-0 rounded-lg border border-border p-2 text-foreground md:hidden"
               aria-label="Open sidebar"
             >
               <Menu className="h-5 w-5" />
             </button>
-            <h1 className="text-lg font-black font-display tracking-tight text-white capitalize">
+            <h1 className="truncate font-display text-lg font-extrabold uppercase tracking-tight text-foreground sm:text-xl">
               {activeTab === "overview" && "Organiser Overview"}
               {activeTab === "enquiries" && "My Stage Booking Enquiries"}
               {activeTab === "bookings" && "Confirmed Bookings & Contracts"}
@@ -411,60 +411,69 @@ export function OrganizerPanel() {
             </h1>
           </div>
 
-          <div className="flex items-center gap-3">
+          <div className="flex shrink-0 items-center gap-2.5 sm:gap-3">
             <button
               onClick={() => setCreateModalOpen(true)}
-              className="btn-red !py-1.5 !px-3 text-xs flex items-center gap-1.5"
+              className="btn-red !py-2 !px-4 text-xs flex items-center gap-1.5 whitespace-nowrap"
+              aria-label="Create new enquiry"
             >
-              <Plus className="h-3.5 w-3.5" />
-              <span>Create New Enquiry</span>
+              <Plus className="h-4 w-4" />
+              <span className="hidden sm:inline">Create New Enquiry</span>
+              <span className="sm:hidden">New</span>
             </button>
 
             <button
               onClick={() => setActiveTab("account")}
-              className="grid h-8 w-8 place-items-center rounded-full overflow-hidden border border-primary/40 hover:scale-105 transition cursor-pointer"
+              className="grid h-10 w-10 shrink-0 place-items-center rounded-full overflow-hidden border-2 border-primary/50 bg-secondary hover:border-primary hover:scale-105 transition cursor-pointer"
               title="My Account"
             >
               {user?.avatar ? (
                 <img src={user.avatar} alt="Avatar" className="h-full w-full object-cover" />
               ) : (
-                <span className="text-xs font-bold text-primary">PS</span>
+                <span className="text-sm font-black text-foreground">PS</span>
               )}
             </button>
           </div>
         </header>
 
-        {/* Tab Content Body */}
-        <main className="flex-1 overflow-y-auto p-4 sm:p-6 lg:p-8 space-y-6 bg-background">
+        {/* Tab Content Body (Scrolls Independently) */}
+        <main className="flex-1 overflow-y-auto p-4 sm:p-6 lg:p-8 space-y-8 bg-background">
           {/* ========================================================= */}
           {/* 1. OVERVIEW VIEW                                          */}
           {/* ========================================================= */}
           {activeTab === "overview" && (
-            <div className="space-y-6">
+            <div className="space-y-8">
+              <div>
+                <p className="eyebrow mb-1">Corporate Partner Portal</p>
+                <h2 className="display text-2xl sm:text-3xl text-foreground">
+                  Organiser <span className="text-primary">Dashboard</span>
+                </h2>
+              </div>
+
               {/* Welcome Banner */}
               <div className="rounded-2xl border border-border bg-card p-6 shadow-md flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                 <div>
-                  <span className="text-[10px] font-bold uppercase tracking-wider text-primary bg-primary/10 border border-primary/30 px-2 py-0.5 rounded">
-                    Corporate Partner Portal
+                  <span className="text-xs font-bold uppercase tracking-wider text-primary bg-primary/10 border border-primary/30 px-2.5 py-0.5 rounded">
+                    Verified Event Partner
                   </span>
-                  <h2 className="text-2xl font-black font-display text-white mt-2">
+                  <h3 className="font-display text-2xl font-extrabold text-foreground mt-2">
                     Welcome back, Priya!
-                  </h2>
-                  <p className="text-xs text-muted-foreground mt-0.5">
-                    Managing stage hosting requirements for <strong className="text-white">Apex Global Tech Summits</strong>.
+                  </h3>
+                  <p className="text-sm text-muted-foreground mt-1">
+                    Managing stage hosting requirements for <strong className="text-foreground">Apex Global Tech Summits</strong>.
                   </p>
                 </div>
 
-                <div className="flex gap-2">
+                <div className="flex flex-wrap gap-2.5">
                   <button
                     onClick={() => setActiveTab("bookings")}
-                    className="btn-outline !py-2 !px-4 text-xs !border-border !text-white hover:!bg-muted"
+                    className="btn-outline !py-2.5 !px-4 text-sm !border-border !text-foreground hover:!bg-muted"
                   >
                     View Active Show
                   </button>
                   <button
                     onClick={() => setCreateModalOpen(true)}
-                    className="btn-red !py-2 !px-4 text-xs"
+                    className="btn-red !py-2.5 !px-4 text-sm"
                   >
                     + Enquire Another Event
                   </button>
@@ -473,68 +482,68 @@ export function OrganizerPanel() {
 
               {/* Next Event Countdown Card */}
               <div className="rounded-2xl border border-border bg-card p-6 shadow-sm">
-                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-border pb-4">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-border pb-5">
                   <div>
-                    <span className="text-[10px] font-bold uppercase tracking-wider text-white bg-white/10 px-2 py-0.5 rounded border border-border">
+                    <span className="text-xs font-bold uppercase tracking-wider text-primary bg-primary/10 px-2.5 py-0.5 rounded border border-primary/30">
                       Next Confirmed Show
                     </span>
-                    <h3 className="text-xl font-bold text-white mt-2">
+                    <h3 className="font-display text-xl font-extrabold text-foreground mt-2">
                       Apex Global Tech Summits 2026
                     </h3>
-                    <p className="text-xs text-muted-foreground mt-1 flex items-center gap-1.5">
-                      <MapPin className="h-3.5 w-3.5 text-primary" /> Jio World Convention Centre, Mumbai
+                    <p className="text-sm text-muted-foreground mt-1 flex items-center gap-1.5">
+                      <MapPin className="h-4 w-4 text-primary" /> Jio World Convention Centre, Mumbai
                     </p>
                   </div>
 
-                  <div className="flex items-center gap-4 bg-muted/40 p-3 rounded-xl border border-border">
+                  <div className="flex items-center gap-5 bg-muted/40 p-4 rounded-xl border border-border">
                     <div className="text-center">
-                      <p className="text-xl font-black font-display text-primary">40</p>
-                      <p className="text-[10px] text-muted-foreground uppercase font-bold">Days Left</p>
+                      <p className="text-2xl font-black font-display text-primary">40</p>
+                      <p className="text-xs text-muted-foreground uppercase font-bold">Days Left</p>
                     </div>
-                    <div className="h-8 w-px bg-muted" />
+                    <div className="h-9 w-px bg-border" />
                     <div className="text-center">
-                      <p className="text-xl font-black font-display text-white">Dec 14</p>
-                      <p className="text-[10px] text-muted-foreground uppercase font-bold">Stage Date</p>
+                      <p className="text-2xl font-black font-display text-foreground">Dec 14</p>
+                      <p className="text-xs text-muted-foreground uppercase font-bold">Stage Date</p>
                     </div>
                   </div>
                 </div>
 
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-4 text-xs">
-                  <div className="p-3 rounded-xl bg-background border border-border">
-                    <span className="text-muted-foreground/80 block text-[11px]">Host Role:</span>
-                    <span className="font-bold text-white">Keynote Intro & Panel Moderator</span>
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 pt-5 text-sm">
+                  <div className="p-4 rounded-xl bg-background border border-border">
+                    <span className="text-muted-foreground block text-xs uppercase font-bold tracking-wider mb-1">Host Role:</span>
+                    <span className="font-bold text-foreground">Keynote Intro & Panel Moderator</span>
                   </div>
-                  <div className="p-3 rounded-xl bg-background border border-border">
-                    <span className="text-muted-foreground/80 block text-[11px]">Stage Rider:</span>
-                    <span className="font-bold text-white flex items-center gap-1.5">
-                      <CheckCircle2 className="h-3.5 w-3.5 text-primary" /> Acknowledged & Approved
+                  <div className="p-4 rounded-xl bg-background border border-border">
+                    <span className="text-muted-foreground block text-xs uppercase font-bold tracking-wider mb-1">Stage Rider:</span>
+                    <span className="font-bold text-foreground flex items-center gap-1.5">
+                      <CheckCircle2 className="h-4 w-4 text-primary" /> Acknowledged & Approved
                     </span>
                   </div>
-                  <div className="p-3 rounded-xl bg-background border border-border">
-                    <span className="text-muted-foreground/80 block text-[11px]">Run-of-Show Rundown:</span>
-                    <span className="font-bold text-foreground/90">Draft v2 in Review</span>
+                  <div className="p-4 rounded-xl bg-background border border-border">
+                    <span className="text-muted-foreground block text-xs uppercase font-bold tracking-wider mb-1">Run-of-Show Rundown:</span>
+                    <span className="font-bold text-foreground">Draft v2 in Review</span>
                   </div>
                 </div>
               </div>
 
               {/* Status Summary */}
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                <div className="rounded-2xl border border-border bg-card p-5 shadow-sm">
-                  <span className="text-xs font-bold text-muted-foreground uppercase">Confirmed Stage Dates</span>
-                  <p className="text-3xl font-black font-display text-white mt-1">1 Show</p>
-                  <p className="text-xs text-muted-foreground/80 mt-1">Contract executed & locked</p>
+                <div className="card-lift rounded-2xl border border-border bg-card p-6 shadow-sm">
+                  <span className="text-xs font-bold text-muted-foreground uppercase tracking-wider">Confirmed Stage Dates</span>
+                  <p className="text-3xl font-black font-display text-foreground mt-1.5">1 Show</p>
+                  <p className="text-sm text-muted-foreground mt-1">Contract executed & locked</p>
                 </div>
 
-                <div className="rounded-2xl border border-border bg-card p-5 shadow-sm">
-                  <span className="text-xs font-bold text-muted-foreground uppercase">Pending Inquiries</span>
-                  <p className="text-3xl font-black font-display text-primary mt-1">1 Proposal</p>
-                  <p className="text-xs text-muted-foreground/80 mt-1">Under commercial review</p>
+                <div className="card-lift rounded-2xl border border-border bg-card p-6 shadow-sm">
+                  <span className="text-xs font-bold text-muted-foreground uppercase tracking-wider">Pending Inquiries</span>
+                  <p className="text-3xl font-black font-display text-primary mt-1.5">1 Proposal</p>
+                  <p className="text-sm text-muted-foreground mt-1">Under commercial review</p>
                 </div>
 
-                <div className="rounded-2xl border border-border bg-card p-5 shadow-sm">
-                  <span className="text-xs font-bold text-muted-foreground uppercase">Dedicated Emcee Manager</span>
-                  <p className="text-lg font-bold text-white mt-1">Neha Sharma</p>
-                  <p className="text-xs text-muted-foreground/80 mt-1">Direct support hotline available</p>
+                <div className="card-lift rounded-2xl border border-border bg-card p-6 shadow-sm">
+                  <span className="text-xs font-bold text-muted-foreground uppercase tracking-wider">Dedicated Emcee Manager</span>
+                  <p className="font-display text-xl font-extrabold text-foreground mt-1.5">Neha Sharma</p>
+                  <p className="text-sm text-muted-foreground mt-1">Direct support hotline available</p>
                 </div>
               </div>
             </div>
@@ -547,12 +556,15 @@ export function OrganizerPanel() {
             <div className="space-y-6">
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                 <div>
-                  <h3 className="text-base font-bold text-white">Your Stage Enquiries</h3>
-                  <p className="text-xs text-muted-foreground">Track date lock requests and proposals submitted to Siddharth Maurya's management.</p>
+                  <p className="eyebrow mb-1">Booking Requests</p>
+                  <h2 className="display text-2xl sm:text-3xl text-foreground">
+                    Your Stage <span className="text-primary">Enquiries</span>
+                  </h2>
+                  <p className="text-sm text-muted-foreground mt-1">Track date lock requests and proposals submitted to Siddharth Maurya's management.</p>
                 </div>
                 <button
                   onClick={() => setCreateModalOpen(true)}
-                  className="btn-red !py-2 !px-4 text-xs flex items-center gap-2 self-start sm:self-auto"
+                  className="btn-red !py-2.5 !px-5 text-sm flex items-center gap-2 self-start sm:self-auto"
                 >
                   <Plus className="h-4 w-4" /> Create New Enquiry
                 </button>
@@ -560,185 +572,50 @@ export function OrganizerPanel() {
 
               <div className="space-y-4">
                 {enquiries.map((enq) => (
-                  <div key={enq.id} className="rounded-2xl border border-border bg-card p-5 shadow-sm space-y-3">
-                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-border pb-3">
+                  <div key={enq.id} className="rounded-2xl border border-border bg-card p-6 shadow-sm space-y-4">
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-border pb-3.5">
                       <div>
-                        <div className="flex items-center gap-2">
-                          <span className="font-mono text-xs font-bold text-primary">{enq.id}</span>
+                        <div className="flex items-center gap-2.5">
+                          <span className="font-mono text-sm font-bold text-primary">{enq.id}</span>
                           <span
-                            className={`rounded-full px-2 py-0.5 text-[10px] font-bold ${
+                            className={`rounded-full px-2.5 py-0.5 text-xs font-bold ${
                               enq.status === "Confirmed"
-                                ? "bg-white/10 text-white border border-border"
+                                ? "bg-muted text-foreground border border-border"
                                 : "bg-primary/20 text-primary border border-primary/30"
                             }`}
                           >
                             {enq.status}
                           </span>
                         </div>
-                        <h4 className="text-base font-bold text-white mt-1">{enq.eventName}</h4>
+                        <h4 className="font-display text-lg font-extrabold text-foreground mt-1">{enq.eventName}</h4>
                       </div>
 
                       <div className="text-left sm:text-right">
-                        <span className="text-xs text-muted-foreground">Submitted: {enq.createdAt}</span>
+                        <span className="text-xs font-medium text-muted-foreground">Submitted: {enq.createdAt}</span>
                       </div>
                     </div>
 
-                    <div className="grid grid-cols-1 sm:grid-cols-4 gap-3 text-xs">
+                    <div className="grid grid-cols-1 sm:grid-cols-4 gap-4 text-sm">
                       <div>
-                        <span className="text-muted-foreground/80 block text-[11px]">Date & City</span>
-                        <p className="font-semibold text-white mt-0.5">📅 {enq.date} • {enq.city}</p>
+                        <span className="text-muted-foreground block text-xs uppercase font-bold tracking-wider">Date & City</span>
+                        <p className="font-semibold text-foreground mt-1">📅 {enq.date} • {enq.city}</p>
                       </div>
                       <div>
-                        <span className="text-muted-foreground/80 block text-[11px]">Venue</span>
-                        <p className="font-semibold text-white mt-0.5">{enq.venue}</p>
+                        <span className="text-muted-foreground block text-xs uppercase font-bold tracking-wider">Venue</span>
+                        <p className="font-semibold text-foreground mt-1">{enq.venue}</p>
                       </div>
                       <div>
-                        <span className="text-muted-foreground/80 block text-[11px]">Format & Crowd</span>
-                        <p className="font-semibold text-white mt-0.5">{enq.format} ({enq.crowdSize})</p>
+                        <span className="text-muted-foreground block text-xs uppercase font-bold tracking-wider">Format & Crowd</span>
+                        <p className="font-semibold text-foreground mt-1">{enq.format} ({enq.crowdSize})</p>
                       </div>
                       <div>
-                        <span className="text-muted-foreground/80 block text-[11px]">Budget Range</span>
-                        <p className="font-mono font-bold text-primary mt-0.5">{enq.budget}</p>
+                        <span className="text-muted-foreground block text-xs uppercase font-bold tracking-wider">Budget Range</span>
+                        <p className="font-mono font-bold text-primary mt-1">{enq.budget}</p>
                       </div>
                     </div>
                   </div>
                 ))}
               </div>
-
-              {/* Create Enquiry Modal */}
-              {createModalOpen && (
-                <div className="fixed inset-0 z-50 flex items-center justify-center bg-background/80 p-4 backdrop-blur-sm">
-                  <div className="w-full max-w-lg rounded-2xl border border-border bg-card p-6 shadow-2xl space-y-4 max-h-[90vh] overflow-y-auto">
-                    <div className="flex items-center justify-between border-b border-border pb-3">
-                      <div>
-                        <h3 className="text-base font-bold text-white">Book Siddharth Maurya for an Event</h3>
-                        <p className="text-xs text-muted-foreground">Direct booking request from verified organizer account.</p>
-                      </div>
-                      <button onClick={() => setCreateModalOpen(false)} className="text-muted-foreground hover:text-white">
-                        <X className="h-4 w-4" />
-                      </button>
-                    </div>
-
-                    <form onSubmit={handleCreateEnquiry} className="space-y-4 text-xs">
-                      <div>
-                        <label className="font-bold text-muted-foreground block mb-1">Event Name / Summit Title</label>
-                        <input
-                          type="text"
-                          required
-                          value={newEventName}
-                          onChange={(e) => setNewEventName(e.target.value)}
-                          placeholder="e.g. National Brand Marketing Conclave 2027"
-                          className="w-full rounded-xl border border-border bg-background py-2 px-3 text-xs text-white placeholder:text-muted-foreground/50 focus:border-primary focus:outline-none"
-                        />
-                      </div>
-
-                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                        <div>
-                          <label className="font-bold text-muted-foreground block mb-1">Event Date</label>
-                          <input
-                            type="date"
-                            required
-                            value={newDate}
-                            onChange={(e) => setNewDate(e.target.value)}
-                            className="w-full rounded-xl border border-border bg-background py-2 px-3 text-xs text-white focus:border-primary focus:outline-none"
-                          />
-                        </div>
-
-                        <div>
-                          <label className="font-bold text-muted-foreground block mb-1">City</label>
-                          <input
-                            type="text"
-                            required
-                            value={newCity}
-                            onChange={(e) => setNewCity(e.target.value)}
-                            placeholder="e.g. Mumbai, New Delhi, Bengaluru"
-                            className="w-full rounded-xl border border-border bg-background py-2 px-3 text-xs text-white placeholder:text-muted-foreground/50 focus:border-primary focus:outline-none"
-                          />
-                        </div>
-                      </div>
-
-                      <div>
-                        <label className="font-bold text-muted-foreground block mb-1">Venue Name</label>
-                        <input
-                          type="text"
-                          value={newVenue}
-                          onChange={(e) => setNewVenue(e.target.value)}
-                          placeholder="e.g. Taj Lands End, Bandra"
-                          className="w-full rounded-xl border border-border bg-background py-2 px-3 text-xs text-white placeholder:text-muted-foreground/50 focus:border-primary focus:outline-none"
-                        />
-                      </div>
-
-                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                        <div>
-                          <label className="font-bold text-muted-foreground block mb-1">Event Format</label>
-                          <select
-                            value={newFormat}
-                            onChange={(e) => setNewFormat(e.target.value)}
-                            className="w-full rounded-xl border border-border bg-background py-2 px-3 text-xs text-white focus:border-primary focus:outline-none"
-                          >
-                            <option value="Tech Summit & Keynotes">Tech Summit & Keynotes</option>
-                            <option value="Corporate Gala & Awards">Corporate Gala & Awards</option>
-                            <option value="Product Launch Expo">Product Launch Expo</option>
-                            <option value="Music Festival / Arena">Music Festival / Arena</option>
-                            <option value="Celebrity Wedding / Sangeet">Celebrity Wedding / Sangeet</option>
-                          </select>
-                        </div>
-
-                        <div>
-                          <label className="font-bold text-muted-foreground block mb-1">Expected Crowd Size</label>
-                          <select
-                            value={newCrowd}
-                            onChange={(e) => setNewCrowd(e.target.value)}
-                            className="w-full rounded-xl border border-border bg-background py-2 px-3 text-xs text-white focus:border-primary focus:outline-none"
-                          >
-                            <option value="100 - 300 VIPs">100 - 300 VIPs</option>
-                            <option value="500 - 1,000 Attendees">500 - 1,000 Attendees</option>
-                            <option value="1,000 - 3,000 Attendees">1,000 - 3,000 Attendees</option>
-                            <option value="5,000+ Stadium / Arena">5,000+ Stadium / Arena</option>
-                          </select>
-                        </div>
-                      </div>
-
-                      <div>
-                        <label className="font-bold text-muted-foreground block mb-1">Budget Allocation</label>
-                        <select
-                          value={newBudget}
-                          onChange={(e) => setNewBudget(e.target.value)}
-                          className="w-full rounded-xl border border-border bg-background py-2 px-3 text-xs text-white focus:border-primary focus:outline-none"
-                        >
-                          <option value="₹2,00,000 - ₹3,50,000">₹2,00,000 - ₹3,50,000</option>
-                          <option value="₹3,50,000 - ₹5,00,000">₹3,50,000 - ₹5,00,000</option>
-                          <option value="₹5,00,000+ Premium">₹5,00,000+ Premium Stage</option>
-                        </select>
-                      </div>
-
-                      <div>
-                        <label className="font-bold text-muted-foreground block mb-1">Special Notes / Run of Show Notes</label>
-                        <textarea
-                          rows={3}
-                          value={newBrief}
-                          onChange={(e) => setNewBrief(e.target.value)}
-                          placeholder="Tell us about your expectations, VIP dignitaries, and stage energy required..."
-                          className="w-full rounded-xl border border-border bg-background py-2 px-3 text-xs text-white placeholder:text-muted-foreground/50 focus:border-primary focus:outline-none"
-                        />
-                      </div>
-
-                      <div className="flex justify-end gap-2 pt-2 border-t border-border">
-                        <button
-                          type="button"
-                          onClick={() => setCreateModalOpen(false)}
-                          className="btn-outline !py-2 !px-4 text-xs !border-border !text-white hover:!bg-muted"
-                        >
-                          Cancel
-                        </button>
-                        <button type="submit" className="btn-red !py-2 !px-4 text-xs">
-                          Submit Enquiry Directly
-                        </button>
-                      </div>
-                    </form>
-                  </div>
-                </div>
-              )}
             </div>
           )}
 
@@ -747,48 +624,55 @@ export function OrganizerPanel() {
           {/* ========================================================= */}
           {activeTab === "bookings" && (
             <div className="space-y-6">
-              <div className="rounded-2xl border border-border bg-card p-6 shadow-sm space-y-4">
-                <div className="flex items-center justify-between border-b border-border pb-4">
+              <div>
+                <p className="eyebrow mb-1">Executed Contracts</p>
+                <h2 className="display text-2xl sm:text-3xl text-foreground">
+                  Confirmed <span className="text-primary">Bookings</span>
+                </h2>
+              </div>
+
+              <div className="rounded-2xl border border-border bg-card p-6 shadow-sm space-y-5">
+                <div className="flex flex-wrap items-center justify-between gap-3 border-b border-border pb-4">
                   <div>
-                    <h3 className="text-base font-bold text-white">Executed Booking Agreements</h3>
-                    <p className="text-xs text-muted-foreground">Official confirmed stage locks for Siddharth Maurya.</p>
+                    <h3 className="font-display text-lg font-extrabold text-foreground">Executed Booking Agreements</h3>
+                    <p className="text-sm text-muted-foreground">Official confirmed stage locks for Siddharth Maurya.</p>
                   </div>
-                  <span className="rounded-full bg-white/10 text-white border border-border px-2.5 py-0.5 text-xs font-bold">
+                  <span className="rounded-full bg-primary/15 text-primary border border-primary/30 px-3 py-1 text-xs font-bold">
                     1 Confirmed Contract
                   </span>
                 </div>
 
-                <div className="rounded-xl border border-border bg-background p-5 space-y-4">
-                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-border pb-3">
+                <div className="rounded-xl border border-border bg-background p-6 space-y-4">
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-border pb-4">
                     <div>
-                      <span className="font-mono text-xs font-bold text-primary">REF: SID-CONF-2026-88</span>
-                      <h4 className="text-lg font-bold text-white mt-0.5">Apex Global Tech Summits 2026</h4>
-                      <p className="text-xs text-muted-foreground">Organizer: Apex Global Tech Summits Pvt Ltd</p>
+                      <span className="font-mono text-sm font-bold text-primary">REF: SID-CONF-2026-88</span>
+                      <h4 className="font-display text-xl font-extrabold text-foreground mt-1">Apex Global Tech Summits 2026</h4>
+                      <p className="text-sm text-muted-foreground">Organizer: Apex Global Tech Summits Pvt Ltd</p>
                     </div>
 
                     <div className="flex gap-2">
                       <button
                         onClick={() => toast.success("Downloading Executed Emcee Contract PDF...")}
-                        className="btn-outline !py-1.5 !px-3 text-xs !border-border !text-white hover:!bg-muted flex items-center gap-1.5"
+                        className="btn-outline !py-2 !px-4 text-sm !border-border !text-foreground hover:!bg-muted flex items-center gap-2"
                       >
-                        <Download className="h-3.5 w-3.5 text-primary" /> Download Contract
+                        <Download className="h-4 w-4 text-primary" /> Download Contract
                       </button>
                     </div>
                   </div>
 
-                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs">
-                    <div className="p-3 rounded-lg bg-muted/30 border border-border">
-                      <span className="text-muted-foreground/80 block text-[11px]">Show Date & Timing</span>
-                      <p className="font-bold text-white mt-0.5">December 14, 2026 • 09:00 AM - 05:30 PM</p>
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 text-sm">
+                    <div className="p-4 rounded-lg bg-muted/30 border border-border">
+                      <span className="text-muted-foreground block text-xs uppercase font-bold tracking-wider">Show Date & Timing</span>
+                      <p className="font-bold text-foreground mt-1">December 14, 2026 • 09:00 AM - 05:30 PM</p>
                     </div>
-                    <div className="p-3 rounded-lg bg-muted/30 border border-border">
-                      <span className="text-muted-foreground/80 block text-[11px]">Location</span>
-                      <p className="font-bold text-white mt-0.5">Jio World Convention Centre, Mumbai</p>
+                    <div className="p-4 rounded-lg bg-muted/30 border border-border">
+                      <span className="text-muted-foreground block text-xs uppercase font-bold tracking-wider">Location</span>
+                      <p className="font-bold text-foreground mt-1">Jio World Convention Centre, Mumbai</p>
                     </div>
-                    <div className="p-3 rounded-lg bg-muted/30 border border-border">
-                      <span className="text-muted-foreground/80 block text-[11px]">Host Status</span>
-                      <p className="font-bold text-white mt-0.5 flex items-center gap-1.5">
-                        <CheckCircle2 className="h-3.5 w-3.5 text-primary" /> Advance Paid & Locked
+                    <div className="p-4 rounded-lg bg-muted/30 border border-border">
+                      <span className="text-muted-foreground block text-xs uppercase font-bold tracking-wider">Host Status</span>
+                      <p className="font-bold text-foreground mt-1 flex items-center gap-1.5">
+                        <CheckCircle2 className="h-4 w-4 text-primary" /> Advance Paid & Locked
                       </p>
                     </div>
                   </div>
@@ -802,19 +686,26 @@ export function OrganizerPanel() {
           {/* ========================================================= */}
           {activeTab === "events" && (
             <div className="space-y-6">
+              <div>
+                <p className="eyebrow mb-1">Stage & AV Specifications</p>
+                <h2 className="display text-2xl sm:text-3xl text-foreground">
+                  Technical <span className="text-primary">Stage Rider</span>
+                </h2>
+              </div>
+
               <div className="rounded-2xl border border-border bg-card p-6 shadow-sm space-y-6">
                 <div>
-                  <h3 className="text-base font-bold text-white">Host Technical Stage Rider & Hospitality</h3>
-                  <p className="text-xs text-muted-foreground">
+                  <h3 className="font-display text-lg font-extrabold text-foreground">Host Technical Stage Rider & Hospitality</h3>
+                  <p className="text-sm text-muted-foreground mt-1">
                     Required audio, video, microphone, and backstage parameters for Siddharth Maurya's stage performance.
                   </p>
                 </div>
 
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm">
                   {/* Microphones */}
-                  <div className="rounded-xl border border-border p-4 bg-background space-y-2">
-                    <div className="flex items-center gap-2 text-primary font-bold">
-                      <Mic className="h-4 w-4" />
+                  <div className="card-lift rounded-xl border border-border p-5 bg-background space-y-2">
+                    <div className="flex items-center gap-2 text-primary font-bold text-base">
+                      <Mic className="h-5 w-5" />
                       <span>Microphone Preference</span>
                     </div>
                     <p className="text-muted-foreground leading-relaxed">
@@ -823,9 +714,9 @@ export function OrganizerPanel() {
                   </div>
 
                   {/* IEM & Monitors */}
-                  <div className="rounded-xl border border-border p-4 bg-background space-y-2">
-                    <div className="flex items-center gap-2 text-white font-bold">
-                      <Headphones className="h-4 w-4 text-primary" />
+                  <div className="card-lift rounded-xl border border-border p-5 bg-background space-y-2">
+                    <div className="flex items-center gap-2 text-foreground font-bold text-base">
+                      <Headphones className="h-5 w-5 text-primary" />
                       <span>In-Ear Monitors (IEM) / Stage Cues</span>
                     </div>
                     <p className="text-muted-foreground leading-relaxed">
@@ -834,9 +725,9 @@ export function OrganizerPanel() {
                   </div>
 
                   {/* Visual Confidence */}
-                  <div className="rounded-xl border border-border p-4 bg-background space-y-2">
-                    <div className="flex items-center gap-2 text-white font-bold">
-                      <Sliders className="h-4 w-4 text-primary" />
+                  <div className="card-lift rounded-xl border border-border p-5 bg-background space-y-2">
+                    <div className="flex items-center gap-2 text-foreground font-bold text-base">
+                      <Sliders className="h-5 w-5 text-primary" />
                       <span>Confidence Monitors & Countdown Timer</span>
                     </div>
                     <p className="text-muted-foreground leading-relaxed">
@@ -845,9 +736,9 @@ export function OrganizerPanel() {
                   </div>
 
                   {/* Green Room */}
-                  <div className="rounded-xl border border-border p-4 bg-background space-y-2">
-                    <div className="flex items-center gap-2 text-white font-bold">
-                      <Building className="h-4 w-4 text-primary" />
+                  <div className="card-lift rounded-xl border border-border p-5 bg-background space-y-2">
+                    <div className="flex items-center gap-2 text-foreground font-bold text-base">
+                      <Building className="h-5 w-5 text-primary" />
                       <span>Green Room Hospitality</span>
                     </div>
                     <p className="text-muted-foreground leading-relaxed">
@@ -856,11 +747,11 @@ export function OrganizerPanel() {
                   </div>
                 </div>
 
-                <div className="border-t border-border pt-4 flex justify-between items-center text-xs">
+                <div className="border-t border-border pt-4 flex flex-wrap justify-between items-center gap-3 text-sm">
                   <span className="text-muted-foreground">Need custom rider adjustments?</span>
                   <button
                     onClick={() => toast.info("Your question has been sent to Sid's technical producer.")}
-                    className="btn-outline !py-1.5 !px-3 text-xs !border-border !text-white hover:!bg-muted"
+                    className="btn-outline !py-2 !px-4 text-sm !border-border !text-foreground hover:!bg-muted"
                   >
                     Request Technical Adjustment
                   </button>
@@ -874,6 +765,13 @@ export function OrganizerPanel() {
           {/* ========================================================= */}
           {activeTab === "account" && (
             <div className="space-y-6 max-w-3xl">
+              <div>
+                <p className="eyebrow mb-1">Partner Profile & Security</p>
+                <h2 className="display text-2xl sm:text-3xl text-foreground">
+                  Company <span className="text-primary">Account</span>
+                </h2>
+              </div>
+
               <input
                 type="file"
                 ref={fileInputRef}
@@ -892,32 +790,32 @@ export function OrganizerPanel() {
                         <img
                           src={user.avatar}
                           alt={contactPerson}
-                          className="h-16 w-16 rounded-2xl object-cover border-2 border-primary shadow-lg"
+                          className="h-20 w-20 rounded-full object-cover border-2 border-primary shadow-lg"
                         />
                       ) : (
-                        <div className="grid h-16 w-16 place-items-center rounded-2xl bg-primary/20 text-2xl font-black text-primary border border-primary/30">
+                        <div className="grid h-20 w-20 place-items-center rounded-full bg-primary/20 text-2xl font-black text-primary border-2 border-primary/30">
                           {contactPerson.charAt(0).toUpperCase()}
                         </div>
                       )}
                       <button
                         type="button"
                         onClick={() => fileInputRef.current?.click()}
-                        className="absolute -bottom-1 -right-1 rounded-full bg-primary p-1.5 text-white shadow-md hover:scale-110 transition cursor-pointer"
+                        className="absolute -bottom-1 -right-1 rounded-full bg-primary p-2 text-white shadow-md hover:scale-110 transition cursor-pointer"
                         title="Change profile photo"
                       >
-                        <Camera className="h-3 w-3" />
+                        <Camera className="h-3.5 w-3.5" />
                       </button>
                     </div>
 
                     <div>
-                      <div className="flex items-center gap-2">
-                        <h3 className="text-lg font-black font-display text-white">{contactPerson}</h3>
-                        <span className="rounded-full bg-white/10 text-white border border-border px-2 py-0.5 text-[10px] font-bold">
+                      <div className="flex flex-wrap items-center gap-2">
+                        <h3 className="font-display text-xl font-extrabold text-foreground">{contactPerson}</h3>
+                        <span className="rounded-full bg-primary/15 text-primary border border-primary/30 px-2.5 py-0.5 text-xs font-bold">
                           Organizer Account
                         </span>
                       </div>
-                      <p className="text-xs text-muted-foreground mt-0.5">{companyName}</p>
-                      <p className="text-xs font-mono text-primary mt-0.5">{contactEmail}</p>
+                      <p className="text-sm text-muted-foreground mt-0.5">{companyName}</p>
+                      <p className="text-sm font-mono text-primary mt-0.5">{contactEmail}</p>
                     </div>
                   </div>
 
@@ -925,84 +823,84 @@ export function OrganizerPanel() {
                     <button
                       type="button"
                       onClick={() => fileInputRef.current?.click()}
-                      className="btn-red !py-1.5 !px-3 text-xs flex items-center gap-1.5"
+                      className="btn-red !py-2 !px-4 text-sm flex items-center gap-1.5"
                     >
-                      <Upload className="h-3.5 w-3.5" /> Upload Photo
+                      <Upload className="h-4 w-4" /> Upload Photo
                     </button>
                     {user?.avatar && (
                       <button
                         type="button"
                         onClick={handleRemovePhoto}
-                        className="btn-outline !py-1.5 !px-2.5 text-xs !border-border !text-muted-foreground hover:!bg-muted"
+                        className="btn-outline !py-2 !px-3 text-sm !border-border !text-muted-foreground hover:!bg-muted"
                         title="Remove photo"
                       >
-                        <Trash2 className="h-3.5 w-3.5" />
+                        <Trash2 className="h-4 w-4" />
                       </button>
                     )}
                   </div>
                 </div>
 
-                <form onSubmit={handleSaveAccount} className="space-y-4 text-xs">
+                <form onSubmit={handleSaveAccount} className="space-y-4 text-sm">
                   <div>
-                    <label className="font-bold text-muted-foreground block mb-1">Company / Organization Legal Name</label>
+                    <label className="font-bold text-muted-foreground block mb-1.5">Company / Organization Legal Name</label>
                     <input
                       type="text"
                       required
                       value={companyName}
                       onChange={(e) => setCompanyName(e.target.value)}
-                      className="w-full rounded-xl border border-border bg-background py-2.5 px-3 text-xs text-white placeholder:text-muted-foreground/50 focus:border-primary focus:outline-none"
+                      className="w-full rounded-xl border border-input bg-background/80 py-2.5 px-3.5 text-sm text-foreground placeholder:text-muted-foreground/50 focus:border-primary focus:outline-none"
                     />
                   </div>
 
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div>
-                      <label className="font-bold text-muted-foreground block mb-1">Primary Event Coordinator</label>
+                      <label className="font-bold text-muted-foreground block mb-1.5">Primary Event Coordinator</label>
                       <input
                         type="text"
                         required
                         value={contactPerson}
                         onChange={(e) => setContactPerson(e.target.value)}
-                        className="w-full rounded-xl border border-border bg-background py-2.5 px-3 text-xs text-white placeholder:text-muted-foreground/50 focus:border-primary focus:outline-none"
+                        className="w-full rounded-xl border border-input bg-background/80 py-2.5 px-3.5 text-sm text-foreground placeholder:text-muted-foreground/50 focus:border-primary focus:outline-none"
                       />
                     </div>
 
                     <div>
-                      <label className="font-bold text-muted-foreground block mb-1">Mobile Phone (WhatsApp Enabled)</label>
+                      <label className="font-bold text-muted-foreground block mb-1.5">Mobile Phone (WhatsApp Enabled)</label>
                       <input
                         type="text"
                         required
                         value={contactPhone}
                         onChange={(e) => setContactPhone(e.target.value)}
-                        className="w-full rounded-xl border border-border bg-background py-2.5 px-3 text-xs text-white placeholder:text-muted-foreground/50 focus:border-primary focus:outline-none"
+                        className="w-full rounded-xl border border-input bg-background/80 py-2.5 px-3.5 text-sm text-foreground placeholder:text-muted-foreground/50 focus:border-primary focus:outline-none"
                       />
                     </div>
                   </div>
 
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div>
-                      <label className="font-bold text-muted-foreground block mb-1">Official Work Email Address</label>
+                      <label className="font-bold text-muted-foreground block mb-1.5">Official Work Email Address</label>
                       <input
                         type="email"
                         required
                         value={contactEmail}
                         onChange={(e) => setContactEmail(e.target.value)}
-                        className="w-full rounded-xl border border-border bg-background py-2.5 px-3 text-xs text-white placeholder:text-muted-foreground/50 focus:border-primary focus:outline-none"
+                        className="w-full rounded-xl border border-input bg-background/80 py-2.5 px-3.5 text-sm text-foreground placeholder:text-muted-foreground/50 focus:border-primary focus:outline-none"
                       />
                     </div>
 
                     <div>
-                      <label className="font-bold text-muted-foreground block mb-1">GSTIN Number (For Tax Invoices)</label>
+                      <label className="font-bold text-muted-foreground block mb-1.5">GSTIN Number (For Tax Invoices)</label>
                       <input
                         type="text"
                         value={gstNumber}
                         onChange={(e) => setGstNumber(e.target.value)}
-                        className="w-full rounded-xl border border-border bg-background py-2.5 px-3 text-xs text-white font-mono placeholder:text-muted-foreground/50 focus:border-primary focus:outline-none"
+                        className="w-full rounded-xl border border-input bg-background/80 py-2.5 px-3.5 text-sm text-foreground font-mono placeholder:text-muted-foreground/50 focus:border-primary focus:outline-none"
                       />
                     </div>
                   </div>
 
                   <div className="pt-2">
-                    <button type="submit" className="btn-red !py-2.5 !px-5 text-xs">
+                    <button type="submit" className="btn-red !py-2.5 !px-5 text-sm">
                       Save Account Changes
                     </button>
                   </div>
@@ -1010,54 +908,189 @@ export function OrganizerPanel() {
 
                 {/* Password / Security Section inside Account */}
                 <div className="border-t border-border pt-6 space-y-4">
-                  <div className="flex items-center gap-2">
-                    <KeyRound className="h-4 w-4 text-primary" />
-                    <h4 className="text-sm font-bold text-white">Security & Password</h4>
+                  <div className="flex items-center gap-2.5">
+                    <KeyRound className="h-5 w-5 text-primary" />
+                    <h4 className="font-display text-lg font-extrabold text-foreground">Security & Password</h4>
                   </div>
-                  <form onSubmit={handleUpdatePassword} className="space-y-4 text-xs">
-                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                  <form onSubmit={handleUpdatePassword} className="space-y-4 text-sm">
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                       <div>
-                        <label className="font-bold text-muted-foreground block mb-1">Current Password</label>
+                        <label className="font-bold text-muted-foreground block mb-1.5">Current Password</label>
                         <input
                           type="password"
                           required
                           value={currentPassword}
                           onChange={(e) => setCurrentPassword(e.target.value)}
                           placeholder="••••••••"
-                          className="w-full rounded-xl border border-border bg-background py-2 px-3 text-xs text-white focus:border-primary focus:outline-none"
+                          className="w-full rounded-xl border border-input bg-background/80 py-2.5 px-3.5 text-sm text-foreground focus:border-primary focus:outline-none"
                         />
                       </div>
                       <div>
-                        <label className="font-bold text-muted-foreground block mb-1">New Password</label>
+                        <label className="font-bold text-muted-foreground block mb-1.5">New Password</label>
                         <input
                           type="password"
                           required
                           value={newPassword}
                           onChange={(e) => setNewPassword(e.target.value)}
                           placeholder="Min 6 characters"
-                          className="w-full rounded-xl border border-border bg-background py-2 px-3 text-xs text-white focus:border-primary focus:outline-none"
+                          className="w-full rounded-xl border border-input bg-background/80 py-2.5 px-3.5 text-sm text-foreground focus:border-primary focus:outline-none"
                         />
                       </div>
                       <div>
-                        <label className="font-bold text-muted-foreground block mb-1">Confirm Password</label>
+                        <label className="font-bold text-muted-foreground block mb-1.5">Confirm Password</label>
                         <input
                           type="password"
                           required
                           value={confirmPassword}
                           onChange={(e) => setConfirmPassword(e.target.value)}
                           placeholder="Re-enter password"
-                          className="w-full rounded-xl border border-border bg-background py-2 px-3 text-xs text-white focus:border-primary focus:outline-none"
+                          className="w-full rounded-xl border border-input bg-background/80 py-2.5 px-3.5 text-sm text-foreground focus:border-primary focus:outline-none"
                         />
                       </div>
                     </div>
                     <button
                       type="submit"
-                      className="btn-red !py-2 !px-4 text-xs"
+                      className="btn-red !py-2.5 !px-5 text-sm"
                     >
                       Update Password & Save
                     </button>
                   </form>
                 </div>
+              </div>
+            </div>
+          )}
+
+          {/* Create Enquiry Modal (Accessible from any tab) */}
+          {createModalOpen && (
+            <div className="fixed inset-0 z-50 flex items-center justify-center bg-background/80 p-4 backdrop-blur-sm">
+              <div className="w-full max-w-lg rounded-2xl border border-border bg-card p-6 shadow-2xl space-y-4 max-h-[90vh] overflow-y-auto">
+                <div className="flex items-center justify-between border-b border-border pb-3">
+                  <div>
+                    <h3 className="font-display text-lg font-extrabold text-foreground">Book Siddharth Maurya for an Event</h3>
+                    <p className="text-sm text-muted-foreground">Direct booking request from verified organizer account.</p>
+                  </div>
+                  <button onClick={() => setCreateModalOpen(false)} className="text-muted-foreground hover:text-foreground">
+                    <X className="h-5 w-5" />
+                  </button>
+                </div>
+
+                <form onSubmit={handleCreateEnquiry} className="space-y-4 text-sm">
+                  <div>
+                    <label className="font-bold text-muted-foreground block mb-1.5">Event Name / Summit Title</label>
+                    <input
+                      type="text"
+                      required
+                      value={newEventName}
+                      onChange={(e) => setNewEventName(e.target.value)}
+                      placeholder="e.g. National Brand Marketing Conclave 2027"
+                      className="w-full rounded-xl border border-input bg-background/80 py-2.5 px-3.5 text-sm text-foreground placeholder:text-muted-foreground/50 focus:border-primary focus:outline-none"
+                    />
+                  </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div>
+                      <label className="font-bold text-muted-foreground block mb-1.5">Event Date</label>
+                      <input
+                        type="date"
+                        required
+                        value={newDate}
+                        onChange={(e) => setNewDate(e.target.value)}
+                        className="w-full rounded-xl border border-input bg-background/80 py-2.5 px-3.5 text-sm text-foreground focus:border-primary focus:outline-none"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="font-bold text-muted-foreground block mb-1.5">City</label>
+                      <input
+                        type="text"
+                        required
+                        value={newCity}
+                        onChange={(e) => setNewCity(e.target.value)}
+                        placeholder="e.g. Mumbai, New Delhi, Bengaluru"
+                        className="w-full rounded-xl border border-input bg-background/80 py-2.5 px-3.5 text-sm text-foreground placeholder:text-muted-foreground/50 focus:border-primary focus:outline-none"
+                      />
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="font-bold text-muted-foreground block mb-1.5">Venue Name</label>
+                    <input
+                      type="text"
+                      value={newVenue}
+                      onChange={(e) => setNewVenue(e.target.value)}
+                      placeholder="e.g. Taj Lands End, Bandra"
+                      className="w-full rounded-xl border border-input bg-background/80 py-2.5 px-3.5 text-sm text-foreground placeholder:text-muted-foreground/50 focus:border-primary focus:outline-none"
+                    />
+                  </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div>
+                      <label className="font-bold text-muted-foreground block mb-1.5">Event Format</label>
+                      <select
+                        value={newFormat}
+                        onChange={(e) => setNewFormat(e.target.value)}
+                        className="w-full rounded-xl border border-input bg-background/80 py-2.5 px-3.5 text-sm text-foreground focus:border-primary focus:outline-none"
+                      >
+                        <option value="Tech Summit & Keynotes">Tech Summit & Keynotes</option>
+                        <option value="Corporate Gala & Awards">Corporate Gala & Awards</option>
+                        <option value="Product Launch Expo">Product Launch Expo</option>
+                        <option value="Music Festival / Arena">Music Festival / Arena</option>
+                        <option value="Celebrity Wedding / Sangeet">Celebrity Wedding / Sangeet</option>
+                      </select>
+                    </div>
+
+                    <div>
+                      <label className="font-bold text-muted-foreground block mb-1.5">Expected Crowd Size</label>
+                      <select
+                        value={newCrowd}
+                        onChange={(e) => setNewCrowd(e.target.value)}
+                        className="w-full rounded-xl border border-input bg-background/80 py-2.5 px-3.5 text-sm text-foreground focus:border-primary focus:outline-none"
+                      >
+                        <option value="100 - 300 VIPs">100 - 300 VIPs</option>
+                        <option value="500 - 1,000 Attendees">500 - 1,000 Attendees</option>
+                        <option value="1,000 - 3,000 Attendees">1,000 - 3,000 Attendees</option>
+                        <option value="5,000+ Stadium / Arena">5,000+ Stadium / Arena</option>
+                      </select>
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="font-bold text-muted-foreground block mb-1.5">Budget Allocation</label>
+                    <select
+                      value={newBudget}
+                      onChange={(e) => setNewBudget(e.target.value)}
+                      className="w-full rounded-xl border border-input bg-background/80 py-2.5 px-3.5 text-sm text-foreground focus:border-primary focus:outline-none"
+                    >
+                      <option value="₹2,00,000 - ₹3,50,000">₹2,00,000 - ₹3,50,000</option>
+                      <option value="₹3,50,000 - ₹5,00,000">₹3,50,000 - ₹5,00,000</option>
+                      <option value="₹5,00,000+ Premium">₹5,00,000+ Premium Stage</option>
+                    </select>
+                  </div>
+
+                  <div>
+                    <label className="font-bold text-muted-foreground block mb-1.5">Special Notes / Run of Show Notes</label>
+                    <textarea
+                      rows={3}
+                      value={newBrief}
+                      onChange={(e) => setNewBrief(e.target.value)}
+                      placeholder="Tell us about your expectations, VIP dignitaries, and stage energy required..."
+                      className="w-full rounded-xl border border-input bg-background/80 py-2.5 px-3.5 text-sm text-foreground placeholder:text-muted-foreground/50 focus:border-primary focus:outline-none"
+                    />
+                  </div>
+
+                  <div className="flex justify-end gap-2 pt-2 border-t border-border">
+                    <button
+                      type="button"
+                      onClick={() => setCreateModalOpen(false)}
+                      className="btn-outline !py-2 !px-4 text-sm !border-border !text-foreground hover:!bg-muted"
+                    >
+                      Cancel
+                    </button>
+                    <button type="submit" className="btn-red !py-2 !px-4 text-sm">
+                      Submit Enquiry Directly
+                    </button>
+                  </div>
+                </form>
               </div>
             </div>
           )}

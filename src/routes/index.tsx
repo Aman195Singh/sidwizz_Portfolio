@@ -131,9 +131,9 @@ function Home() {
       <section className="bg-blush py-14">
         <div className="container-x">
           <SectionHead center eyebrow="Why choose SIDD.WHIZZ" title="More than a host — a stage experience." />
-          <div className="mt-10 grid grid-cols-2 gap-y-8 md:grid-cols-5">
+          <div className="mt-10 grid grid-cols-2 gap-y-8 sm:grid-cols-3 lg:grid-cols-5">
             {WHY.map((w, i) => (
-              <Reveal key={w.t} delay={i * 90} className={`px-4 text-center ${i > 0 ? "md:border-l" : ""}`}>
+              <Reveal key={w.t} delay={i * 90} className={`px-4 text-center ${i > 0 ? "lg:border-l" : ""}`}>
                 <w.i className="mx-auto h-9 w-9 text-primary transition-transform duration-500 hover:scale-125" />
                 <h3 className="mt-3 font-display text-sm font-extrabold">{w.t}</h3>
                 <p className="mt-1 text-xs text-muted-foreground">{w.d}</p>
@@ -152,7 +152,7 @@ function Home() {
             ))}
           </Reveal>
         </div>
-        <div className="mt-7 grid grid-cols-2 gap-3 md:grid-cols-5">
+        <div className="mt-7 grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">
           {shown.map((h, i) => (
             <div key={h.img + filter} className="animate-rise img-zoom group relative aspect-[4/3] overflow-hidden rounded-lg" style={{ "--d": `${i * 80}ms` } as React.CSSProperties}>
               <img src={h.img} alt={`${h.c} event`} loading="lazy" width={1280} height={896} className="h-full w-full object-cover" />

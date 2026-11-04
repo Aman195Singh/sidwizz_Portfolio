@@ -122,7 +122,7 @@ function Services() {
 
       <section className="container-x py-14">
         <SectionHead eyebrow="How it works" title="A simple & transparent process." />
-        <div className="mt-10 grid gap-8 md:grid-cols-4 md:gap-10">
+        <div className="mt-10 grid gap-8 sm:grid-cols-2 lg:grid-cols-4 lg:gap-10">
           {STEPS.map((s, i) => (
             <Reveal key={s.t} delay={i * 130} className="relative">
               <div className="card-lift h-full p-6 pt-8 text-center">
@@ -131,7 +131,7 @@ function Services() {
                 <h3 className="mt-3 font-display text-base font-extrabold">{s.t}</h3>
                 <p className="mt-1 text-sm text-muted-foreground">{s.d}</p>
               </div>
-              {i < 3 && <ArrowRight className="absolute -right-8 top-1/2 hidden h-5 w-5 text-primary md:block" />}
+              {i < 3 && <ArrowRight className="absolute -right-8 top-1/2 hidden h-5 w-5 text-primary lg:block" />}
             </Reveal>
           ))}
         </div>

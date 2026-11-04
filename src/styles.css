@@ -148,7 +148,7 @@
     background: var(--primary);
   }
   .heading-line {
-    @apply inline-flex items-center gap-4;
+    @apply inline-flex flex-wrap items-center gap-x-4 gap-y-2;
   }
   .heading-line::after {
     content: "";
@@ -246,7 +246,12 @@
     color: var(--primary);
   }
   .hero-fade {
-    background: linear-gradient(90deg, var(--background) 0%, var(--background) 34%, color-mix(in oklab, var(--background) 70%, transparent) 46%, transparent 62%);
+    background: linear-gradient(90deg, var(--background) 0%, var(--background) 46%, color-mix(in oklab, var(--background) 82%, transparent) 66%, transparent 86%);
+  }
+  @media (min-width: 1024px) {
+    .hero-fade {
+      background: linear-gradient(90deg, var(--background) 0%, var(--background) 34%, color-mix(in oklab, var(--background) 70%, transparent) 46%, transparent 62%);
+    }
   }
   .hero-fade-mobile {
     background: linear-gradient(180deg, transparent 0%, color-mix(in oklab, var(--background) 40%, transparent) 40%, var(--background) 78%);
