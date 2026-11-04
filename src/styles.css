@@ -254,7 +254,15 @@
     }
   }
   .hero-fade-mobile {
-    background: linear-gradient(180deg, transparent 0%, color-mix(in oklab, var(--background) 40%, transparent) 40%, var(--background) 78%);
+    background: linear-gradient(
+      180deg,
+      transparent 0%,
+      transparent 20%,
+      color-mix(in oklab, var(--background) 35%, transparent) 42%,
+      color-mix(in oklab, var(--background) 80%, transparent) 68%,
+      var(--background) 88%,
+      var(--background) 100%
+    );
   }
   .hero-slash {
     background: linear-gradient(115deg, transparent 55%, var(--primary) 55.2%, var(--primary-deep) 70%, transparent 70.2%);

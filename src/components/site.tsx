@@ -633,22 +633,28 @@ export function PageHero({
 }) {
   return (
     <section className={`relative overflow-hidden ${big ? "md:h-[700px]" : "md:h-[500px]"}`}>
-      <div className="relative h-[300px] md:absolute md:inset-0 md:h-auto">
-        <div className="absolute inset-0 md:left-[30%]">
-          <img
-            src={image}
-            alt=""
-            width={1920}
-            height={1080}
-            className="animate-kenburns h-full w-full object-cover"
-            style={{ objectPosition: position }}
-          />
+      <div className="relative h-[320px] overflow-hidden md:absolute md:inset-0 md:h-auto">
+        <div className="absolute inset-0 overflow-hidden md:left-[30%]">
+          {/* Animated wrapper synchronizes Ken Burns zoom/scale for both image and mobile white gradient overlay */}
+          <div className="animate-kenburns relative h-full w-full">
+            <img
+              src={image}
+              alt=""
+              width={1920}
+              height={1080}
+              className="h-full w-full object-cover"
+              style={{ objectPosition: position }}
+            />
+            {/* Mobile white gradient layer that moves and scales in 100% lockstep with the image */}
+            <div className="hero-fade-mobile pointer-events-none absolute inset-0 md:hidden" />
+          </div>
         </div>
         <div className="hero-slash animate-slash pointer-events-none absolute inset-0 hidden md:block" />
-        <div className="hero-fade absolute inset-0 hidden md:block" />
-        <div className="hero-fade-mobile absolute inset-0 md:hidden" />
+        <div className="hero-fade pointer-events-none absolute inset-0 hidden md:block" />
+        {/* Seamless bottom transition layer guaranteeing pure background blend on mobile */}
+        <div className="pointer-events-none absolute inset-x-0 bottom-0 h-24 bg-gradient-to-b from-transparent to-background md:hidden" />
       </div>
-      <div className="container-x relative -mt-16 pb-10 md:mt-0 md:flex md:h-full md:items-center md:pb-0">
+      <div className="container-x relative -mt-8 pb-10 md:mt-0 md:flex md:h-full md:items-center md:pb-0">
         <div className="max-w-2xl">
           <p className="eyebrow eyebrow-line animate-rise">{eyebrow}</p>
           <h1 className={`display mt-4 ${big ? "text-4xl sm:text-5xl lg:text-[54px]" : "text-3xl sm:text-4xl lg:text-[52px]"}`}>
