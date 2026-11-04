@@ -1,12 +1,64 @@
 import { Link, useRouterState } from "@tanstack/react-router";
 import { useEffect, useRef, useState, type CSSProperties, type ReactNode } from "react";
-import { CalendarDays, ArrowRight, Menu, X, Send, Quote, Star, ChevronLeft, ChevronRight } from "lucide-react";
+import {
+  CalendarDays,
+  ArrowRight,
+  Menu,
+  X,
+  Send,
+  Quote,
+  Star,
+  ChevronLeft,
+  ChevronRight,
+  ChevronDown,
+  User,
+  LogOut,
+  Image as ImageIcon,
+  BookOpen,
+  Film,
+  Building2,
+  Newspaper,
+  HelpCircle,
+  Database,
+  Sparkles,
+} from "lucide-react";
+import {
+  DropdownMenu,
+  DropdownMenuTrigger,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuLabel,
+} from "@/components/ui/dropdown-menu";
+import { useAuth } from "@/lib/auth";
 import ctaHost from "@/assets/cta-host.jpg";
 import ctaCrowd from "@/assets/cta-crowd.jpg";
 import avPriya from "@/assets/avatar-priya.jpg";
 import avRohit from "@/assets/avatar-rohit.jpg";
 import avAmit from "@/assets/avatar-amit.jpg";
 
+export const PRIMARY_NAV = [
+  { to: "/", label: "Home" },
+  { to: "/about", label: "About" },
+  { to: "/services", label: "Services" },
+  { to: "/portfolio", label: "Portfolio" },
+  { to: "/contact", label: "Contact" },
+] as const;
+
+export const MORE_ACTIVE_NAV = [
+  { to: "/gallery", label: "Gallery", icon: ImageIcon, desc: "Stage visuals & moments" },
+] as const;
+
+export const MORE_FUTURE_NAV = [
+  { label: "Testimonials", icon: Quote, desc: "Client reviews & organizer words" },
+  { label: "Blogs", icon: BookOpen, desc: "Articles & stage insights" },
+  { label: "Videos", icon: Film, desc: "Event showreels & highlights" },
+  { label: "Clients & Brands", icon: Building2, desc: "Corporate partners & summits" },
+  { label: "Media & Press", icon: Newspaper, desc: "Interviews, kit & coverage" },
+  { label: "FAQs", icon: HelpCircle, desc: "Hosting queries & answers" },
+] as const;
+
+// Kept for backward compatibility with Footer
 export const NAV = [
   { to: "/", label: "Home" },
   { to: "/about", label: "About" },
@@ -89,8 +141,11 @@ function Tagline({ light = false }: { light?: boolean }) {
 /* ---------- Header ---------- */
 export function Header() {
   const [open, setOpen] = useState(false);
+  const [mobileMoreOpen, setMobileMoreOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
   const pathname = useRouterState({ select: (s) => s.location.pathname });
+  const { user, logout } = useAuth();
+
   useEffect(() => setOpen(false), [pathname]);
   useEffect(() => {
     const on = () => setScrolled(window.scrollY > 10);
@@ -98,50 +153,315 @@ export function Header() {
     window.addEventListener("scroll", on, { passive: true });
     return () => window.removeEventListener("scroll", on);
   }, []);
+
   return (
     <header
       className={`sticky top-0 z-50 border-b bg-background/95 backdrop-blur transition-shadow duration-300 ${scrolled ? "shadow-[var(--shadow-card)]" : ""}`}
     >
       <div className="container-x flex h-16 items-center justify-between gap-4 md:h-[72px]">
-        <Link to="/" className="flex items-center gap-4">
+        {/* Left: Clean Logo */}
+        <Link to="/" className="flex items-center gap-2">
           <Logo />
-          <span className="hidden lg:block">
-            <Tagline />
-          </span>
         </Link>
-        <nav className="hidden items-center gap-7 md:flex">
-          {NAV.map((n) => (
-            <Link key={n.to} to={n.to} className="nav-link" activeOptions={{ exact: true }}>
+
+        {/* Middle: Primary Pages + More Dropdown */}
+        <nav className="hidden items-center gap-6 md:flex">
+          {PRIMARY_NAV.map((n) => (
+            <Link
+              key={n.to}
+              to={n.to}
+              className="nav-link font-medium text-sm transition-colors hover:text-primary"
+              activeOptions={{ exact: n.to === "/" }}
+            >
               {n.label}
             </Link>
           ))}
+
+          {/* "More" Dropdown Menu */}
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <button
+                type="button"
+                className="group flex items-center gap-1.5 font-sans text-sm font-medium text-foreground/85 transition-colors hover:text-primary outline-none focus-visible:ring-2 focus-visible:ring-primary rounded-md px-1 py-0.5"
+                aria-label="More navigation links"
+              >
+                <span>More</span>
+                <ChevronDown className="h-4 w-4 text-muted-foreground transition-transform duration-200 group-data-[state=open]:rotate-180 group-hover:text-primary" />
+              </button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent
+              align="start"
+              className="w-72 p-2 bg-card/95 backdrop-blur-md border border-border shadow-2xl rounded-xl z-50"
+            >
+              {/* Active Pages Section */}
+              <DropdownMenuLabel className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground px-2 py-1">
+                Active Pages
+              </DropdownMenuLabel>
+              {MORE_ACTIVE_NAV.map((item) => (
+                <DropdownMenuItem key={item.to} asChild>
+                  <Link
+                    to={item.to}
+                    className="flex items-start gap-2.5 rounded-lg px-2.5 py-2 text-sm transition-colors hover:bg-accent hover:text-primary cursor-pointer group"
+                  >
+                    <item.icon className="h-4 w-4 mt-0.5 text-primary shrink-0" />
+                    <div>
+                      <p className="font-semibold text-foreground group-hover:text-primary leading-tight">
+                        {item.label}
+                      </p>
+                      <p className="text-xs text-muted-foreground leading-snug">{item.desc}</p>
+                    </div>
+                  </Link>
+                </DropdownMenuItem>
+              ))}
+
+              <DropdownMenuSeparator className="my-1.5" />
+
+              {/* Future / Coming Soon Pages Section */}
+              <div className="flex items-center justify-between px-2 py-1">
+                <DropdownMenuLabel className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground/70 p-0">
+                  Coming Soon
+                </DropdownMenuLabel>
+                <span className="text-[10px] font-bold uppercase bg-muted text-muted-foreground px-1.5 py-0.5 rounded">
+                  Future
+                </span>
+              </div>
+
+              {MORE_FUTURE_NAV.map((item) => (
+                <div
+                  key={item.label}
+                  className="flex items-start justify-between gap-2 rounded-lg px-2.5 py-2 text-sm text-muted-foreground/60 cursor-not-allowed select-none transition-colors hover:bg-muted/30"
+                  title={`${item.label} page is coming soon`}
+                >
+                  <div className="flex items-start gap-2.5">
+                    <item.icon className="h-4 w-4 mt-0.5 text-muted-foreground/40 shrink-0" />
+                    <div>
+                      <p className="font-medium text-muted-foreground/75 leading-tight">{item.label}</p>
+                      <p className="text-[11px] text-muted-foreground/50 leading-snug">{item.desc}</p>
+                    </div>
+                  </div>
+                  <span className="text-[10px] font-medium text-muted-foreground/50 border border-border/50 px-1.5 py-0.5 rounded shrink-0">
+                    Soon
+                  </span>
+                </div>
+              ))}
+            </DropdownMenuContent>
+          </DropdownMenu>
         </nav>
-        <Link to="/contact" className="btn-red hidden !px-4 !py-2 !normal-case md:inline-flex">
-          <CalendarDays className="h-4 w-4" /> Book Sid <ArrowRight className="h-4 w-4" />
-        </Link>
-        <button
-          className="grid h-10 w-10 place-items-center rounded-md border md:hidden"
-          aria-label="Toggle menu"
-          onClick={() => setOpen((v) => !v)}
-        >
-          {open ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
-        </button>
+
+        {/* Right: Auth Profile Icon & "Book Sid" Button */}
+        <div className="hidden items-center gap-3 md:flex">
+          {user ? (
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <button
+                  type="button"
+                  className="flex items-center gap-2 rounded-full border border-border/70 bg-card/60 px-3 py-1.5 text-xs font-semibold text-foreground backdrop-blur transition hover:border-primary/50 hover:bg-card focus-visible:ring-2 focus-visible:ring-primary outline-none"
+                  aria-label="User profile options"
+                >
+                  <div className="grid h-6 w-6 place-items-center rounded-full bg-primary/15 text-[11px] font-bold text-primary">
+                    {user.name.charAt(0).toUpperCase()}
+                  </div>
+                  <span className="max-w-[90px] truncate">{user.name.split(" ")[0]}</span>
+                  <span
+                    className={`rounded-full px-1.5 py-0.2 text-[9px] font-bold uppercase tracking-wide ${
+                      user.role === "admin"
+                        ? "bg-primary/20 text-primary border border-primary/30"
+                        : user.role === "client"
+                        ? "bg-amber-500/20 text-amber-500 border border-amber-500/30"
+                        : "bg-emerald-500/20 text-emerald-500 border border-emerald-500/30"
+                    }`}
+                  >
+                    {user.role}
+                  </span>
+                  <ChevronDown className="h-3.5 w-3.5 text-muted-foreground" />
+                </button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent
+                align="end"
+                className="w-56 p-2 bg-card/95 backdrop-blur border border-border shadow-2xl rounded-xl z-50"
+              >
+                <div className="px-2 py-1.5">
+                  <p className="text-xs font-bold text-foreground truncate">{user.name}</p>
+                  <p className="text-[11px] text-muted-foreground truncate">{user.email}</p>
+                  <div className="mt-1 flex items-center gap-1.5">
+                    <span
+                      className={`rounded-full px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wide ${
+                        user.role === "admin"
+                          ? "bg-primary/20 text-primary"
+                          : user.role === "client"
+                          ? "bg-amber-500/20 text-amber-500"
+                          : "bg-emerald-500/20 text-emerald-500"
+                      }`}
+                    >
+                      Role: {user.role === "admin" ? "Site Admin / Sid" : user.role === "client" ? "Event Organizer" : "Member"}
+                    </span>
+                  </div>
+                </div>
+                <DropdownMenuSeparator className="my-1" />
+                <DropdownMenuItem asChild>
+                  <Link to="/profile" className="flex items-center gap-2 px-2 py-1.5 text-xs font-medium cursor-pointer">
+                    <User className="h-3.5 w-3.5 text-primary" />
+                    <span>Role Dashboard</span>
+                  </Link>
+                </DropdownMenuItem>
+                {user.role === "admin" && (
+                  <DropdownMenuItem asChild>
+                    <Link to="/db-status" className="flex items-center gap-2 px-2 py-1.5 text-xs font-medium cursor-pointer">
+                      <Database className="h-3.5 w-3.5 text-amber-400" />
+                      <span>Neon DB Health Check</span>
+                    </Link>
+                  </DropdownMenuItem>
+                )}
+                <DropdownMenuSeparator className="my-1" />
+                <DropdownMenuItem
+                  onClick={logout}
+                  className="flex items-center gap-2 px-2 py-1.5 text-xs font-medium text-destructive cursor-pointer focus:bg-destructive/15 focus:text-destructive"
+                >
+                  <LogOut className="h-3.5 w-3.5" />
+                  <span>Sign Out</span>
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          ) : (
+            <Link
+              to="/login"
+              className="flex items-center gap-1.5 rounded-full border border-border/80 px-3.5 py-1.5 text-xs font-semibold text-foreground/90 transition hover:border-primary/60 hover:text-primary focus-visible:ring-2 focus-visible:ring-primary"
+            >
+              <User className="h-3.5 w-3.5 text-primary" />
+              <span>Login</span>
+            </Link>
+          )}
+
+          <Link to="/contact" className="btn-red !px-4 !py-2 !normal-case">
+            <CalendarDays className="h-4 w-4" /> Book Sid <ArrowRight className="h-4 w-4" />
+          </Link>
+        </div>
+
+        {/* Mobile Hamburger Button */}
+        <div className="flex items-center gap-2 md:hidden">
+          {user ? (
+            <Link
+              to="/profile"
+              className="grid h-8 w-8 place-items-center rounded-full bg-primary/15 text-xs font-bold text-primary border border-primary/30"
+              aria-label="Profile"
+            >
+              {user.name.charAt(0).toUpperCase()}
+            </Link>
+          ) : (
+            <Link
+              to="/login"
+              className="grid h-8 w-8 place-items-center rounded-full border border-border text-foreground"
+              aria-label="Login"
+            >
+              <User className="h-4 w-4" />
+            </Link>
+          )}
+
+          <button
+            className="grid h-10 w-10 place-items-center rounded-md border text-foreground"
+            aria-label="Toggle menu"
+            onClick={() => setOpen((v) => !v)}
+          >
+            {open ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
+          </button>
+        </div>
       </div>
+
+      {/* Mobile Drawer */}
       <div
-        className={`grid overflow-hidden border-t bg-background transition-all duration-500 md:hidden ${open ? "grid-rows-[1fr]" : "grid-rows-[0fr] border-transparent"}`}
+        className={`grid overflow-hidden border-t bg-background transition-all duration-500 md:hidden ${
+          open ? "grid-rows-[1fr]" : "grid-rows-[0fr] border-transparent"
+        }`}
       >
         <div className="min-h-0">
           <nav className="container-x flex flex-col gap-1 py-4">
-            {NAV.map((n) => (
+            {/* 4 Primary Pages */}
+            {PRIMARY_NAV.map((n) => (
               <Link
                 key={n.to}
                 to={n.to}
-                activeOptions={{ exact: true }}
-                className="rounded-md px-3 py-2.5 font-semibold data-[status=active]:bg-accent data-[status=active]:text-primary"
+                activeOptions={{ exact: n.to === "/" }}
+                className="rounded-md px-3 py-2 font-semibold text-foreground data-[status=active]:bg-accent data-[status=active]:text-primary"
               >
                 {n.label}
               </Link>
             ))}
+
+            {/* Mobile "More" Accordion Toggle */}
+            <button
+              type="button"
+              onClick={() => setMobileMoreOpen((v) => !v)}
+              className="flex items-center justify-between rounded-md px-3 py-2 font-semibold text-foreground hover:bg-accent/50"
+            >
+              <span>More Pages</span>
+              <ChevronDown
+                className={`h-4 w-4 transition-transform duration-200 ${mobileMoreOpen ? "rotate-180 text-primary" : "text-muted-foreground"}`}
+              />
+            </button>
+
+            {mobileMoreOpen && (
+              <div className="ml-2 flex flex-col gap-1 border-l-2 border-border/60 pl-3 my-1">
+                <p className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground pt-1">
+                  Active Pages
+                </p>
+                {MORE_ACTIVE_NAV.map((item) => (
+                  <Link
+                    key={item.to}
+                    to={item.to}
+                    className="flex items-center gap-2 rounded-md px-2 py-1.5 text-sm font-medium text-foreground hover:text-primary data-[status=active]:text-primary"
+                  >
+                    <item.icon className="h-3.5 w-3.5 text-primary" />
+                    <span>{item.label}</span>
+                  </Link>
+                ))}
+
+                <p className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground/70 pt-2">
+                  Coming Soon (Future Pages)
+                </p>
+                {MORE_FUTURE_NAV.map((item) => (
+                  <div
+                    key={item.label}
+                    className="flex items-center justify-between py-1 text-sm text-muted-foreground/50 select-none"
+                  >
+                    <span className="flex items-center gap-2">
+                      <item.icon className="h-3.5 w-3.5 text-muted-foreground/40" />
+                      {item.label}
+                    </span>
+                    <span className="text-[10px] px-1 rounded border border-border/50 text-muted-foreground/50">
+                      Soon
+                    </span>
+                  </div>
+                ))}
+              </div>
+            )}
+
+            {/* Auth / Profile Option on Mobile */}
+            <div className="mt-2 border-t pt-2">
+              {user ? (
+                <div className="flex flex-col gap-2">
+                  <div className="flex items-center justify-between px-3 py-1">
+                    <div>
+                      <p className="text-xs font-bold text-foreground">{user.name}</p>
+                      <p className="text-[11px] text-muted-foreground">{user.email}</p>
+                    </div>
+                    <span className="text-[10px] font-bold uppercase rounded bg-primary/20 text-primary px-1.5 py-0.5">
+                      {user.role}
+                    </span>
+                  </div>
+                  <Link to="/profile" className="btn-outline text-xs">
+                    <User className="h-3.5 w-3.5" /> View Role Dashboard
+                  </Link>
+                  <button onClick={logout} className="text-left text-xs text-destructive px-3 py-1 font-semibold">
+                    Sign Out
+                  </button>
+                </div>
+              ) : (
+                <Link to="/login" className="btn-outline text-xs mb-2">
+                  <User className="h-3.5 w-3.5" /> Login / Sign Up
+                </Link>
+              )}
+            </div>
+
             <Link to="/contact" className="btn-red mt-2">
               <CalendarDays className="h-4 w-4" /> Book Sid
             </Link>

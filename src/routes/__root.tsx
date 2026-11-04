@@ -14,6 +14,7 @@ import { useEffect, type ReactNode } from "react";
 import appCss from "../styles.css?url";
 import { Header, Footer } from "@/components/site";
 import { Toaster } from "@/components/ui/sonner";
+import { AuthProvider } from "@/lib/auth";
 
 function NotFoundComponent() {
   return (
@@ -131,12 +132,14 @@ function RootComponent() {
 
   return (
     <QueryClientProvider client={queryClient}>
-      <Header />
-      <main key={pathname} className="animate-page">
-        <Outlet />
-      </main>
-      <Footer />
-      <Toaster position="top-center" richColors />
+      <AuthProvider>
+        <Header />
+        <main key={pathname} className="animate-page">
+          <Outlet />
+        </main>
+        <Footer />
+        <Toaster position="top-center" richColors />
+      </AuthProvider>
     </QueryClientProvider>
   );
 }

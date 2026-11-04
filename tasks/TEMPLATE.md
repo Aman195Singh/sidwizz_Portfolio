@@ -27,3 +27,4 @@ Use this template to create new task files (e.g., `tasks/01_my_feature.md`).
 - [ ] Requirement 1 complete ho
 - [ ] Mobile responsive ho (320px par check)
 - [ ] `npm test` aur `npm run build` pass ho bina kisi error ke
+
