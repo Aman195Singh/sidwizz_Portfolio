@@ -21,6 +21,8 @@ import {
   HelpCircle,
   Database,
   Sparkles,
+  ShieldCheck,
+  Briefcase,
 } from "lucide-react";
 import {
   DropdownMenu,
@@ -298,17 +300,33 @@ export function Header() {
                   </div>
                 </div>
                 <DropdownMenuSeparator className="my-1" />
+                {user.role === "admin" && (
+                  <DropdownMenuItem asChild>
+                    <Link to="/admin" className="flex items-center gap-2 px-2 py-1.5 text-xs font-bold text-primary cursor-pointer">
+                      <ShieldCheck className="h-3.5 w-3.5 text-primary" />
+                      <span>Admin Panel</span>
+                    </Link>
+                  </DropdownMenuItem>
+                )}
+                {user.role === "client" && (
+                  <DropdownMenuItem asChild>
+                    <Link to="/organizer" className="flex items-center gap-2 px-2 py-1.5 text-xs font-bold text-amber-500 cursor-pointer">
+                      <Briefcase className="h-3.5 w-3.5 text-amber-500" />
+                      <span>Organiser Portal</span>
+                    </Link>
+                  </DropdownMenuItem>
+                )}
                 <DropdownMenuItem asChild>
                   <Link to="/profile" className="flex items-center gap-2 px-2 py-1.5 text-xs font-medium cursor-pointer">
-                    <User className="h-3.5 w-3.5 text-primary" />
-                    <span>Role Dashboard</span>
+                    <User className="h-3.5 w-3.5 text-muted-foreground" />
+                    <span>My Account</span>
                   </Link>
                 </DropdownMenuItem>
                 {user.role === "admin" && (
                   <DropdownMenuItem asChild>
                     <Link to="/db-status" className="flex items-center gap-2 px-2 py-1.5 text-xs font-medium cursor-pointer">
                       <Database className="h-3.5 w-3.5 text-amber-400" />
-                      <span>Neon DB Health Check</span>
+                      <span>Neon DB Health</span>
                     </Link>
                   </DropdownMenuItem>
                 )}
@@ -448,9 +466,21 @@ export function Header() {
                       {user.role}
                     </span>
                   </div>
-                  <Link to="/profile" className="btn-outline text-xs">
-                    <User className="h-3.5 w-3.5" /> View Role Dashboard
-                  </Link>
+                  <div className="flex flex-col gap-1.5">
+                    {user.role === "admin" && (
+                      <Link to="/admin" className="btn-red !py-2 text-xs flex items-center justify-center gap-1.5">
+                        <ShieldCheck className="h-3.5 w-3.5" /> Open Admin Panel
+                      </Link>
+                    )}
+                    {user.role === "client" && (
+                      <Link to="/organizer" className="btn-red !py-2 text-xs flex items-center justify-center gap-1.5">
+                        <Briefcase className="h-3.5 w-3.5" /> Open Organiser Portal
+                      </Link>
+                    )}
+                    <Link to="/profile" className="btn-outline text-xs">
+                      <User className="h-3.5 w-3.5" /> My Account & Profile
+                    </Link>
+                  </div>
                   <button onClick={logout} className="text-left text-xs text-destructive px-3 py-1 font-semibold">
                     Sign Out
                   </button>

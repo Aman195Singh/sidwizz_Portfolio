@@ -15,10 +15,10 @@ describe("App routing", () => {
     expect(matches.at(-1)?.routeId).not.toBe(rootRouteId);
   });
 
-  it("matches auth and utility pages (/login, /signup, /profile, /db-status)", () => {
+  it("matches auth and utility pages (/login, /signup, /profile, /db-status, /admin, /organizer)", () => {
     const router = createRouter({ routeTree, context: { queryClient: new QueryClient() } });
 
-    for (const path of ["/login", "/signup", "/profile", "/db-status"]) {
+    for (const path of ["/login", "/signup", "/profile", "/db-status", "/admin", "/organizer"]) {
       const matches = router.matchRoutes(path);
       expect(matches.at(-1)?.routeId).not.toBe(rootRouteId);
     }

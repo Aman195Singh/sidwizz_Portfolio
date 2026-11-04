@@ -189,6 +189,47 @@ function ProfilePage() {
           </div>
         </div>
 
+        {/* Dedicated Portal Quick Launcher */}
+        {user.role === "admin" && (
+          <div className="rounded-2xl border-2 border-primary/40 bg-gradient-to-r from-primary/15 via-card to-card p-6 shadow-xl flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+            <div className="flex items-start gap-3">
+              <div className="rounded-xl bg-primary/20 p-3 text-primary shrink-0">
+                <ShieldCheck className="h-6 w-6" />
+              </div>
+              <div>
+                <h3 className="text-lg font-black font-display text-foreground">Dedicated Admin Management Panel</h3>
+                <p className="text-xs text-muted-foreground mt-0.5 max-w-xl">
+                  Full backoffice console with left navigation bar: Multi-client Enquiries with instant WhatsApp/Call/Email outreach, Web Traffic Analytics, Media Library sorted by type, Team Accounts, and Developer Support.
+                </p>
+              </div>
+            </div>
+            <Link to="/admin" className="btn-red !py-2.5 !px-5 text-xs whitespace-nowrap self-start sm:self-auto flex items-center gap-2">
+              <span>Open Admin Panel</span>
+              <ArrowRight className="h-4 w-4" />
+            </Link>
+          </div>
+        )}
+
+        {user.role === "client" && (
+          <div className="rounded-2xl border-2 border-amber-500/40 bg-gradient-to-r from-amber-500/15 via-card to-card p-6 shadow-xl flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+            <div className="flex items-start gap-3">
+              <div className="rounded-xl bg-amber-500/20 p-3 text-amber-500 shrink-0">
+                <Briefcase className="h-6 w-6" />
+              </div>
+              <div>
+                <h3 className="text-lg font-black font-display text-foreground">Dedicated Organiser Portal</h3>
+                <p className="text-xs text-muted-foreground mt-0.5 max-w-xl">
+                  Manage your stage reservations, create new event enquiries, download contracts, and review host technical stage riders.
+                </p>
+              </div>
+            </div>
+            <Link to="/organizer" className="btn-red !py-2.5 !px-5 text-xs whitespace-nowrap self-start sm:self-auto flex items-center gap-2">
+              <span>Open Organiser Portal</span>
+              <ArrowRight className="h-4 w-4" />
+            </Link>
+          </div>
+        )}
+
         {/* ============================================================== */}
         {/* ROLE VIEW 1: ADMIN (SITE OWNER / SIDDHARTH MAURYA)              */}
         {/* ============================================================== */}

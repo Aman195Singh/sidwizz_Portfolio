@@ -130,14 +130,16 @@ function RootComponent() {
     window.scrollTo({ top: 0, behavior: "instant" as ScrollBehavior });
   }, [pathname]);
 
+  const isPanel = pathname.startsWith("/admin") || pathname.startsWith("/organizer");
+
   return (
     <QueryClientProvider client={queryClient}>
       <AuthProvider>
-        <Header />
-        <main key={pathname} className="animate-page">
+        {!isPanel && <Header />}
+        <main key={pathname} className={isPanel ? "min-h-screen bg-background" : "animate-page"}>
           <Outlet />
         </main>
-        <Footer />
+        {!isPanel && <Footer />}
         <Toaster position="top-center" richColors />
       </AuthProvider>
     </QueryClientProvider>
