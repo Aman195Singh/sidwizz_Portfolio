@@ -157,9 +157,6 @@ export function OrganizerPanel() {
     };
   }, []);
 
-  const lockedDates = getLockedEventDates();
-  const dateConflict = newDate ? lockedDates.find((d) => d.date === newDate) : undefined;
-
   const [createModalOpen, setCreateModalOpen] = useState(false);
 
   // Form fields for new enquiry
@@ -171,6 +168,9 @@ export function OrganizerPanel() {
   const [newCrowd, setNewCrowd] = useState("500 - 1,000 Attendees");
   const [newBudget, setNewBudget] = useState("₹2,50,000 - ₹4,00,000");
   const [newBrief, setNewBrief] = useState("");
+
+  const lockedDates = getLockedEventDates();
+  const dateConflict = newDate ? lockedDates.find((d) => d.date === newDate) : undefined;
 
   // Account details state (Merged Account & Profile for Organizer)
   const [companyName, setCompanyName] = useState(user?.organization || "Apex Global Tech Summits Pvt Ltd");
