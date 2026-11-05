@@ -265,7 +265,7 @@ export function Header() {
               <DropdownMenuTrigger asChild>
                 <button
                   type="button"
-                  className="grid h-10 w-10 shrink-0 place-items-center rounded-full border-2 border-border bg-card font-display text-sm font-extrabold text-foreground shadow-sm transition hover:border-primary hover:text-primary focus-visible:ring-2 focus-visible:ring-primary outline-none overflow-hidden cursor-pointer"
+                  className="grid h-10 w-10 shrink-0 place-items-center rounded-full border-2 border-primary/60 bg-card font-display text-sm font-extrabold text-foreground shadow-sm transition hover:border-primary hover:scale-105 focus-visible:ring-2 focus-visible:ring-primary outline-none overflow-hidden cursor-pointer"
                   aria-label="User profile options"
                   title={`${user.name} (${user.role})`}
                 >
@@ -383,17 +383,76 @@ export function Header() {
         {/* Mobile Hamburger & Profile / Login Capsule */}
         <div className="flex items-center gap-2.5 lg:hidden">
           {user ? (
-            <Link
-              to={user.role === "admin" ? "/admin" : user.role === "client" ? "/organizer" : "/profile"}
-              className="grid h-10 w-10 place-items-center rounded-full border-2 border-border bg-card font-display text-sm font-extrabold text-foreground overflow-hidden"
-              aria-label="Profile"
-            >
-              {user.avatar ? (
-                <img src={user.avatar} alt={user.name} className="h-full w-full object-cover" />
-              ) : (
-                user.name.charAt(0).toUpperCase()
-              )}
-            </Link>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <button
+                  type="button"
+                  className="grid h-10 w-10 shrink-0 place-items-center rounded-full border-2 border-primary/60 bg-card font-display text-sm font-extrabold text-foreground overflow-hidden cursor-pointer shadow-sm"
+                  aria-label="Profile"
+                >
+                  {user.avatar ? (
+                    <img src={user.avatar} alt={user.name} className="h-full w-full rounded-full object-cover" />
+                  ) : (
+                    <span>{user.name.charAt(0).toUpperCase()}</span>
+                  )}
+                </button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent
+                align="end"
+                className="w-72 p-4 bg-card/98 backdrop-blur-md border border-border shadow-2xl rounded-2xl z-50"
+              >
+                <div className="flex items-center gap-3">
+                  <div className="grid h-12 w-12 shrink-0 place-items-center rounded-full bg-primary/20 text-primary border border-primary/30 font-display text-base font-black overflow-hidden shadow-sm">
+                    {user.avatar ? (
+                      <img src={user.avatar} alt={user.name} className="h-full w-full object-cover" />
+                    ) : (
+                      <span>{user.name.charAt(0).toUpperCase()}</span>
+                    )}
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <p className="font-display text-base font-extrabold text-foreground truncate">{user.name}</p>
+                    <p className="text-xs text-muted-foreground truncate">{user.email}</p>
+                  </div>
+                </div>
+                <div className="mt-3">
+                  <span className="inline-flex items-center gap-1.5 rounded-full bg-primary/10 border border-primary/25 px-2.5 py-1 font-display text-[11px] font-extrabold uppercase tracking-wider text-primary">
+                    {user.role === "admin" ? (
+                      <>👑 SUPER ADMIN</>
+                    ) : user.role === "client" ? (
+                      <>🏢 EVENT ORGANIZER</>
+                    ) : (
+                      <>🎟️ MEMBER PASS</>
+                    )}
+                  </span>
+                </div>
+                <div className="my-3 border-t border-border" />
+                <div className="space-y-1">
+                  <DropdownMenuItem asChild>
+                    <Link
+                      to={user.role === "admin" ? "/admin" : user.role === "client" ? "/organizer" : "/profile"}
+                      className="flex items-center gap-3 rounded-xl px-3 py-2 text-sm font-semibold text-foreground cursor-pointer transition-colors hover:bg-accent"
+                    >
+                      <LayoutDashboard className="h-4 w-4 text-primary" />
+                      <span>
+                        {user.role === "admin"
+                          ? "Admin Dashboard"
+                          : user.role === "client"
+                          ? "Organiser Dashboard"
+                          : "Attendee Portal"}
+                      </span>
+                    </Link>
+                  </DropdownMenuItem>
+                </div>
+                <div className="my-2 border-t border-border" />
+                <DropdownMenuItem
+                  onClick={logout}
+                  className="flex items-center gap-3 rounded-xl px-3 py-2 text-sm font-bold text-primary cursor-pointer transition-colors hover:bg-primary/10"
+                >
+                  <LogOut className="h-4 w-4 text-primary" />
+                  <span>Sign Out</span>
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
           ) : (
             <Link
               to="/login"
@@ -488,11 +547,20 @@ export function Header() {
               {user ? (
                 <div className="flex flex-col gap-2">
                   <div className="flex items-center justify-between px-3 py-1">
-                    <div>
-                      <p className="text-xs font-bold text-foreground">{user.name}</p>
-                      <p className="text-[11px] text-muted-foreground">{user.email}</p>
+                    <div className="flex items-center gap-2.5 min-w-0">
+                      <div className="grid h-9 w-9 shrink-0 place-items-center rounded-full border border-primary/50 bg-primary/15 text-xs font-black text-primary overflow-hidden">
+                        {user.avatar ? (
+                          <img src={user.avatar} alt={user.name} className="h-full w-full object-cover" />
+                        ) : (
+                          <span>{user.name.charAt(0).toUpperCase()}</span>
+                        )}
+                      </div>
+                      <div className="min-w-0">
+                        <p className="text-xs font-bold text-foreground truncate">{user.name}</p>
+                        <p className="text-[11px] text-muted-foreground truncate">{user.email}</p>
+                      </div>
                     </div>
-                    <span className="text-[10px] font-bold uppercase rounded bg-primary/20 text-primary px-1.5 py-0.5">
+                    <span className="text-[10px] font-bold uppercase rounded bg-primary/20 text-primary px-1.5 py-0.5 shrink-0">
                       {user.role}
                     </span>
                   </div>

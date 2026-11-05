@@ -974,7 +974,7 @@ https://sidwizz-portfolio.vercel.app`
             {/* Circular Account Icon (Far Right) */}
             <button
               onClick={() => setActiveTab("account")}
-              className="grid h-10 w-10 shrink-0 place-items-center rounded-full overflow-hidden border-2 border-border bg-card font-display text-sm font-extrabold text-foreground hover:border-primary hover:text-primary transition cursor-pointer"
+              className="grid h-10 w-10 shrink-0 place-items-center rounded-full overflow-hidden border-2 border-primary/60 bg-card font-display text-sm font-extrabold text-foreground hover:border-primary hover:scale-105 transition cursor-pointer shadow-sm"
               title="Open Account & Profile"
             >
               {user?.avatar ? (
@@ -1085,34 +1085,34 @@ https://sidwizz-portfolio.vercel.app`
                   </button>
                 </div>
 
-                <div className="overflow-x-auto">
-                  <table className="w-full text-left text-sm">
+                <div className="overflow-x-auto -mx-2 px-2 sm:mx-0 sm:px-0">
+                  <table className="w-full min-w-[780px] text-left text-sm">
                     <thead className="border-b border-border bg-muted/40 font-display text-xs font-extrabold text-muted-foreground uppercase tracking-wider">
                       <tr>
-                        <th className="p-3.5">Ref</th>
-                        <th className="p-3.5">Event & Organizer</th>
-                        <th className="p-3.5">Date & Venue</th>
-                        <th className="p-3.5">Budget</th>
-                        <th className="p-3.5">Status</th>
-                        <th className="p-3.5 text-right">Quick Contact</th>
+                        <th className="p-3.5 whitespace-nowrap">Ref</th>
+                        <th className="p-3.5 whitespace-nowrap">Event &amp; Organizer</th>
+                        <th className="p-3.5 whitespace-nowrap">Date &amp; Venue</th>
+                        <th className="p-3.5 whitespace-nowrap">Budget</th>
+                        <th className="p-3.5 whitespace-nowrap">Status</th>
+                        <th className="p-3.5 text-right whitespace-nowrap">Quick Contact</th>
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-border">
                       {enquiries.slice(0, 4).map((e) => (
                         <tr key={e.id} className="hover:bg-accent/40 transition">
-                          <td className="p-3.5 font-mono text-sm font-bold text-primary">{e.id}</td>
-                          <td className="p-3.5">
-                            <p className="font-display font-bold text-foreground">{e.eventName}</p>
-                            <p className="text-xs text-muted-foreground mt-0.5">{e.clientName} • {e.organization}</p>
+                          <td className="p-3.5 font-mono text-sm font-bold text-primary whitespace-nowrap">{e.id}</td>
+                          <td className="p-3.5 whitespace-nowrap">
+                            <p className="font-display font-bold text-foreground whitespace-nowrap">{e.eventName}</p>
+                            <p className="text-xs text-muted-foreground mt-0.5 whitespace-nowrap">{e.clientName} • {e.organization}</p>
                           </td>
-                          <td className="p-3.5">
-                            <p className="font-semibold text-foreground">{e.date}</p>
-                            <p className="text-xs text-muted-foreground mt-0.5">{e.city}</p>
+                          <td className="p-3.5 whitespace-nowrap">
+                            <p className="font-semibold text-foreground whitespace-nowrap">{e.date}</p>
+                            <p className="text-xs text-muted-foreground mt-0.5 whitespace-nowrap">{e.city}</p>
                           </td>
-                          <td className="p-3.5 font-mono text-sm text-foreground font-bold">{e.budget}</td>
-                          <td className="p-3.5">
+                          <td className="p-3.5 font-mono text-sm text-foreground font-bold whitespace-nowrap">{e.budget}</td>
+                          <td className="p-3.5 whitespace-nowrap">
                             <span
-                              className={`rounded-full px-2.5 py-1 text-xs font-bold ${
+                              className={`inline-flex items-center whitespace-nowrap rounded-full px-2.5 py-1 text-xs font-bold ${
                                 e.status === "New"
                                   ? "bg-primary/20 text-primary border border-primary/30"
                                   : e.status === "Confirmed"
@@ -2231,40 +2231,40 @@ https://sidwizz-portfolio.vercel.app`
                   </button>
                 </div>
 
-                <div className="overflow-x-auto">
-                  <table className="w-full text-left text-sm">
+                <div className="overflow-x-auto -mx-2 px-2 sm:mx-0 sm:px-0">
+                  <table className="w-full min-w-[600px] text-left text-sm">
                     <thead className="border-b border-border bg-muted/30 text-xs font-bold text-muted-foreground uppercase tracking-wider">
                       <tr>
-                        <th className="p-3.5">User</th>
-                        <th className="p-3.5">Role</th>
-                        <th className="p-3.5">Access Level</th>
-                        <th className="p-3.5 text-right">Status</th>
+                        <th className="p-3.5 whitespace-nowrap">User</th>
+                        <th className="p-3.5 whitespace-nowrap">Role</th>
+                        <th className="p-3.5 whitespace-nowrap">Access Level</th>
+                        <th className="p-3.5 text-right whitespace-nowrap">Status</th>
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-border">
                       <tr>
-                        <td className="p-3.5">
-                          <p className="font-bold text-foreground">Siddharth Maurya</p>
-                          <p className="text-xs text-muted-foreground font-mono">admin@siddwhizz.com</p>
+                        <td className="p-3.5 whitespace-nowrap">
+                          <p className="font-bold text-foreground whitespace-nowrap">Siddharth Maurya</p>
+                          <p className="text-xs text-muted-foreground font-mono whitespace-nowrap">admin@siddwhizz.com</p>
                         </td>
-                        <td className="p-3.5 font-semibold text-primary">Super Admin (Host)</td>
-                        <td className="p-3.5 text-muted-foreground">Full Permissions</td>
-                        <td className="p-3.5 text-right">
-                          <span className="rounded-full bg-primary/20 text-primary px-2.5 py-0.5 text-xs font-bold border border-primary/30">
+                        <td className="p-3.5 font-semibold text-primary whitespace-nowrap">Super Admin (Host)</td>
+                        <td className="p-3.5 text-muted-foreground whitespace-nowrap">Full Permissions</td>
+                        <td className="p-3.5 text-right whitespace-nowrap">
+                          <span className="inline-flex items-center whitespace-nowrap rounded-full bg-primary/20 text-primary px-2.5 py-0.5 text-xs font-bold border border-primary/30">
                             Active
                           </span>
                         </td>
                       </tr>
 
                       <tr>
-                        <td className="p-3.5">
-                          <p className="font-bold text-foreground">Neha Sharma</p>
-                          <p className="text-xs text-muted-foreground font-mono">neha.bookings@siddwhizz.com</p>
+                        <td className="p-3.5 whitespace-nowrap">
+                          <p className="font-bold text-foreground whitespace-nowrap">Neha Sharma</p>
+                          <p className="text-xs text-muted-foreground font-mono whitespace-nowrap">neha.bookings@siddwhizz.com</p>
                         </td>
-                        <td className="p-3.5 font-semibold text-foreground">Booking Manager</td>
-                        <td className="p-3.5 text-muted-foreground">Enquiries & Contracts</td>
-                        <td className="p-3.5 text-right">
-                          <span className="rounded-full bg-muted text-foreground px-2.5 py-0.5 text-xs font-bold border border-border">
+                        <td className="p-3.5 font-semibold text-foreground whitespace-nowrap">Booking Manager</td>
+                        <td className="p-3.5 text-muted-foreground whitespace-nowrap">Enquiries &amp; Contracts</td>
+                        <td className="p-3.5 text-right whitespace-nowrap">
+                          <span className="inline-flex items-center whitespace-nowrap rounded-full bg-muted text-foreground px-2.5 py-0.5 text-xs font-bold border border-border">
                             Active
                           </span>
                         </td>

@@ -1,4 +1,7 @@
 import React, { createContext, useContext, useEffect, useState, type ReactNode } from "react";
+import hostBowtie from "@/assets/host-bowtie.jpg";
+import avatarPriya from "@/assets/avatar-priya.jpg";
+import avatarAmit from "@/assets/avatar-amit.jpg";
 
 export type UserRole = "admin" | "client" | "member";
 
@@ -20,6 +23,7 @@ export const DEMO_USERS: Record<UserRole, User> = {
     email: "admin@siddwhizz.com",
     role: "admin",
     organization: "SIDD.WHIZZ Official",
+    avatar: hostBowtie,
     createdAt: "2024-01-01T00:00:00Z",
   },
   client: {
@@ -28,6 +32,7 @@ export const DEMO_USERS: Record<UserRole, User> = {
     email: "priya@techsummit.io",
     role: "client",
     organization: "Apex Global Tech Summits",
+    avatar: avatarPriya,
     createdAt: "2024-06-15T00:00:00Z",
   },
   member: {
@@ -36,6 +41,7 @@ export const DEMO_USERS: Record<UserRole, User> = {
     email: "amit.verma@example.com",
     role: "member",
     organization: "Event Enthusiast & Community",
+    avatar: avatarAmit,
     createdAt: "2024-09-10T00:00:00Z",
   },
 };
@@ -82,6 +88,49 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 const STORAGE_KEY = "siddwhizz_auth_user";
 const PASSWORDS_KEY = "siddwhizz_user_passwords";
+const PROFILES_KEY = "siddwhizz_user_profiles";
+
+interface SavedUserProfile {
+  name?: string;
+  organization?: string;
+  avatar?: string;
+}
+
+function getSavedProfileForEmail(email: string): SavedUserProfile | null {
+  if (typeof window === "undefined") return null;
+  try {
+    const map = JSON.parse(localStorage.getItem(PROFILES_KEY) || "{}");
+    return map[email.toLowerCase().trim()] || null;
+  } catch {
+    return null;
+  }
+}
+
+function persistProfileForEmail(u: User) {
+  if (typeof window === "undefined" || !u.email) return;
+  try {
+    const map = JSON.parse(localStorage.getItem(PROFILES_KEY) || "{}");
+    map[u.email.toLowerCase().trim()] = {
+      name: u.name,
+      organization: u.organization,
+      avatar: u.avatar,
+    };
+    localStorage.setItem(PROFILES_KEY, JSON.stringify(map));
+  } catch {
+    // ignore
+  }
+}
+
+function mergeWithSavedProfile(baseUser: User): User {
+  const saved = getSavedProfileForEmail(baseUser.email);
+  if (!saved) return baseUser;
+  return {
+    ...baseUser,
+    name: saved.name || baseUser.name,
+    organization: saved.organization || baseUser.organization,
+    avatar: saved.avatar !== undefined ? saved.avatar : baseUser.avatar,
+  };
+}
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
@@ -95,7 +144,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         if (stored) {
           const parsed: User = JSON.parse(stored);
           if (verifySessionIntegrity(parsed)) {
-            setUser(parsed);
+            const hydrated = mergeWithSavedProfile({
+              ...parsed,
+              avatar: parsed.avatar ?? DEMO_USERS[parsed.role]?.avatar,
+            });
+            setUser(hydrated);
           } else {
             console.warn("Tampered or unsigned session detected in localStorage. Clearing session.");
             localStorage.removeItem(STORAGE_KEY);
@@ -128,6 +181,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       sessionSignature: computeSessionSignature(u),
     };
     setUser(signedUser);
+    persistProfileForEmail(signedUser);
     try {
       if (typeof window !== "undefined") {
         localStorage.setItem(STORAGE_KEY, JSON.stringify(signedUser));
@@ -182,20 +236,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       };
     }
 
-    // Retain avatar if previously saved
-    try {
-      if (typeof window !== "undefined") {
-        const stored = localStorage.getItem(STORAGE_KEY);
-        if (stored) {
-          const parsed = JSON.parse(stored);
-          if (parsed.email === selectedUser.email && parsed.avatar) {
-            selectedUser.avatar = parsed.avatar;
-          }
-        }
-      }
-    } catch {
-      // ignore
-    }
+    // Retain saved profile & avatar across sign-outs using persistent PROFILES_KEY
+    selectedUser = mergeWithSavedProfile(selectedUser);
 
     // Verify password if given
     if (password) {
@@ -218,13 +260,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
 
     const safeRole: UserRole = data.role === "member" ? "member" : "client";
+    const cleanEmail = data.email.toLowerCase().trim();
+    const existingSaved = getSavedProfileForEmail(cleanEmail);
     const newUser: User = {
       id: `usr_${Date.now()}`,
       name: data.name.trim(),
-      email: data.email.toLowerCase().trim(),
+      email: cleanEmail,
       role: safeRole,
       organization:
         data.organization?.trim() || (safeRole === "client" ? "Corporate Client" : "Community"),
+      avatar: existingSaved?.avatar || DEMO_USERS[safeRole].avatar,
       createdAt: new Date().toISOString(),
     };
 
@@ -274,9 +319,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const switchRole = (newRole: UserRole) => {
     if (DEMO_USERS[newRole]) {
-      saveUser(DEMO_USERS[newRole]);
+      saveUser(mergeWithSavedProfile({ ...DEMO_USERS[newRole] }));
     } else if (user) {
-      saveUser({ ...user, role: newRole });
+      saveUser(mergeWithSavedProfile({ ...user, role: newRole }));
     }
   };
 
