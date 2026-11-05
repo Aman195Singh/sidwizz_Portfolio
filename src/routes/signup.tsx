@@ -1,7 +1,7 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useState, type FormEvent } from "react";
-import { User, Mail, Lock, Building, ArrowRight, ShieldCheck, Briefcase, UserCheck, AlertCircle } from "lucide-react";
-import { useAuth, type UserRole } from "@/lib/auth";
+import { User, Mail, Lock, Building, ArrowRight, ShieldCheck, Briefcase, UserCheck, AlertCircle, Sparkles } from "lucide-react";
+import { useAuth, DEMO_USERS, type UserRole } from "@/lib/auth";
 import { Logo } from "@/components/site";
 
 export const Route = createFileRoute("/signup")({
@@ -15,7 +15,7 @@ export const Route = createFileRoute("/signup")({
 });
 
 function SignupPage() {
-  const { signup, isAuthenticated, user } = useAuth();
+  const { signup, login, isAuthenticated, user } = useAuth();
   const navigate = useNavigate();
 
   const [name, setName] = useState("");
@@ -95,6 +95,23 @@ function SignupPage() {
       }
     } catch {
       setError("An unexpected error occurred during signup.");
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const handleQuickDemoLogin = async (targetRole: UserRole) => {
+    const demo = DEMO_USERS[targetRole];
+    setIsSubmitting(true);
+    try {
+      await login(demo.email, targetRole === "admin" ? "sid123" : "password123", targetRole);
+      if (targetRole === "admin") {
+        navigate({ to: "/admin" });
+      } else if (targetRole === "client") {
+        navigate({ to: "/organizer" });
+      } else {
+        navigate({ to: "/profile" });
+      }
     } finally {
       setIsSubmitting(false);
     }
@@ -257,6 +274,51 @@ function SignupPage() {
               <ArrowRight className="h-4 w-4" />
             </button>
           </form>
+
+          {/* Direct One-Click Demo Portal Switch Buttons at the bottom */}
+          <div className="mt-8 border-t border-border pt-6">
+            <div className="flex items-center gap-2 mb-2">
+              <Sparkles className="h-4 w-4 text-primary" />
+              <p className="text-xs font-bold uppercase tracking-wider text-foreground">
+                One-Click Direct Role Login Switcher
+              </p>
+            </div>
+            <p className="text-xs text-muted-foreground mb-3.5">
+              Switch directly into any of the 3 portals (Admin, Organizer, or Member/Attendee):
+            </p>
+
+            <div className="grid grid-cols-1 gap-2.5 sm:grid-cols-3">
+              <button
+                type="button"
+                onClick={() => handleQuickDemoLogin("admin")}
+                className="flex flex-col items-center justify-center rounded-xl border border-primary/40 bg-primary/10 p-3 text-center transition hover:bg-primary/20 hover:border-primary cursor-pointer"
+              >
+                <ShieldCheck className="h-5 w-5 text-primary mb-1" />
+                <span className="text-sm font-bold text-foreground">Admin</span>
+                <span className="text-xs text-muted-foreground">Direct Admin Panel</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => handleQuickDemoLogin("client")}
+                className="flex flex-col items-center justify-center rounded-xl border border-border bg-muted/40 p-3 text-center transition hover:bg-accent hover:border-primary/50 cursor-pointer"
+              >
+                <Briefcase className="h-5 w-5 text-primary mb-1" />
+                <span className="text-sm font-bold text-foreground">Organizer</span>
+                <span className="text-xs text-muted-foreground">Direct Organiser Portal</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => handleQuickDemoLogin("member")}
+                className="flex flex-col items-center justify-center rounded-xl border border-border bg-muted/40 p-3 text-center transition hover:bg-accent hover:border-primary/50 cursor-pointer"
+              >
+                <UserCheck className="h-5 w-5 text-primary mb-1" />
+                <span className="text-sm font-bold text-foreground">Member</span>
+                <span className="text-xs text-muted-foreground">Audience / Attendee</span>
+              </button>
+            </div>
+          </div>
 
           {/* Footer link to Login */}
           <div className="mt-6 text-center text-xs text-muted-foreground">
