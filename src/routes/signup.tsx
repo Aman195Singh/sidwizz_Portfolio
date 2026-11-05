@@ -130,9 +130,9 @@ function SignupPage() {
             {/* Role Selection strictly in White, Red, Black */}
             <div>
               <label className="block text-xs font-bold uppercase tracking-wider text-muted-foreground mb-2">
-                Select Your Role (Role-Based Access)
+                Select Your Account Type
               </label>
-              <div className="grid grid-cols-1 gap-2.5 sm:grid-cols-3">
+              <div className="grid grid-cols-1 gap-2.5 sm:grid-cols-2">
                 <button
                   type="button"
                   onClick={() => setRole("client")}
@@ -144,7 +144,7 @@ function SignupPage() {
                 >
                   <Briefcase className={`h-5 w-5 mb-1.5 ${role === "client" ? "text-primary" : "text-muted-foreground"}`} />
                   <span className="text-sm font-bold text-foreground">Organizer</span>
-                  <span className="text-xs text-muted-foreground">Corporate / Event</span>
+                  <span className="text-xs text-muted-foreground">Corporate / Event Agency</span>
                 </button>
 
                 <button
@@ -158,23 +158,19 @@ function SignupPage() {
                 >
                   <UserCheck className={`h-5 w-5 mb-1.5 ${role === "member" ? "text-primary" : "text-muted-foreground"}`} />
                   <span className="text-sm font-bold text-foreground">Member</span>
-                  <span className="text-xs text-muted-foreground">Audience / Attendee</span>
-                </button>
-
-                <button
-                  type="button"
-                  onClick={() => setRole("admin")}
-                  className={`flex flex-col items-center justify-center rounded-xl border p-3.5 text-center transition cursor-pointer ${
-                    role === "admin"
-                      ? "border-primary bg-primary/10 text-foreground ring-1 ring-primary"
-                      : "border-border bg-muted/40 text-muted-foreground hover:border-primary/50 hover:text-foreground"
-                  }`}
-                >
-                  <ShieldCheck className={`h-5 w-5 mb-1.5 ${role === "admin" ? "text-primary" : "text-muted-foreground"}`} />
-                  <span className="text-sm font-bold text-foreground">Admin</span>
-                  <span className="text-xs text-muted-foreground">Host / Management</span>
+                  <span className="text-xs text-muted-foreground">Audience / Delegate</span>
                 </button>
               </div>
+              <p className="mt-2 flex items-center gap-1.5 text-[11px] text-muted-foreground">
+                <ShieldCheck className="h-3.5 w-3.5 text-primary shrink-0" />
+                <span>
+                  Admin &amp; Host Management accounts are restricted. Authorized admins can{" "}
+                  <Link to="/login" className="font-bold text-primary hover:underline">
+                    sign in directly here
+                  </Link>
+                  .
+                </span>
+              </p>
             </div>
 
             {/* Name */}

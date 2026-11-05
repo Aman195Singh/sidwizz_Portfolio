@@ -10,6 +10,7 @@ export interface User {
   organization?: string;
   avatar?: string;
   createdAt: string;
+  sessionSignature?: string;
 }
 
 export const DEMO_USERS: Record<UserRole, User> = {
@@ -39,6 +40,31 @@ export const DEMO_USERS: Record<UserRole, User> = {
   },
 };
 
+/**
+ * Tamper-evident session signature generator & verifier.
+ * Prevents DevTools privilege escalation (e.g. manually editing `"role": "admin"` in localStorage).
+ */
+const SESSION_SALT = "SIDDWHIZZ_RBAC_GUARD_2026_V2";
+
+function computeSessionSignature(u: Pick<User, "id" | "email" | "role">): string {
+  const payload = `${u.id}|${u.email.toLowerCase()}|${u.role}|${SESSION_SALT}`;
+  let h1 = 0xdeadbeef ^ payload.length;
+  let h2 = 0x41c6ce57 ^ payload.length;
+  for (let i = 0; i < payload.length; i++) {
+    const ch = payload.charCodeAt(i);
+    h1 = Math.imul(h1 ^ ch, 2654435761);
+    h2 = Math.imul(h2 ^ ch, 1597334677);
+  }
+  h1 = Math.imul(h1 ^ (h1 >>> 16), 2246822507) ^ Math.imul(h2 ^ (h2 >>> 13), 3266489909);
+  h2 = Math.imul(h2 ^ (h2 >>> 16), 2246822507) ^ Math.imul(h1 ^ (h1 >>> 13), 3266489909);
+  return `sig_${(h2 >>> 0).toString(16).padStart(8, "0")}${(h1 >>> 0).toString(16).padStart(8, "0")}`;
+}
+
+function verifySessionIntegrity(u: User | null): u is User {
+  if (!u || !u.id || !u.email || !u.role || !u.sessionSignature) return false;
+  return u.sessionSignature === computeSessionSignature(u);
+}
+
 interface AuthContextType {
   user: User | null;
   isAuthenticated: boolean;
@@ -61,13 +87,20 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
-  // Initialize from localStorage on mount
+  // Initialize from localStorage on mount with tamper-evident signature verification
   useEffect(() => {
     try {
       if (typeof window !== "undefined") {
         const stored = localStorage.getItem(STORAGE_KEY);
         if (stored) {
-          setUser(JSON.parse(stored));
+          const parsed: User = JSON.parse(stored);
+          if (verifySessionIntegrity(parsed)) {
+            setUser(parsed);
+          } else {
+            console.warn("Tampered or unsigned session detected in localStorage. Clearing session.");
+            localStorage.removeItem(STORAGE_KEY);
+            setUser(null);
+          }
         }
       }
     } catch (e) {
@@ -78,14 +111,26 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const saveUser = (u: User | null) => {
-    setUser(u);
-    try {
-      if (typeof window !== "undefined") {
-        if (u) {
-          localStorage.setItem(STORAGE_KEY, JSON.stringify(u));
-        } else {
+    if (!u) {
+      setUser(null);
+      try {
+        if (typeof window !== "undefined") {
           localStorage.removeItem(STORAGE_KEY);
         }
+      } catch {
+        // ignore
+      }
+      return;
+    }
+
+    const signedUser: User = {
+      ...u,
+      sessionSignature: computeSessionSignature(u),
+    };
+    setUser(signedUser);
+    try {
+      if (typeof window !== "undefined") {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(signedUser));
       }
     } catch (e) {
       console.warn("Failed to write user to localStorage", e);
@@ -165,12 +210,21 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   const signup = async (data: { name: string; email: string; password?: string; role: UserRole; organization?: string }) => {
+    if (data.role === "admin") {
+      return {
+        success: false,
+        error: "Admin accounts cannot be self-registered publicly. Please sign in on /login with authorized Admin credentials.",
+      };
+    }
+
+    const safeRole: UserRole = data.role === "member" ? "member" : "client";
     const newUser: User = {
       id: `usr_${Date.now()}`,
       name: data.name.trim(),
       email: data.email.toLowerCase().trim(),
-      role: data.role,
-      organization: data.organization?.trim() || (data.role === "admin" ? "Management" : data.role === "client" ? "Corporate Client" : "Community"),
+      role: safeRole,
+      organization:
+        data.organization?.trim() || (safeRole === "client" ? "Corporate Client" : "Community"),
       createdAt: new Date().toISOString(),
     };
 
@@ -207,7 +261,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const updateProfile = async (data: Partial<User>): Promise<{ success: boolean; error?: string }> => {
     if (!user) return { success: false, error: "Not logged in" };
-    const updated = { ...user, ...data };
+    // Prevent arbitrary role escalation through updateProfile
+    const { role: _ignoredRole, sessionSignature: _ignoredSig, ...safeUpdates } = data;
+    const updated = { ...user, ...safeUpdates };
     saveUser(updated);
     return { success: true };
   };

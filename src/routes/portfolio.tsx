@@ -2,6 +2,7 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { useState } from "react";
 import { Play, CalendarDays, Mic, Users, Trophy, LayoutGrid, ArrowUpRight, Images, MoreVertical } from "lucide-react";
 import { PageHero, StatsBar, SectionHead, Reveal, Testimonials, BRANDS, BrandMark, CtaBanner, Lightbox } from "@/components/site";
+import { VideoShowreelModal, CaseStudyModal, type CaseStudyItem } from "@/components/LiveBookingAndModals";
 import heroPortfolio from "@/assets/hero-portfolio.jpg";
 import hostPurple from "@/assets/host-purple.jpg";
 import panel from "@/assets/panel-discussion.jpg";
@@ -40,15 +41,103 @@ const REELS = [
   { t: "Panel Discussion – Industry Insight Forum", d: "01:54", img: conclave },
 ];
 const CATS = ["All Events", "Corporate", "Awards", "Conclaves", "Festivals", "Weddings", "Product Launches", "Others"];
-const ITEMS = [
-  { t: "Corporate Event", s: "Leadership Summit 2026", c: "Corporate", img: hostRed },
-  { t: "Awards Night", s: "Excellence Awards 2025", c: "Awards", img: awards },
-  { t: "Panel Discussion", s: "Industry Leaders Forum", c: "Conclaves", img: panel },
-  { t: "Live Festival", s: "City Music Fest 2025", c: "Festivals", img: festival },
-  { t: "Wedding Event", s: "Sangeet Celebration", c: "Weddings", img: wedding },
-  { t: "Tech Launch", s: "Innovation Day 2025", c: "Product Launches", img: techSummit },
-  { t: "Business Conclave", s: "Future of Work Forum", c: "Conclaves", img: confHall },
-  { t: "Gala Evening", s: "Annual Celebration", c: "Others", img: hostArms },
+const ITEMS: CaseStudyItem[] = [
+  {
+    t: "Corporate Event",
+    s: "Leadership Summit 2026",
+    c: "Corporate",
+    img: hostRed,
+    audience: "1,800+ CXOs & Founders",
+    location: "Jio World Convention Centre, Mumbai",
+    summary:
+      "Anchored two full days of executive keynotes, rapid-fire startup pitches, and live audience Q&A across the main plenary arena.",
+    clientQuote:
+      "Sid kept 1,800 executives energized from the 9 AM keynote through the closing gala without a single dip in momentum.",
+  },
+  {
+    t: "Awards Night",
+    s: "Excellence Awards 2025",
+    c: "Awards",
+    img: awards,
+    audience: "900+ Industry Leaders",
+    location: "The Leela Palace, Bengaluru",
+    summary:
+      "Commanded a black-tie gala evening featuring 28 award categories, celebrity presenter handoffs, and spontaneous table interactions.",
+    clientQuote:
+      "Sharp, charismatic, and effortless under live show pressure — our best awards night in a decade.",
+  },
+  {
+    t: "Panel Discussion",
+    s: "Industry Leaders Forum",
+    c: "Conclaves",
+    img: panel,
+    audience: "1,200+ Delegates",
+    location: "Bharat Mandapam, New Delhi",
+    summary:
+      "Moderated 4 high-stakes CXO panels on AI, FinTech policy, and enterprise scaling with balanced time-management and sharp follow-ups.",
+    clientQuote:
+      "Sid's deep research turned a standard corporate panel into the most talked-about session of the forum.",
+  },
+  {
+    t: "Live Festival",
+    s: "City Music Fest 2025",
+    c: "Festivals",
+    img: festival,
+    audience: "15,000+ Festival Crowd",
+    location: "Vagator Main Arena, Goa",
+    summary:
+      "Hyped a 15,000-strong arena crowd between headlining DJ and live band sets, leading crowd chants and sponsor activations.",
+    clientQuote:
+      "Unbelievable stage command — the crowd response every time Sid stepped out was electric.",
+  },
+  {
+    t: "Wedding Event",
+    s: "Sangeet Celebration",
+    c: "Weddings",
+    img: wedding,
+    audience: "600 VIP Guests",
+    location: "Jagmandir Island Palace, Udaipur",
+    summary:
+      "Hosted a royal destination Sangeet with warm family storytelling, choreographed entries, and high-energy dance floor transitions.",
+    clientQuote:
+      "He felt like part of the family while running the stage like a televised award show.",
+  },
+  {
+    t: "Tech Launch",
+    s: "Innovation Day 2025",
+    c: "Product Launches",
+    img: techSummit,
+    audience: "2,200+ Media & Partners",
+    location: "Yashobhoomi IICC, New Delhi",
+    summary:
+      "Led the flagship product reveal countdown, live demo commentary, and media Q&A with precision timing.",
+    clientQuote:
+      "Flawless teleprompter and cue sync during our live national reveal.",
+  },
+  {
+    t: "Business Conclave",
+    s: "Future of Work Forum",
+    c: "Conclaves",
+    img: confHall,
+    audience: "1,000+ HR & Tech Heads",
+    location: "ITC Grand Chola, Chennai",
+    summary:
+      "Facilitated interactive townhalls, live polling segments, and fireside chats with global industry leaders.",
+    clientQuote:
+      "Every transition felt purposeful, warm, and on-brand.",
+  },
+  {
+    t: "Gala Evening",
+    s: "Annual Celebration",
+    c: "Others",
+    img: hostArms,
+    audience: "1,500+ Partners",
+    location: "Taj Lands End, Mumbai",
+    summary:
+      "Delivered an unforgettable milestone anniversary evening blending executive recognition with high-spirited celebration.",
+    clientQuote:
+      "92% of our attendees rated the stage hosting as the highlight of the evening.",
+  },
 ];
 const SNAPS = [
   { src: heroGallery, alt: "Hosting a packed arena" },
@@ -61,6 +150,8 @@ const SNAPS = [
 function Portfolio() {
   const [cat, setCat] = useState("All Events");
   const [lb, setLb] = useState<number | null>(null);
+  const [activeReel, setActiveReel] = useState<{ title: string; duration: string } | null>(null);
+  const [activeCaseStudy, setActiveCaseStudy] = useState<CaseStudyItem | null>(null);
   const list = ITEMS.filter((i) => cat === "All Events" || i.c === cat).slice(0, 5);
   return (
     <>
@@ -96,31 +187,57 @@ function Portfolio() {
         </div>
         <div className="mt-7 grid gap-5 lg:grid-cols-[1.5fr_1fr]">
           <Reveal className="img-zoom group relative overflow-hidden rounded-2xl">
-            <img src={hostPurple} alt="Showreel 2026" loading="lazy" width={1024} height={1024} className="aspect-[16/9] w-full object-cover" />
-            <div className="ink-fade-bottom absolute inset-0" />
-            <span className="absolute inset-0 grid place-items-center">
-              <span className="animate-pulse-ring grid h-16 w-16 place-items-center rounded-full bg-background text-primary transition-transform duration-300 group-hover:scale-110">
-                <Play className="h-7 w-7 fill-current" />
+            <div
+              role="button"
+              tabIndex={0}
+              onClick={() =>
+                setActiveReel({ title: "Event Hosting Showreel 2026 (Official 4K)", duration: "04:28" })
+              }
+              onKeyDown={(e) => {
+                if (e.key === "Enter" || e.key === " ") {
+                  e.preventDefault();
+                  setActiveReel({ title: "Event Hosting Showreel 2026 (Official 4K)", duration: "04:28" });
+                }
+              }}
+              className="relative cursor-pointer focus-visible:ring-2 focus-visible:ring-primary outline-none"
+            >
+              <img src={hostPurple} alt="Showreel 2026" loading="lazy" width={1024} height={1024} className="aspect-[16/9] w-full object-cover" />
+              <div className="ink-fade-bottom absolute inset-0" />
+              <span className="absolute inset-0 grid place-items-center">
+                <span className="animate-pulse-ring grid h-16 w-16 place-items-center rounded-full bg-background text-primary transition-transform duration-300 group-hover:scale-110">
+                  <Play className="h-7 w-7 fill-current" />
+                </span>
               </span>
-            </span>
-            <div className="absolute bottom-5 left-5 text-ink-foreground">
-              <p className="font-display text-lg font-black">SIDD.WHIZZ</p>
-              <p className="text-sm">Event Hosting Showreel 2026</p>
+              <div className="absolute bottom-5 left-5 text-ink-foreground">
+                <p className="font-display text-lg font-black">SIDD.WHIZZ</p>
+                <p className="text-sm">Event Hosting Showreel 2026 — Click to Play</p>
+              </div>
+              <span className="absolute bottom-5 right-5 rounded bg-ink/80 px-2 py-0.5 text-xs font-bold text-ink-foreground">04:28</span>
             </div>
-            <span className="absolute bottom-5 right-5 rounded bg-ink/80 px-2 py-0.5 text-xs font-bold text-ink-foreground">04:28</span>
           </Reveal>
           <div className="flex flex-col gap-4">
             {REELS.map((r, i) => (
               <Reveal key={r.t} delay={i * 120}>
-                <div className="card-lift group flex items-center gap-4 p-2.5">
+                <div
+                  role="button"
+                  tabIndex={0}
+                  onClick={() => setActiveReel({ title: r.t, duration: r.d })}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter" || e.key === " ") {
+                      e.preventDefault();
+                      setActiveReel({ title: r.t, duration: r.d });
+                    }
+                  }}
+                  className="card-lift group flex items-center gap-4 p-2.5 cursor-pointer focus-visible:ring-2 focus-visible:ring-primary outline-none"
+                >
                   <div className="img-zoom relative h-20 w-32 shrink-0 overflow-hidden rounded-lg">
                     <img src={r.img} alt={r.t} loading="lazy" width={1280} height={896} className="h-full w-full object-cover" />
                     <span className="absolute inset-0 grid place-items-center">
-                      <span className="grid h-8 w-8 place-items-center rounded-full bg-background text-primary"><Play className="h-4 w-4 fill-current" /></span>
+                      <span className="grid h-8 w-8 place-items-center rounded-full bg-background text-primary group-hover:bg-primary group-hover:text-primary-foreground transition-colors"><Play className="h-4 w-4 fill-current" /></span>
                     </span>
                   </div>
                   <div className="flex-1">
-                    <p className="text-sm font-bold leading-snug">{r.t}</p>
+                    <p className="text-sm font-bold leading-snug group-hover:text-primary transition-colors">{r.t}</p>
                     <span className="mt-1 inline-block rounded bg-ink px-2 py-0.5 text-[11px] font-bold text-ink-foreground">{r.d}</span>
                   </div>
                   <MoreVertical className="h-5 w-5 text-muted-foreground" />
@@ -133,9 +250,9 @@ function Portfolio() {
 
       <section className="container-x">
         <SectionHead eyebrow="Browse by event type" />
-        <Reveal className="mt-4 flex flex-wrap gap-2.5">
+        <Reveal className="mt-4 flex overflow-x-auto pb-2 flex-nowrap sm:flex-wrap gap-2.5">
           {CATS.map((c) => (
-            <button key={c} onClick={() => setCat(c)} className={`chip inline-flex items-center gap-2 ${cat === c ? "chip-active" : ""}`}>
+            <button key={c} onClick={() => setCat(c)} className={`chip shrink-0 inline-flex items-center gap-2 ${cat === c ? "chip-active" : ""}`}>
               {c === "All Events" && <LayoutGrid className="h-4 w-4" />} {c}
             </button>
           ))}
@@ -145,11 +262,24 @@ function Portfolio() {
           <div className="mt-5 grid gap-4 sm:grid-cols-2 lg:grid-cols-5">
             {list.length === 0 && <p className="text-muted-foreground">More events coming soon in this category.</p>}
             {list.map((it, i) => (
-              <div key={it.t + cat} className="animate-rise card-lift img-zoom group overflow-hidden" style={{ "--d": `${i * 80}ms` } as React.CSSProperties}>
+              <div
+                key={it.t + cat}
+                role="button"
+                tabIndex={0}
+                onClick={() => setActiveCaseStudy(it)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter" || e.key === " ") {
+                    e.preventDefault();
+                    setActiveCaseStudy(it);
+                  }
+                }}
+                className="animate-rise card-lift img-zoom group overflow-hidden cursor-pointer focus-visible:ring-2 focus-visible:ring-primary outline-none"
+                style={{ "--d": `${i * 80}ms` } as React.CSSProperties}
+              >
                 <div className="h-40 overflow-hidden"><img src={it.img} alt={it.t} loading="lazy" width={1280} height={896} className="h-full w-full object-cover" /></div>
                 <div className="flex items-end justify-between p-3">
                   <div>
-                    <p className="text-sm font-extrabold">{it.t}</p>
+                    <p className="text-sm font-extrabold group-hover:text-primary transition-colors">{it.t}</p>
                     <p className="text-xs text-muted-foreground">{it.s}</p>
                   </div>
                   <ArrowUpRight className="h-5 w-5 text-primary transition-transform group-hover:-translate-y-1 group-hover:translate-x-1" />
@@ -209,6 +339,17 @@ function Portfolio() {
         primaryLabel="Book Siddharth Now"
       />
       <Lightbox images={SNAPS} index={lb} onClose={() => setLb(null)} onIndex={setLb} />
+      <VideoShowreelModal
+        open={Boolean(activeReel)}
+        onClose={() => setActiveReel(null)}
+        title={activeReel?.title || "Event Hosting Showreel 2026"}
+        duration={activeReel?.duration || "04:28"}
+      />
+      <CaseStudyModal
+        open={Boolean(activeCaseStudy)}
+        onClose={() => setActiveCaseStudy(null)}
+        item={activeCaseStudy}
+      />
     </>
   );
 }

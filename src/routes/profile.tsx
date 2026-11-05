@@ -19,6 +19,7 @@ import {
 } from "lucide-react";
 import { useAuth } from "@/lib/auth";
 import { Logo } from "@/components/site";
+import { VipPassQrModal } from "@/components/LiveBookingAndModals";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/profile")({
@@ -38,6 +39,7 @@ function ProfilePage() {
 
   const [activeTab, setActiveTab] = useState<"overview" | "account" | "security">("overview");
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [vipPassOpen, setVipPassOpen] = useState(false);
 
   // If user is Admin or Client, route directly to their merged portal
   useEffect(() => {
@@ -179,11 +181,19 @@ function ProfilePage() {
         aria-label="Upload profile picture"
       />
 
+      {/* Mobile & Tablet Dark Backdrop */}
+      {sidebarOpen && (
+        <div
+          className="fixed inset-0 z-40 bg-black/70 backdrop-blur-sm lg:hidden"
+          onClick={() => setSidebarOpen(false)}
+        />
+      )}
+
       {/* ------------------------------------------------------------- */}
       {/* LEFT NAVIGATION SIDEBAR (Fixed & Non-Scrolling with Page)     */}
       {/* ------------------------------------------------------------- */}
       <aside
-        className={`fixed inset-y-0 left-0 z-50 flex w-64 shrink-0 flex-col border-r border-border bg-card backdrop-blur-md transition-transform duration-300 md:static md:h-full md:translate-x-0 ${
+        className={`fixed inset-y-0 left-0 z-50 flex w-64 shrink-0 flex-col border-r border-border bg-card backdrop-blur-md transition-transform duration-300 lg:static lg:h-full lg:translate-x-0 ${
           sidebarOpen ? "translate-x-0 shadow-2xl" : "-translate-x-full"
         }`}
       >
@@ -194,7 +204,7 @@ function ProfilePage() {
           </Link>
           <button
             onClick={() => setSidebarOpen(false)}
-            className="rounded-lg p-1.5 text-muted-foreground hover:bg-accent hover:text-foreground md:hidden"
+            className="rounded-lg p-1.5 text-muted-foreground hover:bg-accent hover:text-foreground lg:hidden"
             aria-label="Close menu"
           >
             <X className="h-5 w-5" />
@@ -297,11 +307,11 @@ function ProfilePage() {
       {/* ------------------------------------------------------------- */}
       <div className="flex flex-1 flex-col h-full min-w-0 overflow-hidden">
         {/* Top Header Bar (Fixed / Non-Scrolling) */}
-        <header className="flex h-16 shrink-0 items-center justify-between border-b border-border bg-card px-4 backdrop-blur md:px-8">
+        <header className="flex h-16 shrink-0 items-center justify-between border-b border-border bg-card px-4 backdrop-blur lg:px-8">
           <div className="flex min-w-0 items-center gap-3">
             <button
               onClick={() => setSidebarOpen(true)}
-              className="shrink-0 rounded-lg border border-border p-2 text-foreground md:hidden"
+              className="shrink-0 rounded-lg border border-border p-2 text-foreground lg:hidden cursor-pointer"
               aria-label="Open sidebar"
             >
               <Menu className="h-5 w-5" />
@@ -449,10 +459,10 @@ function ProfilePage() {
                     </div>
                   </div>
                   <button
-                    onClick={() => toast.success("Pass QR code sent to your registered email.")}
-                    className="btn-red !py-2.5 !px-5 text-sm self-start sm:self-auto shrink-0"
+                    onClick={() => setVipPassOpen(true)}
+                    className="btn-red !py-2.5 !px-5 text-sm self-start sm:self-auto shrink-0 cursor-pointer"
                   >
-                    View VIP Pass
+                    View VIP Pass (QR)
                   </button>
                 </div>
               </div>
@@ -595,6 +605,13 @@ function ProfilePage() {
           )}
         </main>
       </div>
+
+      <VipPassQrModal
+        open={vipPassOpen}
+        onClose={() => setVipPassOpen(false)}
+        passHolderName={user.name}
+        passHolderEmail={user.email}
+      />
     </div>
   );
 }

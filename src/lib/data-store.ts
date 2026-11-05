@@ -5,10 +5,11 @@
  * 1. Stage Booking Enquiries (cross-shared between /contact, /organizer, and /admin)
  * 2. Confirmed Event Bookings & Executed Contracts
  * 3. Media Asset Library (Photos, Videos, Documents, Audio)
- * 4. User Profiles & Profile Photos
+ * 4. Technical Rider & Support Tickets
+ * 5. Global Site & Booking Availability Settings
  *
- * Persists to browser localStorage with auto-seeding, and provides
- * bidirectional synchronization with Neon PostgreSQL via HTTP queries.
+ * Persists to browser localStorage with auto-seeding, and synchronizes
+ * mutations with Neon PostgreSQL on the server via TanStack Start Server Functions.
  */
 
 import hostPurple from "@/assets/host-purple.jpg";
@@ -16,6 +17,13 @@ import confettiConcert from "@/assets/confetti-concert.jpg";
 import hostBowtie from "@/assets/host-bowtie.jpg";
 import stageBeams from "@/assets/stage-beams.jpg";
 import festivalCrowd from "@/assets/festival-crowd.jpg";
+import {
+  insertNeonEnquiryServerFn,
+  updateNeonEnquiryStatusServerFn,
+  insertNeonContractServerFn,
+  markNeonAdvancePaidServerFn,
+  insertNeonTicketServerFn,
+} from "@/lib/neon-server";
 
 export interface Enquiry {
   id: string;
@@ -35,6 +43,7 @@ export interface Enquiry {
   createdAt: string;
   brief: string;
   notes?: string[];
+  packageTier?: string;
 }
 
 export interface Booking {
@@ -67,10 +76,33 @@ export interface MediaItem {
   createdAt: string;
 }
 
+export interface SupportTicket {
+  id: string;
+  userEmail: string;
+  userName?: string;
+  organization?: string;
+  subject: string;
+  priority: "Low" | "Medium" | "High" | "Urgent";
+  description: string;
+  status: "Open" | "In Progress" | "Resolved";
+  createdAt: string;
+}
+
+export interface SiteSettings {
+  bookingAvailable: boolean;
+  whatsappNotifications: boolean;
+  autoReplyEnabled: boolean;
+  hotlinePhone: string;
+  bookingEmail: string;
+  studioAddress: string;
+}
+
 // Storage Keys
 const ENQUIRIES_KEY = "siddwhizz_dataset_enquiries";
 const BOOKINGS_KEY = "siddwhizz_dataset_bookings";
 const MEDIA_KEY = "siddwhizz_dataset_media";
+const TICKETS_KEY = "siddwhizz_dataset_tickets";
+const SETTINGS_KEY = "siddwhizz_site_settings";
 
 // Initial Seed Datasets
 const DEFAULT_ENQUIRIES: Enquiry[] = [
@@ -92,6 +124,7 @@ const DEFAULT_ENQUIRIES: Enquiry[] = [
     createdAt: "2026-11-04 10:30 AM",
     brief: "Looking for high energy hosting for 2 full days, opening keynote moderation, and evening gala awards.",
     notes: ["Client requested host showreel video link", "Preferred date is firm"],
+    packageTier: "Full-Day Summit / Gala",
   },
   {
     id: "ENQ-102",
@@ -111,6 +144,7 @@ const DEFAULT_ENQUIRIES: Enquiry[] = [
     createdAt: "2026-11-03 04:15 PM",
     brief: "Annual leadership meet requiring polished stage delivery, partner award distribution, and interactive audience segments.",
     notes: ["Commercial quotation sent on Nov 3", "Awaiting confirmation from executive sponsor"],
+    packageTier: "Full-Day Summit / Gala",
   },
   {
     id: "ENQ-103",
@@ -130,6 +164,7 @@ const DEFAULT_ENQUIRIES: Enquiry[] = [
     createdAt: "2026-11-01 11:00 AM",
     brief: "Prime NYE stage crowd hyping, international DJ artist introductions, and midnight countdown.",
     notes: ["Advance deposit received", "Tech rider signed"],
+    packageTier: "Multi-Day Series / Festival",
   },
   {
     id: "ENQ-104",
@@ -149,12 +184,14 @@ const DEFAULT_ENQUIRIES: Enquiry[] = [
     createdAt: "2026-11-04 01:20 PM",
     brief: "EV vehicle launch showcase followed by national dealer recognition evening.",
     notes: [],
+    packageTier: "Full-Day Summit / Gala",
   },
 ];
 
 const DEFAULT_BOOKINGS: Booking[] = [
   {
     id: "BK-901",
+    enquiryId: "ENQ-101",
     eventName: "Apex Global Tech Summits 2026",
     clientName: "Priya Sharma",
     organization: "Apex Global Tech Summits Pvt Ltd",
@@ -171,6 +208,7 @@ const DEFAULT_BOOKINGS: Booking[] = [
   },
   {
     id: "BK-902",
+    enquiryId: "ENQ-103",
     eventName: "Sunburn Arena Live Festival Showcase",
     clientName: "Karan Mehta",
     organization: "Percept Live Entertainment",
@@ -269,6 +307,30 @@ const DEFAULT_MEDIA: MediaItem[] = [
   },
 ];
 
+const DEFAULT_TICKETS: SupportTicket[] = [
+  {
+    id: "TKT-401",
+    userEmail: "priya.sharma@eventcorp.in",
+    userName: "Priya Sharma",
+    organization: "Apex Global Tech Summits Pvt Ltd",
+    subject: "Additional Wireless Handheld Mic for Panel Q&A (Dec 14)",
+    priority: "Medium",
+    description:
+      "Requesting confirmation for 2 extra Shure Axient wireless mics for the afternoon fireside chat with 4 speakers.",
+    status: "Open",
+    createdAt: "2026-11-04 11:15 AM",
+  },
+];
+
+const DEFAULT_SETTINGS: SiteSettings = {
+  bookingAvailable: true,
+  whatsappNotifications: true,
+  autoReplyEnabled: true,
+  hotlinePhone: "+91 98765 43210",
+  bookingEmail: "bookings@siddwhizz.com",
+  studioAddress: "Aerocity Business District, New Delhi — 110037",
+};
+
 // -------------------------------------------------------------
 // ENQUIRIES API
 // -------------------------------------------------------------
@@ -320,6 +382,7 @@ export function saveEnquiry(
     createdAt: formattedDate,
     brief: data.brief.trim(),
     notes: data.notes || [],
+    packageTier: data.packageTier || "Full-Day Summit / Gala",
   };
 
   const updated = [newEnquiry, ...current];
@@ -330,6 +393,27 @@ export function saveEnquiry(
     } catch (err) {
       console.warn("Failed to persist new enquiry:", err);
     }
+
+    // Background Server RPC sync to Neon PostgreSQL
+    insertNeonEnquiryServerFn({
+      data: {
+        id: newEnquiry.id,
+        eventName: newEnquiry.eventName,
+        clientName: newEnquiry.clientName,
+        organization: newEnquiry.organization,
+        email: newEnquiry.email,
+        phone: newEnquiry.phone,
+        cleanPhone: newEnquiry.cleanPhone,
+        date: newEnquiry.date,
+        city: newEnquiry.city,
+        venue: newEnquiry.venue,
+        crowdSize: newEnquiry.crowdSize,
+        format: newEnquiry.format,
+        budget: newEnquiry.budget,
+        status: newEnquiry.status,
+        brief: newEnquiry.brief,
+      },
+    }).catch(() => {});
   }
 
   return newEnquiry;
@@ -348,6 +432,8 @@ export function updateEnquiryStatus(id: string, status: Enquiry["status"]): bool
     } catch (err) {
       console.warn("Failed to update enquiry status:", err);
     }
+
+    updateNeonEnquiryStatusServerFn({ data: { id, status } }).catch(() => {});
   }
   return true;
 }
@@ -371,7 +457,7 @@ export function addEnquiryNote(id: string, note: string): boolean {
 }
 
 // -------------------------------------------------------------
-// BOOKINGS API
+// BOOKINGS & CONTRACTS API
 // -------------------------------------------------------------
 
 export function getStoredBookings(): Booking[] {
@@ -386,6 +472,263 @@ export function getStoredBookings(): Booking[] {
   } catch {
     return DEFAULT_BOOKINGS;
   }
+}
+
+export function saveBookingContract(
+  data: Omit<Booking, "id" | "createdAt" | "contractRef"> & { contractRef?: string }
+): Booking {
+  const current = getStoredBookings();
+  const randomRef = Math.floor(10 + Math.random() * 89);
+  const newBooking: Booking = {
+    ...data,
+    id: `BK-${Math.floor(100 + Math.random() * 900)}`,
+    contractRef: data.contractRef || `REF: SID-CONF-2026-${randomRef}`,
+    createdAt: new Date().toISOString().split("T")[0],
+  };
+
+  const updated = [newBooking, ...current];
+  if (typeof window !== "undefined") {
+    try {
+      localStorage.setItem(BOOKINGS_KEY, JSON.stringify(updated));
+      window.dispatchEvent(new Event("siddwhizz_bookings_updated"));
+    } catch (err) {
+      console.warn("Failed to save booking contract:", err);
+    }
+
+    insertNeonContractServerFn({
+      data: {
+        id: newBooking.id,
+        enquiryId: newBooking.enquiryId,
+        eventName: newBooking.eventName,
+        clientName: newBooking.clientName,
+        organization: newBooking.organization,
+        date: newBooking.date,
+        time: newBooking.time,
+        venue: newBooking.venue,
+        city: newBooking.city,
+        format: newBooking.format,
+        fee: newBooking.fee,
+        advancePaid: newBooking.advancePaid,
+        status: newBooking.status,
+        contractRef: newBooking.contractRef,
+      },
+    }).catch(() => {});
+  }
+
+  return newBooking;
+}
+
+export function approveEnquiryToContract(params: {
+  enquiryId: string;
+  agreedFee: string;
+  timeSlot?: string;
+  advancePaid?: boolean;
+}): Booking | null {
+  const enquiries = getStoredEnquiries();
+  const target = enquiries.find((e) => e.id === params.enquiryId);
+  if (!target) return null;
+
+  updateEnquiryStatus(target.id, "Confirmed");
+  addEnquiryNote(
+    target.id,
+    `Contract issued at ${params.agreedFee} (${params.advancePaid ? "50% Advance Paid" : "Awaiting 50% Advance"})`
+  );
+
+  // Check if contract already exists for this enquiry
+  const existing = getStoredBookings().find((b) => b.enquiryId === target.id);
+  if (existing) {
+    return existing;
+  }
+
+  return saveBookingContract({
+    enquiryId: target.id,
+    eventName: target.eventName,
+    clientName: target.clientName,
+    organization: target.organization,
+    date: target.date,
+    time: params.timeSlot || "09:30 AM - 06:00 PM",
+    venue: target.venue,
+    city: target.city,
+    format: target.format,
+    fee: params.agreedFee,
+    advancePaid: Boolean(params.advancePaid),
+    status: "Confirmed",
+  });
+}
+
+export function markBookingAdvancePaid(bookingId: string): boolean {
+  const current = getStoredBookings();
+  const idx = current.findIndex((b) => b.id === bookingId);
+  if (idx === -1) return false;
+
+  current[idx].advancePaid = true;
+  current[idx].status = "Confirmed";
+
+  if (typeof window !== "undefined") {
+    try {
+      localStorage.setItem(BOOKINGS_KEY, JSON.stringify(current));
+      window.dispatchEvent(new Event("siddwhizz_bookings_updated"));
+    } catch (err) {
+      console.warn("Failed to update booking advance status:", err);
+    }
+
+    markNeonAdvancePaidServerFn({ data: { id: bookingId } }).catch(() => {});
+  }
+  return true;
+}
+
+export interface LockedDateInfo {
+  date: string;
+  eventName: string;
+  city: string;
+  status: "Confirmed" | "Pending";
+}
+
+export function getLockedEventDates(): LockedDateInfo[] {
+  const bookings = getStoredBookings();
+  const enquiries = getStoredEnquiries();
+  const map = new Map<string, LockedDateInfo>();
+
+  for (const b of bookings) {
+    if (b.date && /^\d{4}-\d{2}-\d{2}$/.test(b.date)) {
+      map.set(b.date, {
+        date: b.date,
+        eventName: b.eventName,
+        city: b.city,
+        status: "Confirmed",
+      });
+    }
+  }
+
+  for (const e of enquiries) {
+    if (e.date && /^\d{4}-\d{2}-\d{2}$/.test(e.date) && e.status !== "Declined") {
+      if (!map.has(e.date)) {
+        map.set(e.date, {
+          date: e.date,
+          eventName: e.eventName,
+          city: e.city,
+          status: e.status === "Confirmed" ? "Confirmed" : "Pending",
+        });
+      }
+    }
+  }
+
+  return Array.from(map.values()).sort((a, b) => a.date.localeCompare(b.date));
+}
+
+// -------------------------------------------------------------
+// SUPPORT & TECHNICAL RIDER TICKETS API
+// -------------------------------------------------------------
+
+export function getStoredTickets(): SupportTicket[] {
+  if (typeof window === "undefined") return DEFAULT_TICKETS;
+  try {
+    const raw = localStorage.getItem(TICKETS_KEY);
+    if (!raw) {
+      localStorage.setItem(TICKETS_KEY, JSON.stringify(DEFAULT_TICKETS));
+      return DEFAULT_TICKETS;
+    }
+    return JSON.parse(raw);
+  } catch {
+    return DEFAULT_TICKETS;
+  }
+}
+
+export function saveSupportTicket(
+  data: Omit<SupportTicket, "id" | "createdAt" | "status"> & { status?: SupportTicket["status"] }
+): SupportTicket {
+  const current = getStoredTickets();
+  const now = new Date();
+  const formattedDate = now.toLocaleDateString("en-IN", {
+    year: "numeric",
+    month: "short",
+    day: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+  });
+
+  const newTicket: SupportTicket = {
+    id: `TKT-${Math.floor(100 + Math.random() * 900)}`,
+    userEmail: data.userEmail,
+    userName: data.userName || "Event Organizer",
+    organization: data.organization || "Partner Organization",
+    subject: data.subject.trim(),
+    priority: data.priority || "Medium",
+    description: data.description.trim(),
+    status: data.status || "Open",
+    createdAt: formattedDate,
+  };
+
+  const updated = [newTicket, ...current];
+  if (typeof window !== "undefined") {
+    try {
+      localStorage.setItem(TICKETS_KEY, JSON.stringify(updated));
+      window.dispatchEvent(new Event("siddwhizz_tickets_updated"));
+    } catch (err) {
+      console.warn("Failed to save support ticket:", err);
+    }
+
+    insertNeonTicketServerFn({
+      data: {
+        id: newTicket.id,
+        userEmail: newTicket.userEmail,
+        subject: newTicket.subject,
+        priority: newTicket.priority,
+        description: newTicket.description,
+        status: newTicket.status,
+      },
+    }).catch(() => {});
+  }
+
+  return newTicket;
+}
+
+export function updateTicketStatus(id: string, status: SupportTicket["status"]): boolean {
+  const current = getStoredTickets();
+  const idx = current.findIndex((t) => t.id === id);
+  if (idx === -1) return false;
+
+  current[idx].status = status;
+  if (typeof window !== "undefined") {
+    try {
+      localStorage.setItem(TICKETS_KEY, JSON.stringify(current));
+      window.dispatchEvent(new Event("siddwhizz_tickets_updated"));
+    } catch (err) {
+      console.warn("Failed to update ticket status:", err);
+    }
+  }
+  return true;
+}
+
+// -------------------------------------------------------------
+// GLOBAL SITE & BOOKING SETTINGS API
+// -------------------------------------------------------------
+
+export function getSiteSettings(): SiteSettings {
+  if (typeof window === "undefined") return DEFAULT_SETTINGS;
+  try {
+    const raw = localStorage.getItem(SETTINGS_KEY);
+    if (!raw) {
+      localStorage.setItem(SETTINGS_KEY, JSON.stringify(DEFAULT_SETTINGS));
+      return DEFAULT_SETTINGS;
+    }
+    return { ...DEFAULT_SETTINGS, ...JSON.parse(raw) };
+  } catch {
+    return DEFAULT_SETTINGS;
+  }
+}
+
+export function updateSiteSettings(partial: Partial<SiteSettings>): SiteSettings {
+  const next = { ...getSiteSettings(), ...partial };
+  if (typeof window !== "undefined") {
+    try {
+      localStorage.setItem(SETTINGS_KEY, JSON.stringify(next));
+      window.dispatchEvent(new Event("siddwhizz_settings_updated"));
+    } catch (err) {
+      console.warn("Failed to update site settings:", err);
+    }
+  }
+  return next;
 }
 
 // -------------------------------------------------------------
@@ -457,4 +800,3 @@ export function deleteMediaItem(id: string): boolean {
   }
   return true;
 }
-

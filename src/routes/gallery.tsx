@@ -86,9 +86,9 @@ function Gallery() {
       />
 
       <section className="container-x py-8">
-        <Reveal className="flex flex-wrap gap-3">
+        <Reveal className="flex overflow-x-auto pb-2 flex-nowrap sm:flex-wrap gap-3">
           {FILTERS.map((x) => (
-            <button key={x.t} onClick={() => setF(x.t)} className={`chip inline-flex items-center gap-2 !rounded-lg !px-4 !py-2 ${f === x.t ? "chip-active" : ""}`}>
+            <button key={x.t} onClick={() => setF(x.t)} className={`chip shrink-0 inline-flex items-center gap-2 !rounded-lg !px-4 !py-2 ${f === x.t ? "chip-active" : ""}`}>
               <x.i className="h-4 w-4" /> {x.t}
             </button>
           ))}

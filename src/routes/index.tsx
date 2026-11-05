@@ -5,6 +5,7 @@ import {
   Target, Gem, LayoutGrid,
 } from "lucide-react";
 import { PageHero, StatsBar, SectionHead, Reveal, Signature, Testimonials, BRANDS, BrandMark, CtaBanner } from "@/components/site";
+import { VideoShowreelModal } from "@/components/LiveBookingAndModals";
 import heroHome from "@/assets/hero-home.jpg";
 import techSummit from "@/assets/tech-summit.jpg";
 import awards from "@/assets/awards-trophy.jpg";
@@ -63,6 +64,7 @@ const HIGHLIGHTS = [
 
 function Home() {
   const [filter, setFilter] = useState("All Events");
+  const [activeReel, setActiveReel] = useState<{ title: string; duration: string } | null>(null);
   const shown = HIGHLIGHTS.filter((h) => filter === "All Events" || h.c === filter).slice(0, 5);
   return (
     <>
@@ -110,7 +112,11 @@ function Home() {
           <div className="mt-5 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
             {SERVICES.map((s, i) => (
               <Reveal key={s.t} delay={i * 100}>
-                <Link to="/services" className="card-lift img-zoom group block h-full overflow-hidden">
+                <Link
+                  to="/contact"
+                  search={{ format: s.t }}
+                  className="card-lift img-zoom group block h-full overflow-hidden"
+                >
                   <div className="relative h-36 overflow-hidden">
                     <img src={s.img} alt={s.t} loading="lazy" width={1280} height={896} className="h-full w-full object-cover" />
                   </div>
@@ -154,11 +160,28 @@ function Home() {
         </div>
         <div className="mt-7 grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">
           {shown.map((h, i) => (
-            <div key={h.img + filter} className="animate-rise img-zoom group relative aspect-[4/3] overflow-hidden rounded-lg" style={{ "--d": `${i * 80}ms` } as React.CSSProperties}>
+            <div
+              key={h.img + filter}
+              role={h.video ? "button" : undefined}
+              tabIndex={h.video ? 0 : undefined}
+              onClick={() => {
+                if (h.video) {
+                  setActiveReel({ title: `${h.c} Stage Highlight Reel`, duration: "02:15" });
+                }
+              }}
+              onKeyDown={(e) => {
+                if (h.video && (e.key === "Enter" || e.key === " ")) {
+                  e.preventDefault();
+                  setActiveReel({ title: `${h.c} Stage Highlight Reel`, duration: "02:15" });
+                }
+              }}
+              className={`animate-rise img-zoom group relative aspect-[4/3] overflow-hidden rounded-lg ${h.video ? "cursor-pointer" : ""}`}
+              style={{ "--d": `${i * 80}ms` } as React.CSSProperties}
+            >
               <img src={h.img} alt={`${h.c} event`} loading="lazy" width={1280} height={896} className="h-full w-full object-cover" />
               {h.video && (
                 <span className="absolute inset-0 grid place-items-center">
-                  <span className="animate-pulse-ring grid h-11 w-11 place-items-center rounded-full bg-background/90 text-foreground">
+                  <span className="animate-pulse-ring grid h-11 w-11 place-items-center rounded-full bg-background/90 text-foreground group-hover:bg-primary group-hover:text-primary-foreground transition-colors">
                     <Play className="h-5 w-5 fill-current" />
                   </span>
                 </span>
@@ -187,6 +210,13 @@ function Home() {
         title="Let's make your"
         red={<span className="text-ink-foreground">next event unforgettable.</span>}
         sub="Host • Emcee • Moderator • Event Presenter"
+      />
+
+      <VideoShowreelModal
+        open={Boolean(activeReel)}
+        onClose={() => setActiveReel(null)}
+        title={activeReel?.title || "SIDD.WHIZZ Official Stage Showreel"}
+        duration={activeReel?.duration || "02:15"}
       />
     </>
   );

@@ -55,6 +55,13 @@ import {
   getStoredMedia,
   addMediaItem,
   deleteMediaItem,
+  approveEnquiryToContract,
+  getStoredTickets,
+  saveSupportTicket,
+  updateTicketStatus,
+  getSiteSettings,
+  updateSiteSettings,
+  type SupportTicket,
 } from "@/lib/data-store";
 import hostBowtie from "@/assets/host-bowtie.jpg";
 import hostPurple from "@/assets/host-purple.jpg";
@@ -334,16 +341,38 @@ export function AdminPanel({ initialTab = "overview" }: { initialTab?: AdminTab 
   const [confirmPassword, setConfirmPassword] = useState("");
 
   // Keep state synchronized with live DataStore events
+  const [tickets, setTickets] = useState<SupportTicket[]>(getStoredTickets);
+  const [contractModalEnquiry, setContractModalEnquiry] = useState<Enquiry | null>(null);
+  const [contractFee, setContractFee] = useState("₹4,00,000");
+  const [contractTimeSlot, setContractTimeSlot] = useState("09:30 AM - 06:00 PM");
+  const [contractAdvancePaid, setContractAdvancePaid] = useState(false);
+
+  // Settings state persisted via SiteSettings
+  const initialSettings = getSiteSettings();
+  const [bookingAvailable, setBookingAvailable] = useState(initialSettings.bookingAvailable);
+  const [whatsappNotifications, setWhatsappNotifications] = useState(initialSettings.whatsappNotifications);
+  const [autoReplyEnabled, setAutoReplyEnabled] = useState(initialSettings.autoReplyEnabled);
+  const [hotlinePhone, setHotlinePhone] = useState(initialSettings.hotlinePhone);
+
   useEffect(() => {
     const handleSync = () => {
       setEnquiries(getStoredEnquiries());
       setMediaItems(getStoredMedia());
+      setTickets(getStoredTickets());
+      const latestSettings = getSiteSettings();
+      setBookingAvailable(latestSettings.bookingAvailable);
+      setWhatsappNotifications(latestSettings.whatsappNotifications);
+      setAutoReplyEnabled(latestSettings.autoReplyEnabled);
     };
     window.addEventListener("siddwhizz_enquiries_updated", handleSync);
     window.addEventListener("siddwhizz_media_updated", handleSync);
+    window.addEventListener("siddwhizz_tickets_updated", handleSync);
+    window.addEventListener("siddwhizz_settings_updated", handleSync);
     return () => {
       window.removeEventListener("siddwhizz_enquiries_updated", handleSync);
       window.removeEventListener("siddwhizz_media_updated", handleSync);
+      window.removeEventListener("siddwhizz_tickets_updated", handleSync);
+      window.removeEventListener("siddwhizz_settings_updated", handleSync);
     };
   }, []);
 
@@ -351,11 +380,6 @@ export function AdminPanel({ initialTab = "overview" }: { initialTab?: AdminTab 
   const [ticketSubject, setTicketSubject] = useState("");
   const [ticketSeverity, setTicketSeverity] = useState("Medium");
   const [ticketMessage, setTicketMessage] = useState("");
-
-  // Settings state
-  const [bookingAvailable, setBookingAvailable] = useState(true);
-  const [whatsappNotifications, setWhatsappNotifications] = useState(true);
-  const [autoReplyEnabled, setAutoReplyEnabled] = useState(true);
 
   // Profile Photo Upload Handlers
   const handlePhotoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -631,9 +655,44 @@ https://sidwizz-portfolio.vercel.app`
       toast.error("Please fill in subject and description.");
       return;
     }
-    toast.success("Developer ticket logged! The lead engineer will respond via WhatsApp.");
+    saveSupportTicket({
+      userEmail: adminEmail,
+      userName: adminName,
+      organization: "SIDD.WHIZZ Management",
+      subject: ticketSubject.trim(),
+      priority:
+        ticketSeverity === "Critical"
+          ? "Urgent"
+          : (ticketSeverity as "Low" | "Medium" | "High"),
+      description: ticketMessage.trim(),
+    });
+    setTickets(getStoredTickets());
+    toast.success("Support ticket saved to database & logged to engineering team!");
     setTicketSubject("");
     setTicketMessage("");
+  };
+
+  // Issue formal contract from enquiry
+  const handleIssueContract = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!contractModalEnquiry) return;
+    const created = approveEnquiryToContract({
+      enquiryId: contractModalEnquiry.id,
+      agreedFee: contractFee.trim() || "₹4,00,000",
+      timeSlot: contractTimeSlot.trim() || "09:30 AM - 06:00 PM",
+      advancePaid: contractAdvancePaid,
+    });
+    const refreshed = getStoredEnquiries();
+    setEnquiries(refreshed);
+    if (selectedEnquiry?.id === contractModalEnquiry.id) {
+      setSelectedEnquiry(refreshed.find((item) => item.id === contractModalEnquiry.id) || null);
+    }
+    setContractModalEnquiry(null);
+    if (created) {
+      toast.success(
+        `Executed Contract (${created.contractRef}) issued for ${created.eventName} and synced to Organizer Portal!`
+      );
+    }
   };
 
   // Filtered enquiries
@@ -654,12 +713,25 @@ https://sidwizz-portfolio.vercel.app`
 
   const pendingCount = enquiries.filter((e) => e.status === "New").length;
 
+  // Compute dynamic pipeline value in Lakhs from active enquiries
+  const pipelineLakhs = enquiries
+    .filter((e) => e.status !== "Declined")
+    .reduce((acc, e) => {
+      const nums = (e.budget.match(/[\d,]+/g) || [])
+        .map((n) => parseInt(n.replace(/,/g, ""), 10))
+        .filter((n) => !Number.isNaN(n) && n > 0);
+      if (nums.length === 0) return acc + 3.5;
+      const avg = nums.reduce((a, b) => a + b, 0) / nums.length;
+      return acc + (avg > 1000 ? avg / 100000 : avg);
+    }, 0)
+    .toFixed(1);
+
   return (
     <div className="flex h-screen overflow-hidden bg-background text-foreground font-sans">
-      {/* Mobile Sidebar Backdrop */}
+      {/* Mobile & Tablet Sidebar Backdrop */}
       {sidebarOpen && (
         <div
-          className="fixed inset-0 z-40 bg-ink/60 backdrop-blur-xs md:hidden"
+          className="fixed inset-0 z-40 bg-ink/60 backdrop-blur-xs lg:hidden"
           onClick={() => setSidebarOpen(false)}
         />
       )}
@@ -668,7 +740,7 @@ https://sidwizz-portfolio.vercel.app`
       {/* LEFT NAVIGATION SIDEBAR (Fixed, Non-Scrolling with Page)      */}
       {/* ------------------------------------------------------------- */}
       <aside
-        className={`fixed inset-y-0 left-0 z-50 flex w-64 shrink-0 flex-col border-r border-border bg-card transition-transform duration-300 md:static md:h-full md:translate-x-0 ${
+        className={`fixed inset-y-0 left-0 z-50 flex w-64 shrink-0 flex-col border-r border-border bg-card transition-transform duration-300 lg:static lg:h-full lg:translate-x-0 ${
           sidebarOpen ? "translate-x-0 shadow-2xl" : "-translate-x-full"
         }`}
       >
@@ -679,7 +751,7 @@ https://sidwizz-portfolio.vercel.app`
           </Link>
           <button
             onClick={() => setSidebarOpen(false)}
-            className="rounded-lg p-1.5 text-muted-foreground hover:bg-accent hover:text-foreground md:hidden"
+            className="rounded-lg p-1.5 text-muted-foreground hover:bg-accent hover:text-foreground lg:hidden"
             aria-label="Close menu"
           >
             <X className="h-5 w-5" />
@@ -863,11 +935,11 @@ https://sidwizz-portfolio.vercel.app`
       {/* ------------------------------------------------------------- */}
       <div className="flex flex-1 flex-col h-full min-w-0 overflow-hidden">
         {/* Top Header Bar (Fixed at Top) */}
-        <header className="flex h-16 shrink-0 items-center justify-between border-b border-border bg-card px-4 md:px-8">
+        <header className="flex h-16 shrink-0 items-center justify-between border-b border-border bg-card px-4 lg:px-8">
           <div className="flex min-w-0 items-center gap-3">
             <button
               onClick={() => setSidebarOpen(true)}
-              className="shrink-0 rounded-lg border border-border p-2 text-foreground md:hidden"
+              className="shrink-0 rounded-lg border border-border p-2 text-foreground lg:hidden cursor-pointer"
               aria-label="Open sidebar"
             >
               <Menu className="h-5 w-5" />
@@ -886,8 +958,8 @@ https://sidwizz-portfolio.vercel.app`
           <div className="flex shrink-0 items-center gap-3">
             {/* Availability status badge */}
             <div className="hidden sm:flex items-center gap-2 rounded-full border border-border bg-accent px-3.5 py-1.5 text-xs font-bold text-foreground">
-              <span className="h-2 w-2 rounded-full bg-primary animate-pulse" />
-              <span>Accepting Stage Dates</span>
+              <span className={`h-2 w-2 rounded-full ${bookingAvailable ? "bg-primary animate-pulse" : "bg-muted-foreground"}`} />
+              <span>{bookingAvailable ? "Accepting Stage Dates" : "Bookings Paused"}</span>
             </div>
 
             {/* Neon DB indicator */}
@@ -964,8 +1036,10 @@ https://sidwizz-portfolio.vercel.app`
                     <span className="font-display text-xs font-extrabold uppercase tracking-wider">Pipeline Est.</span>
                     <TrendingUp className="h-5 w-5 text-primary" />
                   </div>
-                  <p className="text-3xl font-black font-display text-primary">₹24.5 L</p>
-                  <p className="text-sm text-muted-foreground mt-1">Q4 Active Booking Discussions</p>
+                  <p className="text-3xl font-black font-display text-primary">₹{pipelineLakhs} L</p>
+                  <p className="text-sm text-muted-foreground mt-1">
+                    {enquiries.filter((e) => e.status === "Confirmed").length} Confirmed • {enquiries.length} Total Leads
+                  </p>
                 </div>
               </div>
 
@@ -1384,6 +1458,21 @@ https://sidwizz-portfolio.vercel.app`
                           </button>
                         ))}
                       </div>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setContractModalEnquiry(selectedEnquiry);
+                          setContractFee(
+                            selectedEnquiry.budget.includes("-")
+                              ? selectedEnquiry.budget.split("-")[0].trim()
+                              : selectedEnquiry.budget || "₹4,00,000"
+                          );
+                        }}
+                        className="btn-red w-full !py-2.5 !px-4 text-xs mt-2.5 flex items-center justify-center gap-2 cursor-pointer"
+                      >
+                        <FileText className="h-4 w-4" />
+                        <span>Approve &amp; Issue Formal Contract to Organizer</span>
+                      </button>
                     </div>
 
                     {/* Quick Outreach Tools */}
@@ -2214,10 +2303,12 @@ https://sidwizz-portfolio.vercel.app`
                     </div>
                     <button
                       onClick={() => {
-                        setBookingAvailable(!bookingAvailable);
-                        toast.success(`Booking status changed to ${!bookingAvailable ? "Active" : "Paused"}`);
+                        const next = !bookingAvailable;
+                        setBookingAvailable(next);
+                        updateSiteSettings({ bookingAvailable: next });
+                        toast.success(`Public booking availability changed to ${next ? "Active" : "Paused"}`);
                       }}
-                      className={`relative inline-flex h-6 w-11 items-center rounded-full transition ${
+                      className={`relative inline-flex h-6 w-11 items-center rounded-full transition cursor-pointer ${
                         bookingAvailable ? "bg-primary" : "bg-muted"
                       }`}
                     >
@@ -2237,10 +2328,12 @@ https://sidwizz-portfolio.vercel.app`
                     </div>
                     <button
                       onClick={() => {
-                        setWhatsappNotifications(!whatsappNotifications);
+                        const next = !whatsappNotifications;
+                        setWhatsappNotifications(next);
+                        updateSiteSettings({ whatsappNotifications: next });
                         toast.success("Notification preferences updated.");
                       }}
-                      className={`relative inline-flex h-6 w-11 items-center rounded-full transition ${
+                      className={`relative inline-flex h-6 w-11 items-center rounded-full transition cursor-pointer ${
                         whatsappNotifications ? "bg-primary" : "bg-muted"
                       }`}
                     >
@@ -2260,10 +2353,12 @@ https://sidwizz-portfolio.vercel.app`
                     </div>
                     <button
                       onClick={() => {
-                        setAutoReplyEnabled(!autoReplyEnabled);
+                        const next = !autoReplyEnabled;
+                        setAutoReplyEnabled(next);
+                        updateSiteSettings({ autoReplyEnabled: next });
                         toast.success("Auto-reply preferences updated.");
                       }}
-                      className={`relative inline-flex h-6 w-11 items-center rounded-full transition ${
+                      className={`relative inline-flex h-6 w-11 items-center rounded-full transition cursor-pointer ${
                         autoReplyEnabled ? "bg-primary" : "bg-muted"
                       }`}
                     >
@@ -2278,11 +2373,24 @@ https://sidwizz-portfolio.vercel.app`
                   {/* Direct Contact Phone */}
                   <div>
                     <label className="font-bold text-foreground block mb-1.5">Official Host Booking Hotline</label>
-                    <input
-                      type="text"
-                      defaultValue="+91 98200 88776"
-                      className="w-full max-w-sm rounded-xl border border-input bg-background py-2.5 px-3.5 text-sm text-foreground focus:border-primary focus:outline-none"
-                    />
+                    <div className="flex flex-wrap gap-2">
+                      <input
+                        type="text"
+                        value={hotlinePhone}
+                        onChange={(e) => setHotlinePhone(e.target.value)}
+                        className="w-full max-w-sm rounded-xl border border-input bg-background py-2.5 px-3.5 text-sm text-foreground focus:border-primary focus:outline-none"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => {
+                          updateSiteSettings({ hotlinePhone });
+                          toast.success("Official booking hotline saved!");
+                        }}
+                        className="btn-red !py-2 !px-4 text-xs cursor-pointer"
+                      >
+                        Save Hotline
+                      </button>
+                    </div>
                   </div>
 
                   {/* Neon Database Status */}
@@ -2386,6 +2494,64 @@ https://sidwizz-portfolio.vercel.app`
                     <p className="text-xs text-muted-foreground uppercase font-bold">Production Node</p>
                     <p className="font-semibold text-foreground mt-0.5">v22.16 LTS</p>
                   </div>
+                </div>
+              </div>
+
+              {/* Live Organizer Technical Rider & Support Tickets */}
+              <div className="rounded-2xl border border-border bg-card p-6 shadow-sm space-y-4">
+                <div className="flex items-center justify-between border-b border-border pb-3">
+                  <div>
+                    <h4 className="font-display text-lg font-extrabold text-foreground">
+                      Organizer Technical Rider &amp; Support Tickets ({tickets.length})
+                    </h4>
+                    <p className="text-sm text-muted-foreground">
+                      Live stage AV requests from Event Organizers and internal engineering tickets.
+                    </p>
+                  </div>
+                </div>
+
+                <div className="space-y-3">
+                  {tickets.map((tkt) => (
+                    <div
+                      key={tkt.id}
+                      className="rounded-xl border border-border bg-background p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-sm"
+                    >
+                      <div className="space-y-1">
+                        <div className="flex flex-wrap items-center gap-2">
+                          <span className="font-mono text-xs font-bold text-primary">{tkt.id}</span>
+                          <span className="rounded-full bg-primary/15 text-primary border border-primary/30 px-2.5 py-0.5 text-[11px] font-bold">
+                            {tkt.priority}
+                          </span>
+                          <span className="text-xs text-muted-foreground">
+                            {tkt.organization || tkt.userEmail} • {tkt.createdAt}
+                          </span>
+                        </div>
+                        <p className="font-bold text-foreground">{tkt.subject}</p>
+                        <p className="text-xs text-muted-foreground leading-relaxed">{tkt.description}</p>
+                      </div>
+
+                      <div className="flex items-center gap-2 shrink-0">
+                        {(["Open", "In Progress", "Resolved"] as const).map((st) => (
+                          <button
+                            key={st}
+                            type="button"
+                            onClick={() => {
+                              updateTicketStatus(tkt.id, st);
+                              setTickets(getStoredTickets());
+                              toast.success(`Ticket ${tkt.id} marked ${st}`);
+                            }}
+                            className={`rounded-lg px-2.5 py-1.5 text-xs font-bold transition cursor-pointer ${
+                              tkt.status === st
+                                ? "bg-primary text-primary-foreground"
+                                : "border border-border bg-card text-muted-foreground hover:text-foreground"
+                            }`}
+                          >
+                            {st}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  ))}
                 </div>
               </div>
 
@@ -2800,6 +2966,90 @@ https://sidwizz-portfolio.vercel.app`
                     <span>Permanently Delete</span>
                   </button>
                 </div>
+              </div>
+            </div>
+          )}
+
+          {/* ========================================================= */}
+          {/* APPROVE & ISSUE FORMAL CONTRACT MODAL                     */}
+          {/* ========================================================= */}
+          {contractModalEnquiry && (
+            <div className="fixed inset-0 z-60 flex items-center justify-center bg-black/85 p-4 backdrop-blur-sm animate-in fade-in-50">
+              <div className="w-full max-w-lg rounded-2xl border border-border bg-card p-6 shadow-2xl space-y-4">
+                <div className="flex items-start justify-between border-b border-border pb-3">
+                  <div>
+                    <p className="eyebrow">Stage Engagement Execution</p>
+                    <h3 className="font-display text-lg font-extrabold text-foreground mt-1">
+                      Issue Formal Contract — {contractModalEnquiry.eventName}
+                    </h3>
+                    <p className="text-xs text-muted-foreground mt-0.5">
+                      Organizer: {contractModalEnquiry.clientName} ({contractModalEnquiry.organization})
+                    </p>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setContractModalEnquiry(null)}
+                    className="rounded-lg p-1.5 text-muted-foreground hover:bg-accent hover:text-foreground cursor-pointer"
+                  >
+                    <X className="h-4 w-4" />
+                  </button>
+                </div>
+
+                <form onSubmit={handleIssueContract} className="space-y-4 text-sm">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div>
+                      <label className="font-bold text-muted-foreground block mb-1.5">
+                        Agreed Commercial Fee (INR)
+                      </label>
+                      <input
+                        type="text"
+                        required
+                        value={contractFee}
+                        onChange={(e) => setContractFee(e.target.value)}
+                        placeholder="e.g. ₹4,00,000"
+                        className="w-full rounded-xl border border-input bg-background py-2.5 px-3.5 text-sm font-mono font-bold text-foreground focus:border-primary focus:outline-none"
+                      />
+                    </div>
+                    <div>
+                      <label className="font-bold text-muted-foreground block mb-1.5">
+                        Stage Call &amp; Show Timing
+                      </label>
+                      <input
+                        type="text"
+                        required
+                        value={contractTimeSlot}
+                        onChange={(e) => setContractTimeSlot(e.target.value)}
+                        placeholder="e.g. 09:30 AM - 06:00 PM"
+                        className="w-full rounded-xl border border-input bg-background py-2.5 px-3.5 text-sm text-foreground focus:border-primary focus:outline-none"
+                      />
+                    </div>
+                  </div>
+
+                  <label className="flex items-center gap-2.5 rounded-xl border border-border bg-background p-3.5 cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={contractAdvancePaid}
+                      onChange={(e) => setContractAdvancePaid(e.target.checked)}
+                      className="h-4 w-4 accent-primary"
+                    />
+                    <span className="text-xs font-bold text-foreground">
+                      Mark 50% Advance Retainer Deposit as Received
+                    </span>
+                  </label>
+
+                  <div className="flex justify-end gap-2 pt-2 border-t border-border">
+                    <button
+                      type="button"
+                      onClick={() => setContractModalEnquiry(null)}
+                      className="btn-outline !py-2 !px-4 text-xs cursor-pointer"
+                    >
+                      Cancel
+                    </button>
+                    <button type="submit" className="btn-red !py-2 !px-5 text-xs cursor-pointer">
+                      Confirm &amp; Issue Executed Contract
+                    </button>
+                  </div>
+                </form>
               </div>
             </div>
           )}

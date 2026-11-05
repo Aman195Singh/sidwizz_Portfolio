@@ -95,7 +95,13 @@ function Services() {
                   <span className="icon-badge absolute -top-6 left-5 h-11 w-11 rounded-lg"><s.i className="h-5 w-5" /></span>
                   <h3 className="font-display text-lg font-extrabold">{s.t}</h3>
                   <p className="mt-2 flex-1 text-sm text-foreground/75">{s.d}</p>
-                  <Link to="/contact" className="mt-4 inline-flex items-center gap-2 text-sm font-bold text-primary transition-all group-hover:gap-3">Know More <ArrowRight className="h-4 w-4" /></Link>
+                  <Link
+                    to="/contact"
+                    search={{ format: s.t }}
+                    className="mt-4 inline-flex items-center gap-2 text-sm font-bold text-primary transition-all group-hover:gap-3"
+                  >
+                    Book This Format <ArrowRight className="h-4 w-4" />
+                  </Link>
                 </div>
               </article>
             </Reveal>
@@ -111,10 +117,15 @@ function Services() {
           </div>
           <div className="grid grid-cols-3 gap-5 md:grid-cols-6">
             {FORMATS.map((f) => (
-              <div key={f.t} className="group text-center">
+              <Link
+                key={f.t}
+                to="/contact"
+                search={{ format: f.t }}
+                className="group text-center transition-colors hover:text-primary"
+              >
                 <f.i className="mx-auto h-8 w-8 text-primary transition-transform duration-300 group-hover:-translate-y-1 group-hover:scale-110" />
                 <p className="mt-2 text-sm font-semibold leading-tight">{f.t}</p>
-              </div>
+              </Link>
             ))}
           </div>
         </Reveal>
@@ -173,16 +184,21 @@ function Services() {
           <h2 className="display mt-2 text-2xl md:text-3xl">Choose what works for you.</h2>
           <div className="mt-6 grid gap-4 sm:grid-cols-3">
             {[
-              { i: CalendarDays, t: "Single Event", d: "Perfect for one-time events, launches or special occasions.", c: "Book Now" },
-              { i: Layers, t: "Event Series", d: "Ideal for multi-city, ongoing or annual event series.", c: "Enquire Now", pop: true },
-              { i: Handshake, t: "Long-term Collaboration", d: "A trusted stage partner for your brand's multiple events.", c: "Discuss Now" },
+              { i: CalendarDays, t: "Single Event", fee: "₹2.0L – ₹3.0L", d: "Perfect for half-day sessions, product launches or special occasions.", c: "Book Now", f: "Product Launch" },
+              { i: Layers, t: "Full-Day Summit", fee: "₹3.5L – ₹5.0L", d: "Ideal for full-day summits, conclaves, and evening gala awards.", c: "Enquire Now", pop: true, f: "Corporate Summit" },
+              { i: Handshake, t: "Multi-Day Series", fee: "₹5.0L+ Retainer", d: "A trusted stage partner for multi-city summits and festivals.", c: "Discuss Now", f: "Festival & Live Show" },
             ].map((o) => (
               <div key={o.t} className={`card-lift relative flex flex-col p-5 text-center ${o.pop ? "border-2 border-primary bg-blush" : ""}`}>
                 {o.pop && <span className="absolute -top-3 right-3 rounded bg-primary px-2 py-0.5 text-[10px] font-bold text-primary-foreground">Popular</span>}
                 <o.i className="mx-auto h-8 w-8 text-primary" />
                 <h3 className="mt-2 font-display text-sm font-extrabold">{o.t}</h3>
+                <p className="mt-1 font-mono text-xs font-black text-primary">{o.fee}</p>
                 <p className="mt-1 flex-1 text-xs text-muted-foreground">{o.d}</p>
-                <Link to="/contact" className={`mt-4 ${o.pop ? "btn-red" : "btn border-2 border-primary text-primary hover:bg-primary hover:text-primary-foreground"} !px-3 !py-1.5 !text-xs !normal-case`}>
+                <Link
+                  to="/contact"
+                  search={{ format: o.f }}
+                  className={`mt-4 ${o.pop ? "btn-red" : "btn border-2 border-primary text-primary hover:bg-primary hover:text-primary-foreground"} !px-3 !py-1.5 !text-xs !normal-case`}
+                >
                   {o.c} <ArrowRight className="h-3 w-3" />
                 </Link>
               </div>

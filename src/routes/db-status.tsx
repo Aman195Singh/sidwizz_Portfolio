@@ -14,6 +14,7 @@ import {
   ShieldCheck,
 } from "lucide-react";
 import { getNeonDbStatus, getLiveNeonTables, type NeonDbConfig } from "@/lib/db";
+import { toast } from "sonner";
 
 export const Route = createFileRoute("/db-status")({
   head: () => ({
@@ -53,8 +54,7 @@ function DbStatusPage() {
   }, []);
 
   const sampleEnv = `DATABASE_URL="postgresql://neondb_owner:YOUR_PASSWORD@ep-sample-pool-123456.ap-southeast-1.aws.neon.tech/neondb?sslmode=require"
-DIRECT_URL="postgresql://neondb_owner:YOUR_PASSWORD@ep-sample-direct-123456.ap-southeast-1.aws.neon.tech/neondb?sslmode=require"
-VITE_DATABASE_URL="postgresql://neondb_owner:YOUR_PASSWORD@ep-sample-pool-123456.ap-southeast-1.aws.neon.tech/neondb?sslmode=require"`;
+DIRECT_URL="postgresql://neondb_owner:YOUR_PASSWORD@ep-sample-direct-123456.ap-southeast-1.aws.neon.tech/neondb?sslmode=require"`;
 
   const copyEnvSnippet = () => {
     navigator.clipboard.writeText(sampleEnv);

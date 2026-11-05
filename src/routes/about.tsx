@@ -1,9 +1,11 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
+import { useState } from "react";
 import {
   Play, CalendarDays, Mic, Users, TrendingUp, Trophy, Rocket, Zap, Target, ArrowLeftRight, Gem,
-  Star, Layers, Award, CheckCircle2, MessageCircle, ChevronRight,
+  Star, Layers, Award, CheckCircle2, MessageCircle, ChevronRight, FileText,
 } from "lucide-react";
 import { PageHero, StatsBar, SectionHead, Reveal, Signature, CtaBanner } from "@/components/site";
+import { PressKitModal } from "@/components/LiveBookingAndModals";
 import heroAbout from "@/assets/hero-about.jpg";
 import mic from "@/assets/hero-contact.jpg";
 import beams from "@/assets/stage-beams.jpg";
@@ -44,6 +46,7 @@ const STRENGTHS = [
 ];
 
 function About() {
+  const [epkOpen, setEpkOpen] = useState(false);
   return (
     <>
       <PageHero
@@ -57,7 +60,9 @@ function About() {
         actions={
           <>
             <a href="#journey" className="btn-red"><Play className="h-4 w-4" /> Explore My Journey</a>
-            <Link to="/contact" className="btn-outline"><CalendarDays className="h-4 w-4" /> Book Siddharth</Link>
+            <button type="button" onClick={() => setEpkOpen(true)} className="btn-outline cursor-pointer">
+              <FileText className="h-4 w-4 text-primary" /> Official Press Kit (EPK)
+            </button>
           </>
         }
       />
@@ -82,6 +87,18 @@ function About() {
             A dynamic event host, moderator and emcee, Siddharth “Sid” Maurya brings the perfect blend of energy, professionalism and audience connection to every stage — from high-impact corporate summits to grand award nights and live entertainment festivals.
           </p>
           <Signature />
+          <div className="mt-5 flex flex-wrap gap-3">
+            <button
+              type="button"
+              onClick={() => setEpkOpen(true)}
+              className="btn-red !py-2.5 !px-5 text-xs cursor-pointer"
+            >
+              <FileText className="h-4 w-4" /> Download Official Press Kit (EPK)
+            </button>
+            <Link to="/contact" className="btn-outline !py-2.5 !px-5 text-xs">
+              <CalendarDays className="h-4 w-4 text-primary" /> Check Stage Dates
+            </Link>
+          </div>
         </Reveal>
       </section>
 
@@ -171,6 +188,7 @@ function About() {
         sub="Discuss your upcoming event, format and vision with me."
         primaryLabel="Book Siddharth"
       />
+      <PressKitModal open={epkOpen} onClose={() => setEpkOpen(false)} />
     </>
   );
 }

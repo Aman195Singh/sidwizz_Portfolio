@@ -36,7 +36,21 @@ import {
 import { useAuth } from "@/lib/auth";
 import { toast } from "sonner";
 import { Logo } from "@/components/site";
-import { getStoredEnquiries, saveEnquiry } from "@/lib/data-store";
+import {
+  getStoredEnquiries,
+  saveEnquiry,
+  getStoredBookings,
+  markBookingAdvancePaid,
+  getStoredTickets,
+  saveSupportTicket,
+  getLockedEventDates,
+  type Booking,
+  type SupportTicket,
+} from "@/lib/data-store";
+import {
+  ContractModal,
+  TechnicalRiderRequestModal,
+} from "@/components/LiveBookingAndModals";
 
 export type OrganizerTab = "overview" | "enquiries" | "bookings" | "events" | "account";
 
@@ -127,6 +141,25 @@ export function OrganizerPanel() {
     return () => window.removeEventListener("siddwhizz_enquiries_updated", handleSync);
   }, []);
 
+  const [bookings, setBookings] = useState<Booking[]>(() => getStoredBookings());
+  const [selectedContract, setSelectedContract] = useState<Booking | null>(null);
+  const [riderModalOpen, setRiderModalOpen] = useState(false);
+  const [riderTickets, setRiderTickets] = useState<SupportTicket[]>(() => getStoredTickets());
+
+  useEffect(() => {
+    const syncBookings = () => setBookings(getStoredBookings());
+    const syncTickets = () => setRiderTickets(getStoredTickets());
+    window.addEventListener("siddwhizz_bookings_updated", syncBookings);
+    window.addEventListener("siddwhizz_tickets_updated", syncTickets);
+    return () => {
+      window.removeEventListener("siddwhizz_bookings_updated", syncBookings);
+      window.removeEventListener("siddwhizz_tickets_updated", syncTickets);
+    };
+  }, []);
+
+  const lockedDates = getLockedEventDates();
+  const dateConflict = newDate ? lockedDates.find((d) => d.date === newDate) : undefined;
+
   const [createModalOpen, setCreateModalOpen] = useState(false);
 
   // Form fields for new enquiry
@@ -205,12 +238,21 @@ export function OrganizerPanel() {
 
   const handleSaveAccount = async (e: React.FormEvent) => {
     e.preventDefault();
+    const cleanGst = gstNumber.trim().toUpperCase();
+    const gstRegex = /^[0-9]{2}[A-Z]{5}[0-9]{4}[A-Z]{1}[1-9A-Z]{1}Z[0-9A-Z]{1}$/;
+    if (cleanGst && !gstRegex.test(cleanGst)) {
+      toast.error(
+        "Invalid Indian GSTIN format. Must be 15 characters (e.g. 27AABCA1234F1Z5)."
+      );
+      return;
+    }
+    setGstNumber(cleanGst);
     await updateProfile({
       name: contactPerson,
       email: contactEmail,
       organization: companyName,
     });
-    toast.success("Organizer company and contact preferences updated successfully!");
+    toast.success("Organizer company, GSTIN, and contact preferences updated successfully!");
   };
 
   const handleUpdatePassword = async (e: React.FormEvent) => {
@@ -240,11 +282,19 @@ export function OrganizerPanel() {
 
   return (
     <div className="flex h-screen overflow-hidden bg-background text-foreground font-sans antialiased selection:bg-primary selection:text-primary-foreground">
+      {/* Mobile & Tablet Dark Backdrop */}
+      {sidebarOpen && (
+        <div
+          className="fixed inset-0 z-40 bg-black/70 backdrop-blur-sm lg:hidden"
+          onClick={() => setSidebarOpen(false)}
+        />
+      )}
+
       {/* ------------------------------------------------------------- */}
       {/* LEFT NAVIGATION SIDEBAR (Fixed & Non-Scrolling with Page)     */}
       {/* ------------------------------------------------------------- */}
       <aside
-        className={`fixed inset-y-0 left-0 z-50 flex w-64 shrink-0 flex-col border-r border-border bg-card backdrop-blur-md transition-transform duration-300 md:static md:h-full md:translate-x-0 ${
+        className={`fixed inset-y-0 left-0 z-50 flex w-64 shrink-0 flex-col border-r border-border bg-card backdrop-blur-md transition-transform duration-300 lg:static lg:h-full lg:translate-x-0 ${
           sidebarOpen ? "translate-x-0 shadow-2xl" : "-translate-x-full"
         }`}
       >
@@ -255,7 +305,7 @@ export function OrganizerPanel() {
           </Link>
           <button
             onClick={() => setSidebarOpen(false)}
-            className="rounded-lg p-1.5 text-muted-foreground hover:bg-accent hover:text-foreground md:hidden"
+            className="rounded-lg p-1.5 text-muted-foreground hover:bg-accent hover:text-foreground lg:hidden"
             aria-label="Close menu"
           >
             <X className="h-5 w-5" />
@@ -328,7 +378,7 @@ export function OrganizerPanel() {
               <CalendarCheck className="h-4 w-4 shrink-0" /> My Bookings
             </span>
             <span className="rounded-full bg-muted text-foreground border border-border px-2 py-0.5 text-[11px] font-bold">
-              1 Active
+              {bookings.length} Active
             </span>
           </button>
 
@@ -393,11 +443,11 @@ export function OrganizerPanel() {
       {/* ------------------------------------------------------------- */}
       <div className="flex flex-1 flex-col h-full min-w-0 overflow-hidden">
         {/* Top Header Bar (Fixed / Non-Scrolling) */}
-        <header className="flex h-16 shrink-0 items-center justify-between border-b border-border bg-card px-4 backdrop-blur md:px-8">
+        <header className="flex h-16 shrink-0 items-center justify-between border-b border-border bg-card px-4 backdrop-blur lg:px-8">
           <div className="flex min-w-0 items-center gap-3">
             <button
               onClick={() => setSidebarOpen(true)}
-              className="shrink-0 rounded-lg border border-border p-2 text-foreground md:hidden"
+              className="shrink-0 rounded-lg border border-border p-2 text-foreground lg:hidden cursor-pointer"
               aria-label="Open sidebar"
             >
               <Menu className="h-5 w-5" />
@@ -530,13 +580,15 @@ export function OrganizerPanel() {
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                 <div className="card-lift rounded-2xl border border-border bg-card p-6 shadow-sm">
                   <span className="text-xs font-bold text-muted-foreground uppercase tracking-wider">Confirmed Stage Dates</span>
-                  <p className="text-3xl font-black font-display text-foreground mt-1.5">1 Show</p>
+                  <p className="text-3xl font-black font-display text-foreground mt-1.5">{bookings.length} {bookings.length === 1 ? "Show" : "Shows"}</p>
                   <p className="text-sm text-muted-foreground mt-1">Contract executed & locked</p>
                 </div>
 
                 <div className="card-lift rounded-2xl border border-border bg-card p-6 shadow-sm">
                   <span className="text-xs font-bold text-muted-foreground uppercase tracking-wider">Pending Inquiries</span>
-                  <p className="text-3xl font-black font-display text-primary mt-1.5">1 Proposal</p>
+                  <p className="text-3xl font-black font-display text-primary mt-1.5">
+                    {enquiries.filter((e) => e.status !== "Confirmed").length} Proposals
+                  </p>
                   <p className="text-sm text-muted-foreground mt-1">Under commercial review</p>
                 </div>
 
@@ -638,44 +690,66 @@ export function OrganizerPanel() {
                     <p className="text-sm text-muted-foreground">Official confirmed stage locks for Siddharth Maurya.</p>
                   </div>
                   <span className="rounded-full bg-primary/15 text-primary border border-primary/30 px-3 py-1 text-xs font-bold">
-                    1 Confirmed Contract
+                    {bookings.length} Confirmed {bookings.length === 1 ? "Contract" : "Contracts"}
                   </span>
                 </div>
 
-                <div className="rounded-xl border border-border bg-background p-6 space-y-4">
-                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-border pb-4">
-                    <div>
-                      <span className="font-mono text-sm font-bold text-primary">REF: SID-CONF-2026-88</span>
-                      <h4 className="font-display text-xl font-extrabold text-foreground mt-1">Apex Global Tech Summits 2026</h4>
-                      <p className="text-sm text-muted-foreground">Organizer: Apex Global Tech Summits Pvt Ltd</p>
-                    </div>
+                <div className="space-y-4">
+                  {bookings.map((bk) => (
+                    <div key={bk.id} className="rounded-xl border border-border bg-background p-6 space-y-4">
+                      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-border pb-4">
+                        <div>
+                          <div className="flex flex-wrap items-center gap-2">
+                            <span className="font-mono text-sm font-bold text-primary">{bk.contractRef}</span>
+                            <span className="rounded-full bg-primary/15 text-primary border border-primary/30 px-2.5 py-0.5 text-[11px] font-bold">
+                              Fee: {bk.fee}
+                            </span>
+                          </div>
+                          <h4 className="font-display text-xl font-extrabold text-foreground mt-1">{bk.eventName}</h4>
+                          <p className="text-sm text-muted-foreground">Organizer: {bk.organization}</p>
+                        </div>
 
-                    <div className="flex gap-2">
-                      <button
-                        onClick={() => toast.success("Downloading Executed Emcee Contract PDF...")}
-                        className="btn-outline !py-2 !px-4 text-sm !border-border !text-foreground hover:!bg-muted flex items-center gap-2"
-                      >
-                        <Download className="h-4 w-4 text-primary" /> Download Contract
-                      </button>
-                    </div>
-                  </div>
+                        <div className="flex flex-wrap gap-2">
+                          {!bk.advancePaid && (
+                            <button
+                              onClick={() => {
+                                markBookingAdvancePaid(bk.id);
+                                setBookings(getStoredBookings());
+                                toast.success(`50% Advance Deposit recorded for ${bk.eventName}!`);
+                              }}
+                              className="btn-red !py-2 !px-4 text-sm cursor-pointer"
+                            >
+                              Pay 50% Advance Deposit
+                            </button>
+                          )}
+                          <button
+                            onClick={() => setSelectedContract(bk)}
+                            className="btn-outline !py-2 !px-4 text-sm !border-border !text-foreground hover:!bg-muted flex items-center gap-2 cursor-pointer"
+                          >
+                            <Download className="h-4 w-4 text-primary" /> View &amp; Download Contract
+                          </button>
+                        </div>
+                      </div>
 
-                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 text-sm">
-                    <div className="p-4 rounded-lg bg-muted/30 border border-border">
-                      <span className="text-muted-foreground block text-xs uppercase font-bold tracking-wider">Show Date & Timing</span>
-                      <p className="font-bold text-foreground mt-1">December 14, 2026 • 09:00 AM - 05:30 PM</p>
+                      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 text-sm">
+                        <div className="p-4 rounded-lg bg-muted/30 border border-border">
+                          <span className="text-muted-foreground block text-xs uppercase font-bold tracking-wider">Show Date &amp; Timing</span>
+                          <p className="font-bold text-foreground mt-1">{bk.date} • {bk.time}</p>
+                        </div>
+                        <div className="p-4 rounded-lg bg-muted/30 border border-border">
+                          <span className="text-muted-foreground block text-xs uppercase font-bold tracking-wider">Location</span>
+                          <p className="font-bold text-foreground mt-1">{bk.venue}, {bk.city}</p>
+                        </div>
+                        <div className="p-4 rounded-lg bg-muted/30 border border-border">
+                          <span className="text-muted-foreground block text-xs uppercase font-bold tracking-wider">Host Status</span>
+                          <p className="font-bold text-foreground mt-1 flex items-center gap-1.5">
+                            <CheckCircle2 className="h-4 w-4 text-primary" />{" "}
+                            {bk.advancePaid ? "Advance Paid & Locked" : "Awaiting 50% Advance Deposit"}
+                          </p>
+                        </div>
+                      </div>
                     </div>
-                    <div className="p-4 rounded-lg bg-muted/30 border border-border">
-                      <span className="text-muted-foreground block text-xs uppercase font-bold tracking-wider">Location</span>
-                      <p className="font-bold text-foreground mt-1">Jio World Convention Centre, Mumbai</p>
-                    </div>
-                    <div className="p-4 rounded-lg bg-muted/30 border border-border">
-                      <span className="text-muted-foreground block text-xs uppercase font-bold tracking-wider">Host Status</span>
-                      <p className="font-bold text-foreground mt-1 flex items-center gap-1.5">
-                        <CheckCircle2 className="h-4 w-4 text-primary" /> Advance Paid & Locked
-                      </p>
-                    </div>
-                  </div>
+                  ))}
                 </div>
               </div>
             </div>
@@ -748,14 +822,46 @@ export function OrganizerPanel() {
                 </div>
 
                 <div className="border-t border-border pt-4 flex flex-wrap justify-between items-center gap-3 text-sm">
-                  <span className="text-muted-foreground">Need custom rider adjustments?</span>
+                  <span className="text-muted-foreground">Need custom rider adjustments or AV modifications?</span>
                   <button
-                    onClick={() => toast.info("Your question has been sent to Sid's technical producer.")}
-                    className="btn-outline !py-2 !px-4 text-sm !border-border !text-foreground hover:!bg-muted"
+                    onClick={() => setRiderModalOpen(true)}
+                    className="btn-red !py-2 !px-4 text-sm cursor-pointer"
                   >
                     Request Technical Adjustment
                   </button>
                 </div>
+
+                {riderTickets.length > 0 && (
+                  <div className="border-t border-border pt-5 space-y-3">
+                    <h4 className="font-display text-sm font-extrabold uppercase tracking-wider text-foreground">
+                      Submitted Technical Rider Adjustments ({riderTickets.length})
+                    </h4>
+                    <div className="space-y-2.5">
+                      {riderTickets.map((tkt) => (
+                        <div
+                          key={tkt.id}
+                          className="rounded-xl border border-border bg-background p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-2 text-sm"
+                        >
+                          <div>
+                            <div className="flex items-center gap-2">
+                              <span className="font-mono text-xs font-bold text-primary">{tkt.id}</span>
+                              <span className="font-bold text-foreground">{tkt.subject}</span>
+                            </div>
+                            <p className="text-xs text-muted-foreground mt-1">{tkt.description}</p>
+                          </div>
+                          <div className="flex items-center gap-2 shrink-0">
+                            <span className="rounded-full bg-primary/15 text-primary border border-primary/30 px-2.5 py-0.5 text-xs font-bold">
+                              {tkt.priority} Priority
+                            </span>
+                            <span className="rounded-full bg-muted text-foreground border border-border px-2.5 py-0.5 text-xs font-bold">
+                              {tkt.status}
+                            </span>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
               </div>
             </div>
           )}
@@ -997,6 +1103,27 @@ export function OrganizerPanel() {
                         onChange={(e) => setNewDate(e.target.value)}
                         className="w-full rounded-xl border border-input bg-background/80 py-2.5 px-3.5 text-sm text-foreground focus:border-primary focus:outline-none"
                       />
+                      {newDate && (
+                        <p
+                          className={`mt-1.5 text-xs font-bold flex items-center gap-1 ${
+                            dateConflict ? "text-primary" : "text-foreground"
+                          }`}
+                        >
+                          {dateConflict ? (
+                            <>
+                              <AlertCircle className="h-3.5 w-3.5 text-primary shrink-0" />
+                              <span>
+                                Note: {newDate} has a {dateConflict.status.toLowerCase()} lock ({dateConflict.city}). Waitlist / alternate slot applies.
+                              </span>
+                            </>
+                          ) : (
+                            <>
+                              <CheckCircle2 className="h-3.5 w-3.5 text-primary shrink-0" />
+                              <span>Date Available for Direct Lock</span>
+                            </>
+                          )}
+                        </p>
+                      )}
                     </div>
 
                     <div>
@@ -1096,6 +1223,55 @@ export function OrganizerPanel() {
           )}
         </main>
       </div>
+
+      <ContractModal
+        open={Boolean(selectedContract)}
+        onClose={() => setSelectedContract(null)}
+        booking={
+          selectedContract
+            ? {
+                id: selectedContract.id,
+                contractRef: selectedContract.contractRef,
+                eventName: selectedContract.eventName,
+                clientName: selectedContract.clientName,
+                organization: selectedContract.organization,
+                date: selectedContract.date,
+                time: selectedContract.time,
+                venue: selectedContract.venue,
+                city: selectedContract.city,
+                format: selectedContract.format,
+                fee: selectedContract.fee,
+                advancePaid: selectedContract.advancePaid,
+                gstin: gstNumber,
+              }
+            : null
+        }
+        onPayAdvance={(bookingId) => {
+          markBookingAdvancePaid(bookingId);
+          const refreshed = getStoredBookings();
+          setBookings(refreshed);
+          const updatedSelected = refreshed.find((b) => b.id === bookingId) || null;
+          setSelectedContract(updatedSelected);
+        }}
+      />
+
+      <TechnicalRiderRequestModal
+        open={riderModalOpen}
+        onClose={() => setRiderModalOpen(false)}
+        userEmail={contactEmail}
+        organization={companyName}
+        onSubmitRequest={({ subject, priority, description }) => {
+          saveSupportTicket({
+            userEmail: contactEmail,
+            userName: contactPerson,
+            organization: companyName,
+            subject,
+            priority,
+            description,
+          });
+          setRiderTickets(getStoredTickets());
+        }}
+      />
     </div>
   );
 }
