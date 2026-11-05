@@ -275,6 +275,35 @@
   .ink-fade-bottom {
     background: linear-gradient(180deg, transparent 40%, oklch(0.1 0 0 / 0.85));
   }
+
+  /* ============================================================== */
+  /* DASHBOARD PANELS — DISTINCT DARKER OFF-WHITE CARD & HEADER SYSTEM */
+  /* ============================================================== */
+  .panel-canvas {
+    background-color: #e5e8ed !important;
+  }
+  .panel-card {
+    border-radius: 1.25rem !important;
+    border: 1.5px solid #cbd2d9 !important;
+    background-color: #f2f4f7 !important;
+    box-shadow: 0 4px 20px -4px rgba(15, 23, 42, 0.08) !important;
+    overflow: hidden;
+  }
+  .panel-card-header {
+    background-color: #d6dbe2 !important;
+    border-bottom: 1.5px solid #cbd2d9 !important;
+    padding: 1.125rem 1.5rem !important;
+  }
+  .panel-card-body {
+    background-color: #f2f4f7 !important;
+    padding: 1.5rem !important;
+  }
+  .panel-inner-tile {
+    border-radius: 0.875rem !important;
+    border: 1.5px solid #cbd2d9 !important;
+    background-color: #e9ecf0 !important;
+    padding: 1.25rem !important;
+  }
 }
 
 @layer utilities {

@@ -17,6 +17,11 @@ import confettiConcert from "@/assets/confetti-concert.jpg";
 import hostBowtie from "@/assets/host-bowtie.jpg";
 import stageBeams from "@/assets/stage-beams.jpg";
 import festivalCrowd from "@/assets/festival-crowd.jpg";
+import techSummit from "@/assets/tech-summit.jpg";
+import conferenceHall from "@/assets/conference-hall.jpg";
+import micDark from "@/assets/mic-dark.jpg";
+import conclaveStage from "@/assets/conclave-stage.jpg";
+import starTrophy from "@/assets/star-trophy.jpg";
 import {
   insertNeonEnquiryServerFn,
   updateNeonEnquiryStatusServerFn,
@@ -73,6 +78,7 @@ export interface MediaItem {
   duration?: string;
   dimensions?: string;
   url: string;
+  thumbnail?: string;
   createdAt: string;
 }
 
@@ -234,6 +240,7 @@ const DEFAULT_MEDIA: MediaItem[] = [
     size: "42.5 MB",
     duration: "2:15 min",
     url: "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
+    thumbnail: techSummit,
     createdAt: "2026-10-20",
   },
   {
@@ -244,6 +251,7 @@ const DEFAULT_MEDIA: MediaItem[] = [
     size: "2.4 MB",
     dimensions: "3840 x 2160",
     url: hostPurple,
+    thumbnail: hostPurple,
     createdAt: "2026-10-15",
   },
   {
@@ -254,6 +262,7 @@ const DEFAULT_MEDIA: MediaItem[] = [
     size: "3.1 MB",
     dimensions: "4000 x 2667",
     url: confettiConcert,
+    thumbnail: confettiConcert,
     createdAt: "2026-10-18",
   },
   {
@@ -263,6 +272,7 @@ const DEFAULT_MEDIA: MediaItem[] = [
     category: "Riders & Specs",
     size: "1.2 MB",
     url: "https://www.w3.org/WAI/ER/tests/xhtml/testfiles/resources/pdf/dummy.pdf",
+    thumbnail: conferenceHall,
     createdAt: "2026-11-01",
   },
   {
@@ -273,6 +283,7 @@ const DEFAULT_MEDIA: MediaItem[] = [
     size: "4.8 MB",
     duration: "0:42 sec",
     url: "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3",
+    thumbnail: micDark,
     createdAt: "2026-09-12",
   },
   {
@@ -283,6 +294,7 @@ const DEFAULT_MEDIA: MediaItem[] = [
     size: "1.8 MB",
     dimensions: "2400 x 3000",
     url: hostBowtie,
+    thumbnail: hostBowtie,
     createdAt: "2026-10-05",
   },
   {
@@ -293,6 +305,7 @@ const DEFAULT_MEDIA: MediaItem[] = [
     size: "2.8 MB",
     dimensions: "3840 x 2160",
     url: stageBeams,
+    thumbnail: stageBeams,
     createdAt: "2026-10-25",
   },
   {
@@ -303,6 +316,7 @@ const DEFAULT_MEDIA: MediaItem[] = [
     size: "3.5 MB",
     dimensions: "3840 x 2400",
     url: festivalCrowd,
+    thumbnail: festivalCrowd,
     createdAt: "2026-10-30",
   },
 ];
@@ -799,4 +813,30 @@ export function deleteMediaItem(id: string): boolean {
     }
   }
   return true;
+}
+
+export function updateMediaThumbnail(id: string, thumbnail: string): boolean {
+  const current = getStoredMedia();
+  const idx = current.findIndex((m) => m.id === id);
+  if (idx === -1) return false;
+
+  current[idx].thumbnail = thumbnail;
+  if (typeof window !== "undefined") {
+    try {
+      localStorage.setItem(MEDIA_KEY, JSON.stringify(current));
+      window.dispatchEvent(new Event("siddwhizz_media_updated"));
+    } catch (err) {
+      console.warn("Failed to update media thumbnail:", err);
+    }
+  }
+  return true;
+}
+
+export function getDefaultThumbnail(item: { type: string; url?: string; thumbnail?: string }): string {
+  if (item.thumbnail && item.thumbnail.trim()) return item.thumbnail;
+  if (item.type === "image" && item.url) return item.url;
+  if (item.type === "video") return techSummit;
+  if (item.type === "audio") return micDark;
+  if (item.type === "document") return conferenceHall;
+  return stageBeams;
 }

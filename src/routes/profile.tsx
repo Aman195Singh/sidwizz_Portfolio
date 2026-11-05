@@ -346,10 +346,31 @@ function ProfilePage() {
         </header>
 
         {/* Tab Content Body (Scrolls Independently) */}
-        <main className="flex-1 overflow-y-auto p-4 sm:p-6 lg:p-8 space-y-8 bg-background">
+        <main className="flex-1 overflow-y-auto p-4 sm:p-6 lg:p-8 space-y-8 panel-canvas">
           {/* Top Header Card with Profile Photo Studio */}
-          <div className="rounded-2xl border border-border bg-card p-6 sm:p-8 shadow-sm">
-            <div className="flex flex-col gap-6 sm:flex-row sm:items-center sm:justify-between">
+          <div className="panel-card shadow-sm">
+            <div className="panel-card-header flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+              <div className="flex items-center gap-2.5">
+                <span className="h-5 w-1.5 rounded-full bg-primary shrink-0" />
+                <div>
+                  <h3 className="font-display text-base sm:text-lg font-black tracking-tight text-foreground uppercase">
+                    Member Account &amp; Identity Studio
+                  </h3>
+                  <p className="text-xs text-muted-foreground">Manage your attendee stage avatar and session authentication.</p>
+                </div>
+              </div>
+              <button
+                onClick={() => {
+                  logout();
+                  navigate({ to: "/" });
+                }}
+                className="btn-outline !py-1.5 !px-3.5 text-xs !border-neutral-300 !text-foreground hover:!bg-neutral-200 self-start sm:self-auto cursor-pointer"
+              >
+                <LogOut className="h-3.5 w-3.5" /> Sign Out
+              </button>
+            </div>
+
+            <div className="panel-card-body p-6 sm:p-7">
               <div className="flex items-center gap-4">
                 {/* Photo Avatar */}
                 <div className="relative group">
@@ -386,7 +407,7 @@ function ProfilePage() {
                     <button
                       type="button"
                       onClick={() => fileInputRef.current?.click()}
-                      className="text-xs text-primary font-bold hover:underline flex items-center gap-1.5"
+                      className="text-xs text-primary font-bold hover:underline flex items-center gap-1.5 cursor-pointer"
                     >
                       <Upload className="h-3.5 w-3.5" /> Change Photo
                     </button>
@@ -394,7 +415,7 @@ function ProfilePage() {
                       <button
                         type="button"
                         onClick={handleRemovePhoto}
-                        className="text-xs text-muted-foreground hover:text-destructive flex items-center gap-1"
+                        className="text-xs text-muted-foreground hover:text-destructive flex items-center gap-1 cursor-pointer"
                       >
                         <Trash2 className="h-3.5 w-3.5" /> Remove
                       </button>
@@ -402,68 +423,61 @@ function ProfilePage() {
                   </div>
                 </div>
               </div>
-
-              <div className="flex items-center gap-2.5">
-                <button
-                  onClick={() => {
-                    logout();
-                    navigate({ to: "/" });
-                  }}
-                  className="btn-outline !py-2 !px-4 text-sm !border-border !text-foreground hover:!bg-muted"
-                >
-                  <LogOut className="h-4 w-4" /> Sign Out
-                </button>
-              </div>
             </div>
           </div>
 
           {activeTab === "overview" && (
             <div className="space-y-8">
               <div>
-                <p className="eyebrow mb-1">Audience Access & RSVPs</p>
+                <p className="eyebrow mb-1">Audience Access &amp; RSVPs</p>
                 <h2 className="display text-2xl sm:text-3xl text-foreground">
                   Active Stage <span className="text-primary">Passes</span>
                 </h2>
               </div>
 
               {/* VIP Stage Passes / Registered Events */}
-              <div className="rounded-2xl border border-border bg-card p-6 shadow-sm space-y-5">
-                <div className="flex flex-wrap items-center justify-between gap-3 border-b border-border pb-4">
-                  <div>
-                    <h3 className="font-display text-lg font-extrabold text-foreground flex items-center gap-2">
-                      <Ticket className="h-5 w-5 text-primary" /> Active Stage Passes & RSVPs
-                    </h3>
-                    <p className="text-sm text-muted-foreground mt-0.5">
-                      Events hosted by Siddharth Maurya where you hold audience registration.
-                    </p>
+              <div className="panel-card shadow-sm">
+                <div className="panel-card-header flex flex-wrap items-center justify-between gap-3">
+                  <div className="flex items-center gap-2.5">
+                    <span className="h-5 w-1.5 rounded-full bg-primary shrink-0" />
+                    <div>
+                      <h3 className="font-display text-base sm:text-lg font-black tracking-tight text-foreground uppercase flex items-center gap-2">
+                        <Ticket className="h-5 w-5 text-primary" /> Active Stage Passes &amp; RSVPs
+                      </h3>
+                      <p className="text-xs text-muted-foreground">
+                        Events hosted by Siddharth Maurya where you hold audience registration.
+                      </p>
+                    </div>
                   </div>
                   <span className="rounded-full bg-primary/15 text-primary border border-primary/30 px-3 py-1 text-xs font-bold">
                     1 Active Pass
                   </span>
                 </div>
 
-                <div className="card-lift rounded-xl border border-border bg-background p-5 sm:p-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-                  <div className="space-y-1.5">
-                    <span className="font-mono text-sm font-bold text-primary">TICKET: PASS-2026-VIP</span>
-                    <h4 className="font-display text-xl font-extrabold text-foreground">Global FinTech Summit 2026</h4>
-                    <div className="flex flex-wrap items-center gap-4 text-sm text-muted-foreground pt-1">
-                      <span className="flex items-center gap-1.5">
-                        <Calendar className="h-4 w-4 text-primary" /> Dec 14, 2026
-                      </span>
-                      <span className="flex items-center gap-1.5">
-                        <MapPin className="h-4 w-4 text-primary" /> Jio World Convention Centre, Mumbai
-                      </span>
-                      <span className="flex items-center gap-1.5 text-foreground font-semibold">
-                        <CheckCircle2 className="h-4 w-4 text-primary" /> Emcee: Siddharth Maurya
-                      </span>
+                <div className="panel-card-body p-6">
+                  <div className="panel-inner-tile card-lift flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                    <div className="space-y-1.5">
+                      <span className="font-mono text-sm font-bold text-primary">TICKET: PASS-2026-VIP</span>
+                      <h4 className="font-display text-xl font-extrabold text-foreground">Global FinTech Summit 2026</h4>
+                      <div className="flex flex-wrap items-center gap-4 text-sm text-muted-foreground pt-1">
+                        <span className="flex items-center gap-1.5">
+                          <Calendar className="h-4 w-4 text-primary" /> Dec 14, 2026
+                        </span>
+                        <span className="flex items-center gap-1.5">
+                          <MapPin className="h-4 w-4 text-primary" /> Jio World Convention Centre, Mumbai
+                        </span>
+                        <span className="flex items-center gap-1.5 text-foreground font-semibold">
+                          <CheckCircle2 className="h-4 w-4 text-primary" /> Emcee: Siddharth Maurya
+                        </span>
+                      </div>
                     </div>
+                    <button
+                      onClick={() => setVipPassOpen(true)}
+                      className="btn-red !py-2.5 !px-5 text-sm self-start sm:self-auto shrink-0 cursor-pointer"
+                    >
+                      View VIP Pass (QR)
+                    </button>
                   </div>
-                  <button
-                    onClick={() => setVipPassOpen(true)}
-                    className="btn-red !py-2.5 !px-5 text-sm self-start sm:self-auto shrink-0 cursor-pointer"
-                  >
-                    View VIP Pass (QR)
-                  </button>
                 </div>
               </div>
             </div>
@@ -479,63 +493,70 @@ function ProfilePage() {
               </div>
 
               {/* Member Account & Profile Form */}
-              <div className="rounded-2xl border border-border bg-card p-6 shadow-sm space-y-6">
-                <div>
-                  <h3 className="font-display text-lg font-extrabold text-foreground">Personal Account Information</h3>
-                  <p className="text-sm text-muted-foreground">Update your contact profile and preferences.</p>
+              <div className="panel-card shadow-sm">
+                <div className="panel-card-header flex items-center gap-2.5">
+                  <span className="h-5 w-1.5 rounded-full bg-primary shrink-0" />
+                  <div>
+                    <h3 className="font-display text-base sm:text-lg font-black tracking-tight text-foreground uppercase">
+                      Personal Account Information
+                    </h3>
+                    <p className="text-xs text-muted-foreground">Update your contact profile and preferences.</p>
+                  </div>
                 </div>
 
-                <form onSubmit={handleSaveProfile} className="space-y-4 text-sm">
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                    <div>
-                      <label className="font-bold text-muted-foreground block mb-1.5">Your Full Name</label>
-                      <input
-                        type="text"
-                        required
-                        value={name}
-                        onChange={(e) => setName(e.target.value)}
-                        className="w-full rounded-xl border border-input bg-background/80 py-2.5 px-3.5 text-sm text-foreground placeholder:text-muted-foreground/50 focus:border-primary focus:outline-none"
-                      />
+                <div className="panel-card-body p-6">
+                  <form onSubmit={handleSaveProfile} className="space-y-4 text-sm">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                      <div>
+                        <label className="font-bold text-muted-foreground block mb-1.5">Your Full Name</label>
+                        <input
+                          type="text"
+                          required
+                          value={name}
+                          onChange={(e) => setName(e.target.value)}
+                          className="w-full rounded-xl border border-neutral-300 bg-white py-2.5 px-3.5 text-sm text-foreground placeholder:text-muted-foreground/50 focus:border-primary focus:outline-none"
+                        />
+                      </div>
+
+                      <div>
+                        <label className="font-bold text-muted-foreground block mb-1.5">Email Address</label>
+                        <input
+                          type="email"
+                          required
+                          value={email}
+                          onChange={(e) => setEmail(e.target.value)}
+                          className="w-full rounded-xl border border-neutral-300 bg-white py-2.5 px-3.5 text-sm text-foreground placeholder:text-muted-foreground/50 focus:border-primary focus:outline-none"
+                        />
+                      </div>
+
+                      <div>
+                        <label className="font-bold text-muted-foreground block mb-1.5">Mobile Contact</label>
+                        <input
+                          type="text"
+                          value={phone}
+                          onChange={(e) => setPhone(e.target.value)}
+                          className="w-full rounded-xl border border-neutral-300 bg-white py-2.5 px-3.5 text-sm text-foreground placeholder:text-muted-foreground/50 focus:border-primary focus:outline-none"
+                        />
+                      </div>
+
+                      <div>
+                        <label className="font-bold text-muted-foreground block mb-1.5">Location / City</label>
+                        <input
+                          type="text"
+                          value={city}
+                          onChange={(e) => setCity(e.target.value)}
+                          className="w-full rounded-xl border border-neutral-300 bg-white py-2.5 px-3.5 text-sm text-foreground placeholder:text-muted-foreground/50 focus:border-primary focus:outline-none"
+                        />
+                      </div>
                     </div>
 
-                    <div>
-                      <label className="font-bold text-muted-foreground block mb-1.5">Email Address</label>
-                      <input
-                        type="email"
-                        required
-                        value={email}
-                        onChange={(e) => setEmail(e.target.value)}
-                        className="w-full rounded-xl border border-input bg-background/80 py-2.5 px-3.5 text-sm text-foreground placeholder:text-muted-foreground/50 focus:border-primary focus:outline-none"
-                      />
+                    <div className="pt-2">
+                      <button type="submit" className="btn-red !py-2.5 !px-5 text-sm cursor-pointer">
+                        Save Profile Details
+                      </button>
                     </div>
-
-                    <div>
-                      <label className="font-bold text-muted-foreground block mb-1.5">Mobile Contact</label>
-                      <input
-                        type="text"
-                        value={phone}
-                        onChange={(e) => setPhone(e.target.value)}
-                        className="w-full rounded-xl border border-input bg-background/80 py-2.5 px-3.5 text-sm text-foreground placeholder:text-muted-foreground/50 focus:border-primary focus:outline-none"
-                      />
-                    </div>
-
-                    <div>
-                      <label className="font-bold text-muted-foreground block mb-1.5">Location / City</label>
-                      <input
-                        type="text"
-                        value={city}
-                        onChange={(e) => setCity(e.target.value)}
-                        className="w-full rounded-xl border border-input bg-background/80 py-2.5 px-3.5 text-sm text-foreground placeholder:text-muted-foreground/50 focus:border-primary focus:outline-none"
-                      />
-                    </div>
-                  </div>
-
-                  <div className="pt-2">
-                    <button type="submit" className="btn-red !py-2.5 !px-5 text-sm">
-                      Save Profile Details
-                    </button>
-                  </div>
-                </form>
+                  </form>
+                </div>
               </div>
             </div>
           )}
@@ -543,63 +564,69 @@ function ProfilePage() {
           {(activeTab === "security" || activeTab === "overview") && (
             <div className="space-y-6">
               <div>
-                <p className="eyebrow mb-1">Credentials & Protection</p>
+                <p className="eyebrow mb-1">Credentials &amp; Protection</p>
                 <h2 className="display text-2xl sm:text-3xl text-foreground">
                   Account <span className="text-primary">Security</span>
                 </h2>
               </div>
 
-              <div className="rounded-2xl border border-border bg-card p-6 shadow-sm space-y-5">
-                <div className="flex items-center gap-2.5 border-b border-border pb-3">
+              <div className="panel-card shadow-sm">
+                <div className="panel-card-header flex items-center gap-2.5">
+                  <span className="h-5 w-1.5 rounded-full bg-primary shrink-0" />
                   <KeyRound className="h-5 w-5 text-primary" />
                   <div>
-                    <h3 className="font-display text-lg font-extrabold text-foreground">Account Password</h3>
-                    <p className="text-sm text-muted-foreground">Update your password to keep your member account secure.</p>
+                    <h3 className="font-display text-base sm:text-lg font-black tracking-tight text-foreground uppercase">
+                      Account Password &amp; Authentication
+                    </h3>
+                    <p className="text-xs text-muted-foreground">Update your password to keep your member account secure.</p>
                   </div>
                 </div>
-                <form onSubmit={handleUpdatePassword} className="space-y-4 text-sm">
-                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                    <div>
-                      <label className="font-bold text-muted-foreground block mb-1.5">Current Password</label>
-                      <input
-                        type="password"
-                        required
-                        value={currentPassword}
-                        onChange={(e) => setCurrentPassword(e.target.value)}
-                        placeholder="••••••••"
-                        className="w-full rounded-xl border border-input bg-background/80 py-2.5 px-3.5 text-sm text-foreground focus:border-primary focus:outline-none"
-                      />
+
+                <div className="panel-card-body p-6">
+                  <form onSubmit={handleUpdatePassword} className="space-y-4 text-sm">
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                      <div>
+                        <label className="font-bold text-muted-foreground block mb-1.5">Current Password</label>
+                        <input
+                          type="password"
+                          required
+                          value={currentPassword}
+                          onChange={(e) => setCurrentPassword(e.target.value)}
+                          placeholder="••••••••"
+                          className="w-full rounded-xl border border-neutral-300 bg-white py-2.5 px-3.5 text-sm text-foreground focus:border-primary focus:outline-none"
+                        />
+                      </div>
+                      <div>
+                        <label className="font-bold text-muted-foreground block mb-1.5">New Password</label>
+                        <input
+                          type="password"
+                          required
+                          value={newPassword}
+                          onChange={(e) => setNewPassword(e.target.value)}
+                          placeholder="Min 6 characters"
+                          className="w-full rounded-xl border border-neutral-300 bg-white py-2.5 px-3.5 text-sm text-foreground focus:border-primary focus:outline-none"
+                        />
+                      </div>
+                      <div>
+                        <label className="font-bold text-muted-foreground block mb-1.5">Confirm New Password</label>
+                        <input
+                          type="password"
+                          required
+                          value={confirmPassword}
+                          onChange={(e) => setConfirmPassword(e.target.value)}
+                          placeholder="Re-enter password"
+                          className="w-full rounded-xl border border-neutral-300 bg-white py-2.5 px-3.5 text-sm text-foreground focus:border-primary focus:outline-none"
+                        />
+                      </div>
                     </div>
-                    <div>
-                      <label className="font-bold text-muted-foreground block mb-1.5">New Password</label>
-                      <input
-                        type="password"
-                        required
-                        value={newPassword}
-                        onChange={(e) => setNewPassword(e.target.value)}
-                        placeholder="Min 6 characters"
-                        className="w-full rounded-xl border border-input bg-background/80 py-2.5 px-3.5 text-sm text-foreground focus:border-primary focus:outline-none"
-                      />
-                    </div>
-                    <div>
-                      <label className="font-bold text-muted-foreground block mb-1.5">Confirm New Password</label>
-                      <input
-                        type="password"
-                        required
-                        value={confirmPassword}
-                        onChange={(e) => setConfirmPassword(e.target.value)}
-                        placeholder="Re-enter password"
-                        className="w-full rounded-xl border border-input bg-background/80 py-2.5 px-3.5 text-sm text-foreground focus:border-primary focus:outline-none"
-                      />
-                    </div>
-                  </div>
-                  <button
-                    type="submit"
-                    className="btn-red !py-2.5 !px-5 text-sm"
-                  >
-                    Change Password & Save
-                  </button>
-                </form>
+                    <button
+                      type="submit"
+                      className="btn-red !py-2.5 !px-5 text-sm cursor-pointer"
+                    >
+                      Change Password &amp; Save
+                    </button>
+                  </form>
+                </div>
               </div>
             </div>
           )}

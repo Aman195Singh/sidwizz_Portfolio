@@ -43,6 +43,7 @@ import {
   Maximize2,
   Volume2,
   Download,
+  Clock,
   AlertTriangle,
 } from "lucide-react";
 import { useAuth } from "@/lib/auth";
@@ -61,6 +62,8 @@ import {
   updateTicketStatus,
   getSiteSettings,
   updateSiteSettings,
+  getDefaultThumbnail,
+  updateMediaThumbnail,
   type SupportTicket,
 } from "@/lib/data-store";
 import hostBowtie from "@/assets/host-bowtie.jpg";
@@ -69,6 +72,11 @@ import hostSmileRed from "@/assets/host-smile-red.jpg";
 import stageBeams from "@/assets/stage-beams.jpg";
 import confettiConcert from "@/assets/confetti-concert.jpg";
 import festivalCrowd from "@/assets/festival-crowd.jpg";
+import techSummit from "@/assets/tech-summit.jpg";
+import conclaveStage from "@/assets/conclave-stage.jpg";
+import conferenceHall from "@/assets/conference-hall.jpg";
+import micDark from "@/assets/mic-dark.jpg";
+import starTrophy from "@/assets/star-trophy.jpg";
 
 export type AdminTab =
   | "overview"
@@ -206,6 +214,7 @@ interface MediaItem {
   dimensions?: string;
   duration?: string;
   url: string;
+  thumbnail?: string;
   createdAt: string;
 }
 
@@ -329,6 +338,13 @@ export function AdminPanel({ initialTab = "overview" }: { initialTab?: AdminTab 
 
   // Media delete confirmation modal state
   const [mediaToDelete, setMediaToDelete] = useState<MediaItem | null>(null);
+
+  // Thumbnail management modal state
+  const [thumbnailModalMedia, setThumbnailModalMedia] = useState<MediaItem | null>(null);
+  const [selectedThumbnailPreview, setSelectedThumbnailPreview] = useState<string | null>(null);
+  const thumbnailInputRef = useRef<HTMLInputElement>(null);
+  const uploadThumbnailInputRef = useRef<HTMLInputElement>(null);
+  const [uploadMediaThumbnail, setUploadMediaThumbnail] = useState<string | null>(null);
 
   // Account merged state
   const [adminName, setAdminName] = useState(user?.name || "Siddharth Maurya");
@@ -591,6 +607,12 @@ https://sidwizz-portfolio.vercel.app`
       ? (selectedMediaFile.size / (1024 * 1024)).toFixed(1) + " MB"
       : "2.4 MB";
 
+    const finalThumbnail =
+      uploadMediaThumbnail ||
+      (newMediaType === "image"
+        ? (selectedMediaPreview || stageBeams)
+        : getDefaultThumbnail({ type: newMediaType }));
+
     const newItem: MediaItem = {
       id: `med-${Date.now().toString(36)}`,
       title: newMediaTitle.trim(),
@@ -607,7 +629,8 @@ https://sidwizz-portfolio.vercel.app`
       dimensions: newMediaType === "image" ? "High Resolution" : undefined,
       duration: newMediaType === "video" ? "Show Clip" : newMediaType === "audio" ? "Audio Clip" : undefined,
       url: selectedMediaPreview || stageBeams,
-      createdAt: new Date().toISOString().split("T")[0],
+      thumbnail: finalThumbnail,
+      createdAt: new Date().toISOString().split("T")[0] ?? "2026-11-05",
     };
 
     addMediaItem(newItem);
@@ -615,8 +638,36 @@ https://sidwizz-portfolio.vercel.app`
     setUploadModalOpen(false);
     setSelectedMediaFile(null);
     setSelectedMediaPreview(null);
+    setUploadMediaThumbnail(null);
     setNewMediaTitle("");
     toast.success(`"${newItem.title}" uploaded and indexed into Media Library!`);
+  };
+
+  // Save custom or preset thumbnail
+  const handleSaveThumbnail = (thumbnailUrl: string) => {
+    if (!thumbnailModalMedia) return;
+    updateMediaThumbnail(thumbnailModalMedia.id, thumbnailUrl);
+    setMediaItems(getStoredMedia());
+    if (viewingMedia?.id === thumbnailModalMedia.id) {
+      setViewingMedia({ ...viewingMedia, thumbnail: thumbnailUrl });
+    }
+    toast.success(`Thumbnail updated for "${thumbnailModalMedia.title}"!`);
+    setThumbnailModalMedia(null);
+    setSelectedThumbnailPreview(null);
+  };
+
+  // Thumbnail file select for custom thumbnail upload
+  const handleThumbnailFileSelect = (file: File) => {
+    if (!file.type.startsWith("image/")) {
+      toast.error("Please upload an image file (JPG, PNG, WebP) for the thumbnail.");
+      return;
+    }
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      const dataUrl = e.target?.result as string;
+      setSelectedThumbnailPreview(dataUrl);
+    };
+    reader.readAsDataURL(file);
   };
 
   // Open asset modal for viewing
@@ -987,7 +1038,7 @@ https://sidwizz-portfolio.vercel.app`
         </header>
 
         {/* Tab Content Body (Independently Scrollable) */}
-        <main className="flex-1 overflow-y-auto p-5 sm:p-6 lg:p-8 space-y-6 bg-background">
+        <main className="flex-1 overflow-y-auto p-5 sm:p-6 lg:p-8 space-y-6 panel-canvas">
           {/* ========================================================= */}
           {/* 1. OVERVIEW VIEW                                          */}
           {/* ========================================================= */}
@@ -996,108 +1047,121 @@ https://sidwizz-portfolio.vercel.app`
               <div>
                 <p className="eyebrow eyebrow-line">Stage Command Center</p>
                 <h2 className="display mt-2 text-2xl sm:text-3xl">
-                  Performance & <span className="text-primary">Booking Overview.</span>
+                  Performance &amp; <span className="text-primary">Booking Overview.</span>
                 </h2>
               </div>
 
               {/* Metric Cards */}
               <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-                <div className="card-lift p-5">
-                  <div className="flex items-center justify-between text-muted-foreground mb-2">
-                    <span className="font-display text-xs font-extrabold uppercase tracking-wider">New Enquiries</span>
-                    <Inbox className="h-5 w-5 text-primary" />
+                <div className="panel-card card-lift shadow-sm">
+                  <div className="panel-card-header py-3 px-5 flex items-center justify-between">
+                    <span className="font-display text-xs font-extrabold uppercase tracking-wider text-muted-foreground">New Enquiries</span>
+                    <Inbox className="h-4 w-4 text-primary" />
                   </div>
-                  <p className="text-3xl font-black font-display text-foreground">{enquiries.length}</p>
-                  <p className="text-sm text-primary font-semibold mt-1">
-                    {pendingCount} requiring immediate response
-                  </p>
+                  <div className="panel-card-body p-5">
+                    <p className="text-3xl font-black font-display text-foreground">{enquiries.length}</p>
+                    <p className="text-xs text-primary font-bold mt-1">
+                      {pendingCount} requiring immediate response
+                    </p>
+                  </div>
                 </div>
 
-                <div className="card-lift p-5">
-                  <div className="flex items-center justify-between text-muted-foreground mb-2">
-                    <span className="font-display text-xs font-extrabold uppercase tracking-wider">Historical Shows</span>
-                    <Calendar className="h-5 w-5 text-foreground" />
+                <div className="panel-card card-lift shadow-sm">
+                  <div className="panel-card-header py-3 px-5 flex items-center justify-between">
+                    <span className="font-display text-xs font-extrabold uppercase tracking-wider text-muted-foreground">Historical Shows</span>
+                    <Calendar className="h-4 w-4 text-foreground" />
                   </div>
-                  <p className="text-3xl font-black font-display text-foreground">600+</p>
-                  <p className="text-sm text-muted-foreground mt-1">15+ Years Live Experience</p>
+                  <div className="panel-card-body p-5">
+                    <p className="text-3xl font-black font-display text-foreground">600+</p>
+                    <p className="text-xs text-muted-foreground mt-1">15+ Years Live Experience</p>
+                  </div>
                 </div>
 
-                <div className="card-lift p-5">
-                  <div className="flex items-center justify-between text-muted-foreground mb-2">
-                    <span className="font-display text-xs font-extrabold uppercase tracking-wider">Audience Reach</span>
-                    <Users className="h-5 w-5 text-foreground" />
+                <div className="panel-card card-lift shadow-sm">
+                  <div className="panel-card-header py-3 px-5 flex items-center justify-between">
+                    <span className="font-display text-xs font-extrabold uppercase tracking-wider text-muted-foreground">Audience Reach</span>
+                    <Users className="h-4 w-4 text-foreground" />
                   </div>
-                  <p className="text-3xl font-black font-display text-foreground">1.2M+</p>
-                  <p className="text-sm text-muted-foreground mt-1">Tech summits, festivals, galas</p>
+                  <div className="panel-card-body p-5">
+                    <p className="text-3xl font-black font-display text-foreground">1.2M+</p>
+                    <p className="text-xs text-muted-foreground mt-1">Tech summits, festivals, galas</p>
+                  </div>
                 </div>
 
-                <div className="card-lift p-5">
-                  <div className="flex items-center justify-between text-muted-foreground mb-2">
-                    <span className="font-display text-xs font-extrabold uppercase tracking-wider">Pipeline Est.</span>
-                    <TrendingUp className="h-5 w-5 text-primary" />
+                <div className="panel-card card-lift shadow-sm">
+                  <div className="panel-card-header py-3 px-5 flex items-center justify-between">
+                    <span className="font-display text-xs font-extrabold uppercase tracking-wider text-muted-foreground">Pipeline Est.</span>
+                    <TrendingUp className="h-4 w-4 text-primary" />
                   </div>
-                  <p className="text-3xl font-black font-display text-primary">₹{pipelineLakhs} L</p>
-                  <p className="text-sm text-muted-foreground mt-1">
-                    {enquiries.filter((e) => e.status === "Confirmed").length} Confirmed • {enquiries.length} Total Leads
-                  </p>
+                  <div className="panel-card-body p-5">
+                    <p className="text-3xl font-black font-display text-primary">₹{pipelineLakhs} L</p>
+                    <p className="text-xs text-muted-foreground mt-1">
+                      {enquiries.filter((e) => e.status === "Confirmed").length} Confirmed • {enquiries.length} Total Leads
+                    </p>
+                  </div>
                 </div>
               </div>
 
               {/* Speed-to-lead alert */}
               {pendingCount > 0 && (
-                <div className="rounded-2xl border border-primary/40 bg-primary/10 p-6 shadow-sm flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-                  <div className="flex items-start gap-4">
-                    <div className="rounded-xl bg-primary/20 p-3 text-primary border border-primary/30 shrink-0">
-                      <Inbox className="h-6 w-6" />
+                <div className="panel-card shadow-sm border-primary/40 bg-primary/10">
+                  <div className="p-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                    <div className="flex items-start gap-4">
+                      <div className="rounded-xl bg-primary/20 p-3 text-primary border border-primary/30 shrink-0">
+                        <Inbox className="h-6 w-6" />
+                      </div>
+                      <div>
+                        <h3 className="font-display text-base sm:text-lg font-extrabold text-foreground">
+                          {pendingCount} Fresh Event Enquiries Need Follow-up
+                        </h3>
+                        <p className="text-sm text-foreground/80 mt-1 leading-relaxed">
+                          High-value planners from FinTech Summit and Tata Motors are waiting. Reach out via WhatsApp or Direct Call within 15 minutes to maximize booking rate.
+                        </p>
+                      </div>
                     </div>
-                    <div>
-                      <h3 className="font-display text-base sm:text-lg font-extrabold text-foreground">
-                        {pendingCount} Fresh Event Enquiries Need Follow-up
-                      </h3>
-                      <p className="text-sm text-foreground/80 mt-1 leading-relaxed">
-                        High-value planners from FinTech Summit and Tata Motors are waiting. Reach out via WhatsApp or Direct Call within 15 minutes to maximize booking rate.
-                      </p>
-                    </div>
+                    <button
+                      onClick={() => setActiveTab("enquiries")}
+                      className="btn-red !py-2.5 !px-5 text-sm whitespace-nowrap self-start sm:self-auto cursor-pointer"
+                    >
+                      <span>Open Enquiries</span>
+                      <ArrowRight className="h-4 w-4" />
+                    </button>
                   </div>
-                  <button
-                    onClick={() => setActiveTab("enquiries")}
-                    className="btn-red !py-2.5 !px-5 text-sm whitespace-nowrap self-start sm:self-auto"
-                  >
-                    <span>Open Enquiries</span>
-                    <ArrowRight className="h-4 w-4" />
-                  </button>
                 </div>
               )}
 
               {/* Recent Enquiries Table Preview */}
-              <div className="rounded-2xl border border-border bg-card p-6 shadow-[var(--shadow-card)]">
-                <div className="flex items-center justify-between mb-5">
-                  <div>
-                    <p className="eyebrow">Live Pipeline</p>
-                    <h3 className="font-display text-lg sm:text-xl font-extrabold text-foreground mt-1">Recent Booking Inquiries</h3>
-                    <p className="text-sm text-muted-foreground">Incoming leads from the website's Contact and Booking forms</p>
+              <div className="panel-card shadow-sm">
+                <div className="panel-card-header flex items-center justify-between">
+                  <div className="flex items-center gap-2.5">
+                    <span className="h-5 w-1.5 rounded-full bg-primary shrink-0" />
+                    <div>
+                      <p className="eyebrow text-xs">Live Pipeline</p>
+                      <h3 className="font-display text-base sm:text-lg font-extrabold text-foreground mt-0.5">Recent Booking Inquiries</h3>
+                    </div>
                   </div>
                   <button
                     onClick={() => setActiveTab("enquiries")}
-                    className="text-sm font-bold text-primary hover:underline flex items-center gap-1"
+                    className="text-sm font-bold text-primary hover:underline flex items-center gap-1 cursor-pointer"
                   >
                     View All ({enquiries.length}) →
                   </button>
                 </div>
 
-                <div className="overflow-x-auto -mx-2 px-2 sm:mx-0 sm:px-0">
-                  <table className="w-full min-w-[780px] text-left text-sm">
-                    <thead className="border-b border-border bg-muted/40 font-display text-xs font-extrabold text-muted-foreground uppercase tracking-wider">
-                      <tr>
-                        <th className="p-3.5 whitespace-nowrap">Ref</th>
-                        <th className="p-3.5 whitespace-nowrap">Event &amp; Organizer</th>
-                        <th className="p-3.5 whitespace-nowrap">Date &amp; Venue</th>
-                        <th className="p-3.5 whitespace-nowrap">Budget</th>
-                        <th className="p-3.5 whitespace-nowrap">Status</th>
-                        <th className="p-3.5 text-right whitespace-nowrap">Quick Contact</th>
-                      </tr>
-                    </thead>
-                    <tbody className="divide-y divide-border">
+                <div className="panel-card-body p-0 sm:p-4">
+                  <div className="overflow-x-auto -mx-2 px-2 sm:mx-0 sm:px-0">
+                    <table className="w-full min-w-[780px] text-left text-sm">
+                      <thead className="border-b border-neutral-300 bg-neutral-100 font-display text-xs font-extrabold text-muted-foreground uppercase tracking-wider">
+                        <tr>
+                          <th className="p-3.5 whitespace-nowrap">Ref</th>
+                          <th className="p-3.5 whitespace-nowrap">Event &amp; Organizer</th>
+                          <th className="p-3.5 whitespace-nowrap">Date &amp; Venue</th>
+                          <th className="p-3.5 whitespace-nowrap">Budget</th>
+                          <th className="p-3.5 whitespace-nowrap">Status</th>
+                          <th className="p-3.5 text-right whitespace-nowrap">Quick Contact</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-neutral-300">
                       {enquiries.slice(0, 4).map((e) => (
                         <tr key={e.id} className="hover:bg-accent/40 transition">
                           <td className="p-3.5 font-mono text-sm font-bold text-primary whitespace-nowrap">{e.id}</td>
@@ -1153,7 +1217,8 @@ https://sidwizz-portfolio.vercel.app`
                 </div>
               </div>
             </div>
-          )}
+          </div>
+        )}
 
           {/* ========================================================= */}
           {/* 2. WEB PAGE ANALYTICS VIEW                                */}
@@ -1179,59 +1244,85 @@ https://sidwizz-portfolio.vercel.app`
               </div>
 
               <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
-                <div className="card-lift p-5">
-                  <span className="font-display text-xs font-extrabold text-muted-foreground uppercase">Unique Visitors</span>
-                  <p className="text-3xl font-black font-display text-foreground mt-1">42,500</p>
-                  <p className="text-sm text-primary font-semibold mt-1">↑ 18.2% this month</p>
+                <div className="panel-card card-lift shadow-sm">
+                  <div className="panel-card-header py-3 px-5 flex items-center justify-between">
+                    <span className="font-display text-xs font-extrabold text-muted-foreground uppercase">Unique Visitors</span>
+                    <Users className="h-4 w-4 text-primary" />
+                  </div>
+                  <div className="panel-card-body p-5">
+                    <p className="text-3xl font-black font-display text-foreground">42,500</p>
+                    <p className="text-xs text-primary font-bold mt-1">↑ 18.2% this month</p>
+                  </div>
                 </div>
-                <div className="card-lift p-5">
-                  <span className="font-display text-xs font-extrabold text-muted-foreground uppercase">Total Pageviews</span>
-                  <p className="text-3xl font-black font-display text-foreground mt-1">118,200</p>
-                  <p className="text-sm text-primary font-semibold mt-1">↑ 24.6% this month</p>
+
+                <div className="panel-card card-lift shadow-sm">
+                  <div className="panel-card-header py-3 px-5 flex items-center justify-between">
+                    <span className="font-display text-xs font-extrabold text-muted-foreground uppercase">Total Pageviews</span>
+                    <TrendingUp className="h-4 w-4 text-primary" />
+                  </div>
+                  <div className="panel-card-body p-5">
+                    <p className="text-3xl font-black font-display text-foreground">118,200</p>
+                    <p className="text-xs text-primary font-bold mt-1">↑ 24.6% this month</p>
+                  </div>
                 </div>
-                <div className="card-lift p-5">
-                  <span className="font-display text-xs font-extrabold text-muted-foreground uppercase">Avg. Time on Site</span>
-                  <p className="text-3xl font-black font-display text-foreground mt-1">2m 48s</p>
-                  <p className="text-sm text-muted-foreground mt-1">High audience retention</p>
+
+                <div className="panel-card card-lift shadow-sm">
+                  <div className="panel-card-header py-3 px-5 flex items-center justify-between">
+                    <span className="font-display text-xs font-extrabold text-muted-foreground uppercase">Avg. Time</span>
+                    <Clock className="h-4 w-4 text-foreground" />
+                  </div>
+                  <div className="panel-card-body p-5">
+                    <p className="text-3xl font-black font-display text-foreground">2m 48s</p>
+                    <p className="text-xs text-muted-foreground mt-1">High audience retention</p>
+                  </div>
                 </div>
-                <div className="card-lift p-5">
-                  <span className="font-display text-xs font-extrabold text-muted-foreground uppercase">Enquiry Conversion</span>
-                  <p className="text-3xl font-black font-display text-foreground mt-1">4.2%</p>
-                  <p className="text-sm text-muted-foreground font-semibold mt-1">High booking intent</p>
+
+                <div className="panel-card card-lift shadow-sm">
+                  <div className="panel-card-header py-3 px-5 flex items-center justify-between">
+                    <span className="font-display text-xs font-extrabold text-muted-foreground uppercase">Enquiry Rate</span>
+                    <CheckCircle2 className="h-4 w-4 text-emerald-500" />
+                  </div>
+                  <div className="panel-card-body p-5">
+                    <p className="text-3xl font-black font-display text-foreground">4.2%</p>
+                    <p className="text-xs text-muted-foreground font-semibold mt-1">High booking intent</p>
+                  </div>
                 </div>
               </div>
 
               {/* Section Popularity Breakdown */}
               <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
-                <div className="rounded-2xl border border-border bg-card p-6 shadow-[var(--shadow-card)]">
-                  <h3 className="font-display text-lg font-extrabold text-foreground mb-5">Most Visited Sections</h3>
-                  <div className="space-y-4">
+                <div className="panel-card shadow-sm">
+                  <div className="panel-card-header flex items-center gap-2.5">
+                    <span className="h-5 w-1.5 rounded-full bg-primary shrink-0" />
+                    <h3 className="font-display text-base sm:text-lg font-extrabold text-foreground uppercase tracking-tight">Most Visited Sections</h3>
+                  </div>
+                  <div className="panel-card-body p-6 space-y-4">
                     <div>
                       <div className="flex justify-between text-sm font-bold mb-1.5">
-                        <span>Homepage & Hero Showreel (/)</span>
+                        <span>Homepage &amp; Hero Showreel (/)</span>
                         <span className="text-muted-foreground">45% (53,190 views)</span>
                       </div>
-                      <div className="h-2.5 w-full rounded-full bg-muted overflow-hidden">
+                      <div className="h-2.5 w-full rounded-full bg-neutral-200 overflow-hidden">
                         <div className="h-full bg-primary rounded-full" style={{ width: "45%" }} />
                       </div>
                     </div>
 
                     <div>
                       <div className="flex justify-between text-sm font-bold mb-1.5">
-                        <span>Portfolio & Summits (/portfolio)</span>
+                        <span>Portfolio &amp; Summits (/portfolio)</span>
                         <span className="text-muted-foreground">28% (33,096 views)</span>
                       </div>
-                      <div className="h-2.5 w-full rounded-full bg-muted overflow-hidden">
+                      <div className="h-2.5 w-full rounded-full bg-neutral-200 overflow-hidden">
                         <div className="h-full bg-primary rounded-full" style={{ width: "28%" }} />
                       </div>
                     </div>
 
                     <div>
                       <div className="flex justify-between text-sm font-bold mb-1.5">
-                        <span>Event Formats & Packages (/services)</span>
+                        <span>Event Formats &amp; Packages (/services)</span>
                         <span className="text-muted-foreground">15% (17,730 views)</span>
                       </div>
-                      <div className="h-2.5 w-full rounded-full bg-muted overflow-hidden">
+                      <div className="h-2.5 w-full rounded-full bg-neutral-200 overflow-hidden">
                         <div className="h-full bg-primary rounded-full" style={{ width: "15%" }} />
                       </div>
                     </div>
@@ -1241,30 +1332,33 @@ https://sidwizz-portfolio.vercel.app`
                         <span>Live Stage Moments Gallery (/gallery)</span>
                         <span className="text-muted-foreground">12% (14,184 views)</span>
                       </div>
-                      <div className="h-2.5 w-full rounded-full bg-muted overflow-hidden">
+                      <div className="h-2.5 w-full rounded-full bg-neutral-200 overflow-hidden">
                         <div className="h-full bg-primary rounded-full" style={{ width: "12%" }} />
                       </div>
                     </div>
                   </div>
                 </div>
 
-                <div className="rounded-2xl border border-border bg-card p-6 shadow-[var(--shadow-card)]">
-                  <h3 className="font-display text-lg font-extrabold text-foreground mb-5">Traffic Referral Channels</h3>
-                  <div className="space-y-3.5">
-                    <div className="flex items-center justify-between border-b border-border pb-2.5 text-sm">
-                      <span className="font-semibold text-foreground">Direct & Bookmark</span>
+                <div className="panel-card shadow-sm">
+                  <div className="panel-card-header flex items-center gap-2.5">
+                    <span className="h-5 w-1.5 rounded-full bg-primary shrink-0" />
+                    <h3 className="font-display text-base sm:text-lg font-extrabold text-foreground uppercase tracking-tight">Traffic Referral Channels</h3>
+                  </div>
+                  <div className="panel-card-body p-6 space-y-3.5">
+                    <div className="flex items-center justify-between border-b border-neutral-300 pb-2.5 text-sm">
+                      <span className="font-semibold text-foreground">Direct &amp; Bookmark</span>
                       <span className="font-mono font-bold text-muted-foreground">38%</span>
                     </div>
-                    <div className="flex items-center justify-between border-b border-border pb-2.5 text-sm">
+                    <div className="flex items-center justify-between border-b border-neutral-300 pb-2.5 text-sm">
                       <span className="font-semibold text-foreground">Instagram (@siddwhizz)</span>
                       <span className="font-mono font-bold text-foreground">32%</span>
                     </div>
-                    <div className="flex items-center justify-between border-b border-border pb-2.5 text-sm">
+                    <div className="flex items-center justify-between border-b border-neutral-300 pb-2.5 text-sm">
                       <span className="font-semibold text-foreground">LinkedIn (Siddharth Maurya)</span>
                       <span className="font-mono font-bold text-muted-foreground">20%</span>
                     </div>
                     <div className="flex items-center justify-between pb-1 text-sm">
-                      <span className="font-semibold text-foreground">Word-of-Mouth & Agency Referrals</span>
+                      <span className="font-semibold text-foreground">Word-of-Mouth &amp; Agency Referrals</span>
                       <span className="font-mono font-bold text-muted-foreground">10%</span>
                     </div>
                   </div>
@@ -1294,7 +1388,7 @@ https://sidwizz-portfolio.vercel.app`
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
                     placeholder="Search by event, client, organization, or city..."
-                    className="w-full rounded-xl border border-input bg-card py-2.5 pl-10 pr-4 text-sm text-foreground placeholder:text-muted-foreground focus:border-primary focus:outline-none"
+                    className="w-full rounded-xl border border-neutral-300 bg-white py-2.5 pl-10 pr-4 text-sm text-foreground placeholder:text-muted-foreground focus:border-primary focus:outline-none"
                   />
                 </div>
 
@@ -1303,10 +1397,10 @@ https://sidwizz-portfolio.vercel.app`
                     <button
                       key={st}
                       onClick={() => setStatusFilter(st)}
-                      className={`rounded-lg px-3.5 py-2 text-sm font-bold transition ${
+                      className={`rounded-lg px-3.5 py-2 text-sm font-bold transition cursor-pointer ${
                         statusFilter === st
                           ? "bg-primary text-primary-foreground shadow-sm"
-                          : "border border-border bg-card text-muted-foreground hover:bg-accent hover:text-foreground"
+                          : "border border-neutral-300 bg-white text-muted-foreground hover:bg-neutral-100 hover:text-foreground"
                       }`}
                     >
                       {st}
@@ -1320,7 +1414,7 @@ https://sidwizz-portfolio.vercel.app`
                 {/* List Column */}
                 <div className={`space-y-4 ${selectedEnquiry ? "lg:col-span-7" : "lg:col-span-12"}`}>
                   {filteredEnquiries.length === 0 ? (
-                    <div className="rounded-2xl border border-border bg-card p-12 text-center">
+                    <div className="panel-card p-12 text-center">
                       <Inbox className="mx-auto h-8 w-8 text-muted-foreground mb-2" />
                       <p className="text-base font-bold text-foreground">No enquiries found</p>
                       <p className="text-sm text-muted-foreground">Try adjusting your search query or filter.</p>
@@ -1330,89 +1424,94 @@ https://sidwizz-portfolio.vercel.app`
                       <div
                         key={e.id}
                         onClick={() => setSelectedEnquiry(e)}
-                        className={`rounded-2xl border p-6 transition cursor-pointer ${
+                        className={`panel-card transition cursor-pointer ${
                           selectedEnquiry?.id === e.id
-                            ? "border-primary bg-primary/5 ring-1 ring-primary"
-                            : "border-border bg-card hover:border-primary/50"
+                            ? "ring-2 ring-primary border-primary"
+                            : "hover:border-primary/50"
                         }`}
                       >
-                        <div className="flex items-start justify-between gap-3">
-                          <div>
-                            <div className="flex items-center gap-2.5">
-                              <span className="font-mono text-sm font-bold text-primary">{e.id}</span>
-                              <span
-                                className={`rounded-full px-2.5 py-0.5 text-xs font-bold ${
-                                  e.status === "New"
-                                    ? "bg-primary/20 text-primary border border-primary/30"
-                                    : e.status === "Confirmed"
-                                    ? "bg-white text-black font-bold"
-                                    : "bg-muted text-foreground border border-border"
-                                }`}
-                              >
-                                {e.status}
-                              </span>
+                        <div className="panel-card-header flex items-start justify-between gap-3">
+                          <div className="flex items-center gap-2.5">
+                            <span className="h-5 w-1.5 rounded-full bg-primary shrink-0" />
+                            <div>
+                              <div className="flex items-center gap-2.5">
+                                <span className="font-mono text-sm font-bold text-primary">{e.id}</span>
+                                <span
+                                  className={`rounded-full px-2.5 py-0.5 text-xs font-bold ${
+                                    e.status === "New"
+                                      ? "bg-primary/20 text-primary border border-primary/30"
+                                      : e.status === "Confirmed"
+                                      ? "bg-white text-black font-bold"
+                                      : "bg-muted text-foreground border border-neutral-300"
+                                  }`}
+                                >
+                                  {e.status}
+                                </span>
+                              </div>
+                              <h4 className="font-display text-base sm:text-lg font-extrabold text-foreground mt-0.5">{e.eventName}</h4>
+                              <p className="text-xs text-muted-foreground font-medium mt-0.5">
+                                {e.clientName} • <span className="text-foreground font-semibold">{e.organization}</span>
+                              </p>
                             </div>
-                            <h4 className="font-display text-lg font-extrabold text-foreground mt-1.5">{e.eventName}</h4>
-                            <p className="text-sm text-muted-foreground font-medium mt-0.5">
-                              {e.clientName} • <span className="text-foreground font-semibold">{e.organization}</span>
-                            </p>
                           </div>
 
-                          <div className="flex flex-col items-end gap-1.5 text-right shrink-0">
-                            <div className="inline-flex items-center gap-1.5 rounded-lg border border-border bg-card/90 px-3 py-1 shadow-2xs">
-                              <IndianRupee className="h-4 w-4 text-primary shrink-0" />
-                              <span className="font-mono text-sm sm:text-base font-black tracking-tight text-foreground">
+                          <div className="flex flex-col items-end gap-1 text-right shrink-0">
+                            <div className="inline-flex items-center gap-1.5 rounded-lg border border-neutral-300 bg-white px-2.5 py-1 shadow-2xs">
+                              <IndianRupee className="h-3.5 w-3.5 text-primary shrink-0" />
+                              <span className="font-mono text-xs sm:text-base font-black tracking-tight text-foreground">
                                 {e.budget.replace(/^₹\s*/, "")}
                               </span>
                             </div>
-                            <div className="inline-flex items-center gap-1.5 rounded-md border border-border/60 bg-muted/40 px-2.5 py-0.5 text-xs font-bold text-muted-foreground">
-                              <Calendar className="h-3.5 w-3.5 text-primary shrink-0" />
+                            <div className="inline-flex items-center gap-1.5 rounded-md border border-neutral-300 bg-white/70 px-2 py-0.5 text-xs font-bold text-muted-foreground">
+                              <Calendar className="h-3 w-3 text-primary shrink-0" />
                               <span className="font-mono tracking-wide">{e.date}</span>
                             </div>
                           </div>
                         </div>
 
-                        <p className="mt-2.5 text-sm text-muted-foreground line-clamp-2">{e.brief}</p>
+                        <div className="panel-card-body p-5">
+                          <p className="text-sm text-muted-foreground line-clamp-2">{e.brief}</p>
 
-                        {/* Action buttons inside card */}
-                        <div className="mt-4 flex flex-wrap items-center justify-between gap-2 border-t border-border pt-3.5">
-                          <span className="text-xs font-medium text-muted-foreground flex items-center gap-1.5">
-                            <MapPin className="h-4 w-4 text-primary" /> {e.city}
-                          </span>
+                          {/* Action buttons inside card */}
+                          <div className="mt-4 flex flex-wrap items-center justify-between gap-2 border-t border-neutral-300 pt-3">
+                            <span className="text-xs font-medium text-muted-foreground flex items-center gap-1.5">
+                              <MapPin className="h-4 w-4 text-primary" /> {e.city}
+                            </span>
 
-                          <div className="flex items-center gap-2">
-                            <button
-                              onClick={(ev) => {
-                                ev.stopPropagation();
-                                handleWhatsAppReply(e);
-                              }}
-                              className="flex items-center gap-1.5 rounded-lg border border-border bg-card px-3 py-1.5 text-xs font-bold text-foreground transition-all duration-200 hover:scale-105 hover:bg-primary hover:text-white hover:border-primary active:scale-95 shadow-2xs cursor-pointer"
-                            >
-                              <MessageCircle className="h-3.5 w-3.5" />
-                              <span>WhatsApp</span>
-                            </button>
+                            <div className="flex items-center gap-2">
+                              <button
+                                onClick={(ev) => {
+                                  ev.stopPropagation();
+                                  handleWhatsAppReply(e);
+                                }}
+                                className="flex items-center gap-1.5 rounded-lg border border-neutral-300 bg-white px-3 py-1.5 text-xs font-bold text-foreground transition-all duration-200 hover:scale-105 hover:bg-primary hover:text-white hover:border-primary active:scale-95 shadow-2xs cursor-pointer"
+                              >
+                                <MessageCircle className="h-3.5 w-3.5" />
+                                <span>WhatsApp</span>
+                              </button>
 
-                            <button
-                              onClick={(ev) => {
-                                ev.stopPropagation();
-                                handlePhoneCall(e);
-                              }}
-                              className="flex items-center gap-1.5 rounded-lg border border-border bg-card px-3 py-1.5 text-xs font-bold text-foreground transition-all duration-200 hover:scale-105 hover:bg-primary hover:text-white hover:border-primary active:scale-95 shadow-2xs cursor-pointer"
-                            >
-                              <Phone className="h-3.5 w-3.5" />
-                              <span>Call</span>
-                            </button>
+                              <button
+                                onClick={(ev) => {
+                                  ev.stopPropagation();
+                                  handlePhoneCall(e);
+                                }}
+                                className="flex items-center gap-1.5 rounded-lg border border-neutral-300 bg-white px-3 py-1.5 text-xs font-bold text-foreground transition-all duration-200 hover:scale-105 hover:bg-primary hover:text-white hover:border-primary active:scale-95 shadow-2xs cursor-pointer"
+                              >
+                                <Phone className="h-3.5 w-3.5" />
+                                <span>Call</span>
+                              </button>
 
-                            <button
-                              onClick={(ev) => {
-                                ev.stopPropagation();
-                                handleEmailReply(e);
-                              }}
-                              className="flex items-center gap-1.5 rounded-lg border border-border bg-card px-3 py-1.5 text-xs font-bold text-foreground transition-all duration-200 hover:scale-105 hover:bg-primary hover:text-white hover:border-primary active:scale-95 shadow-2xs cursor-pointer"
-                            >
-                              <Mail className="h-3.5 w-3.5" />
-                              <span>Email</span>
-                            </button>
+                              <button
+                                onClick={(ev) => {
+                                  ev.stopPropagation();
+                                  handleEmailReply(e);
+                                }}
+                                className="flex items-center gap-1.5 rounded-lg border border-neutral-300 bg-white px-3 py-1.5 text-xs font-bold text-foreground transition-all duration-200 hover:scale-105 hover:bg-primary hover:text-white hover:border-primary active:scale-95 shadow-2xs cursor-pointer"
+                              >
+                                <Mail className="h-3.5 w-3.5" />
+                                <span>Email</span>
+                              </button>
+                            </div>
                           </div>
                         </div>
                       </div>
@@ -1422,8 +1521,8 @@ https://sidwizz-portfolio.vercel.app`
 
                 {/* Detailed Enquiry Drawer */}
                 {selectedEnquiry && (
-                  <div className="lg:col-span-5 rounded-2xl border border-border bg-card p-6 shadow-xl space-y-5 sticky top-4 self-start">
-                    <div className="flex items-start justify-between border-b border-border pb-4">
+                  <div className="lg:col-span-5 panel-card shadow-xl space-y-5 sticky top-4 self-start">
+                    <div className="panel-card-header flex items-start justify-between">
                       <div>
                         <span className="font-mono text-sm font-bold text-primary">{selectedEnquiry.id}</span>
                         <h3 className="font-display text-xl font-extrabold text-foreground mt-0.5">{selectedEnquiry.eventName}</h3>
@@ -1431,152 +1530,154 @@ https://sidwizz-portfolio.vercel.app`
                       </div>
                       <button
                         onClick={() => setSelectedEnquiry(null)}
-                        className="rounded-lg p-1.5 text-muted-foreground hover:bg-accent hover:text-foreground"
+                        className="rounded-lg p-1.5 text-muted-foreground hover:bg-neutral-100 hover:text-foreground cursor-pointer"
                         aria-label="Close"
                       >
                         <X className="h-4 w-4" />
                       </button>
                     </div>
 
-                    {/* Status Changer */}
-                    <div>
-                      <label className="text-xs font-bold uppercase tracking-wider text-muted-foreground mb-1.5 block">
-                        Update Pipeline Status
-                      </label>
-                      <div className="grid grid-cols-3 gap-2">
-                        {(["New", "In Discussion", "Confirmed"] as const).map((st) => (
-                          <button
-                            key={st}
-                            onClick={() => handleStatusChange(selectedEnquiry.id, st)}
-                            className={`rounded-lg py-2 text-xs font-bold transition ${
-                              selectedEnquiry.status === st
-                                ? "bg-primary text-primary-foreground shadow"
-                                : "border border-border bg-background text-muted-foreground hover:bg-accent"
-                            }`}
-                          >
-                            {st}
-                          </button>
-                        ))}
-                      </div>
-                      <button
-                        type="button"
-                        onClick={() => {
-                          setContractModalEnquiry(selectedEnquiry);
-                          setContractFee(
-                            selectedEnquiry.budget.includes("-")
-                              ? selectedEnquiry.budget.split("-")[0].trim()
-                              : selectedEnquiry.budget || "₹4,00,000"
-                          );
-                        }}
-                        className="btn-red w-full !py-2.5 !px-4 text-xs mt-2.5 flex items-center justify-center gap-2 cursor-pointer"
-                      >
-                        <FileText className="h-4 w-4" />
-                        <span>Approve &amp; Issue Formal Contract to Organizer</span>
-                      </button>
-                    </div>
-
-                    {/* Quick Outreach Tools */}
-                    <div className="rounded-xl border border-border bg-background p-4 space-y-2.5">
-                      <p className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Instant Client Outreach</p>
-                      <div className="grid grid-cols-3 gap-2">
-                        <button
-                          onClick={() => handleWhatsAppReply(selectedEnquiry)}
-                          className="flex flex-col items-center justify-center rounded-xl border border-border bg-card p-3 text-foreground transition-all duration-200 hover:scale-105 hover:bg-primary hover:text-white hover:border-primary active:scale-95 text-center cursor-pointer shadow-2xs"
-                        >
-                          <MessageCircle className="h-4 w-4 mb-1" />
-                          <span className="text-xs font-bold">WhatsApp</span>
-                        </button>
-                        <button
-                          onClick={() => handlePhoneCall(selectedEnquiry)}
-                          className="flex flex-col items-center justify-center rounded-xl border border-border bg-card p-3 text-foreground transition-all duration-200 hover:scale-105 hover:bg-primary hover:text-white hover:border-primary active:scale-95 text-center cursor-pointer shadow-2xs"
-                        >
-                          <Phone className="h-4 w-4 mb-1" />
-                          <span className="text-xs font-bold">Direct Call</span>
-                        </button>
-                        <button
-                          onClick={() => handleEmailReply(selectedEnquiry)}
-                          className="flex flex-col items-center justify-center rounded-xl border border-border bg-card p-3 text-foreground transition-all duration-200 hover:scale-105 hover:bg-primary hover:text-white hover:border-primary active:scale-95 text-center cursor-pointer shadow-2xs"
-                        >
-                          <Mail className="h-4 w-4 mb-1" />
-                          <span className="text-xs font-bold">Send Mail</span>
-                        </button>
-                      </div>
-                    </div>
-
-                    {/* Event Specifications */}
-                    <div className="space-y-2 text-sm border-t border-border pt-3">
-                      <div className="flex justify-between py-2 border-b border-border items-center">
-                        <span className="text-muted-foreground flex items-center gap-1.5">
-                          <Calendar className="h-4 w-4 text-primary" /> Target Date:
-                        </span>
-                        <span className="font-mono font-bold text-foreground text-sm bg-accent/40 px-2.5 py-0.5 rounded-md border border-border/60">
-                          {selectedEnquiry.date}
-                        </span>
-                      </div>
-                      <div className="flex justify-between py-2 border-b border-border items-center">
-                        <span className="text-muted-foreground">City & Venue:</span>
-                        <span className="font-semibold text-foreground text-right">{selectedEnquiry.venue}, {selectedEnquiry.city}</span>
-                      </div>
-                      <div className="flex justify-between py-2 border-b border-border items-center">
-                        <span className="text-muted-foreground">Event Format:</span>
-                        <span className="font-semibold text-foreground">{selectedEnquiry.format}</span>
-                      </div>
-                      <div className="flex justify-between py-2 border-b border-border items-center">
-                        <span className="text-muted-foreground">Audience Size:</span>
-                        <span className="font-semibold text-foreground">{selectedEnquiry.crowdSize}</span>
-                      </div>
-                      <div className="flex justify-between py-2 border-b border-border items-center">
-                        <span className="text-muted-foreground flex items-center gap-1.5">
-                          <IndianRupee className="h-4 w-4 text-primary" /> Budget Indicator:
-                        </span>
-                        <span className="font-mono font-extrabold text-foreground text-sm sm:text-base bg-accent/40 px-2.5 py-0.5 rounded-md border border-border/60">
-                          {selectedEnquiry.budget}
-                        </span>
-                      </div>
-                    </div>
-
-                    {/* Special Brief */}
-                    <div className="border-t border-border pt-3">
-                      <p className="text-xs font-bold uppercase tracking-wider text-muted-foreground mb-1.5">
-                        Organizer Event Brief
-                      </p>
-                      <p className="text-sm text-foreground bg-background p-3.5 rounded-xl border border-border leading-relaxed">
-                        {selectedEnquiry.brief}
-                      </p>
-                    </div>
-
-                    {/* Internal Notes */}
-                    <div className="border-t border-border pt-3 space-y-2.5">
-                      <p className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
-                        Internal Management Notes
-                      </p>
-                      {selectedEnquiry.notes && selectedEnquiry.notes.length > 0 ? (
-                        <div className="space-y-1.5">
-                          {selectedEnquiry.notes.map((n, idx) => (
-                            <div key={idx} className="rounded-lg bg-accent p-2.5 text-sm text-foreground flex items-start gap-2">
-                              <span className="text-primary font-bold">•</span>
-                              <span>{n}</span>
-                            </div>
+                    <div className="panel-card-body p-6 space-y-5">
+                      {/* Status Changer */}
+                      <div>
+                        <label className="text-xs font-bold uppercase tracking-wider text-muted-foreground mb-1.5 block">
+                          Update Pipeline Status
+                        </label>
+                        <div className="grid grid-cols-3 gap-2">
+                          {(["New", "In Discussion", "Confirmed"] as const).map((st) => (
+                            <button
+                              key={st}
+                              onClick={() => handleStatusChange(selectedEnquiry.id, st)}
+                              className={`rounded-lg py-2 text-xs font-bold transition cursor-pointer ${
+                                selectedEnquiry.status === st
+                                  ? "bg-primary text-primary-foreground shadow"
+                                  : "border border-neutral-300 bg-white text-muted-foreground hover:bg-neutral-100"
+                              }`}
+                            >
+                              {st}
+                            </button>
                           ))}
                         </div>
-                      ) : (
-                        <p className="text-sm text-muted-foreground">No notes added yet.</p>
-                      )}
-
-                      <div className="flex gap-2 mt-2">
-                        <input
-                          type="text"
-                          value={newNoteText}
-                          onChange={(e) => setNewNoteText(e.target.value)}
-                          placeholder="Add private note for Sid..."
-                          className="flex-1 rounded-xl border border-input bg-background py-2 px-3 text-sm text-foreground focus:border-primary focus:outline-none"
-                        />
                         <button
-                          onClick={() => handleAddNote(selectedEnquiry.id)}
-                          className="btn-red !py-2 !px-4 text-sm"
+                          type="button"
+                          onClick={() => {
+                            setContractModalEnquiry(selectedEnquiry);
+                            setContractFee(
+                              selectedEnquiry.budget.includes("-")
+                                ? (selectedEnquiry.budget.split("-")[0] ?? "").trim()
+                                : selectedEnquiry.budget || "₹4,00,000"
+                            );
+                          }}
+                          className="btn-red w-full !py-2.5 !px-4 text-xs mt-2.5 flex items-center justify-center gap-2 cursor-pointer"
                         >
-                          Add
+                          <FileText className="h-4 w-4" />
+                          <span>Approve &amp; Issue Formal Contract to Organizer</span>
                         </button>
+                      </div>
+
+                      {/* Quick Outreach Tools */}
+                      <div className="panel-inner-tile p-4 space-y-2.5">
+                        <p className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Instant Client Outreach</p>
+                        <div className="grid grid-cols-3 gap-2">
+                          <button
+                            onClick={() => handleWhatsAppReply(selectedEnquiry)}
+                            className="flex flex-col items-center justify-center rounded-xl border border-neutral-300 bg-white p-3 text-foreground transition-all duration-200 hover:scale-105 hover:bg-primary hover:text-white hover:border-primary active:scale-95 text-center cursor-pointer shadow-2xs"
+                          >
+                            <MessageCircle className="h-4 w-4 mb-1" />
+                            <span className="text-xs font-bold">WhatsApp</span>
+                          </button>
+                          <button
+                            onClick={() => handlePhoneCall(selectedEnquiry)}
+                            className="flex flex-col items-center justify-center rounded-xl border border-neutral-300 bg-white p-3 text-foreground transition-all duration-200 hover:scale-105 hover:bg-primary hover:text-white hover:border-primary active:scale-95 text-center cursor-pointer shadow-2xs"
+                          >
+                            <Phone className="h-4 w-4 mb-1" />
+                            <span className="text-xs font-bold">Direct Call</span>
+                          </button>
+                          <button
+                            onClick={() => handleEmailReply(selectedEnquiry)}
+                            className="flex flex-col items-center justify-center rounded-xl border border-neutral-300 bg-white p-3 text-foreground transition-all duration-200 hover:scale-105 hover:bg-primary hover:text-white hover:border-primary active:scale-95 text-center cursor-pointer shadow-2xs"
+                          >
+                            <Mail className="h-4 w-4 mb-1" />
+                            <span className="text-xs font-bold">Send Mail</span>
+                          </button>
+                        </div>
+                      </div>
+
+                      {/* Event Specifications */}
+                      <div className="space-y-2 text-sm border-t border-neutral-300 pt-3">
+                        <div className="flex justify-between py-2 border-b border-neutral-300 items-center">
+                          <span className="text-muted-foreground flex items-center gap-1.5">
+                            <Calendar className="h-4 w-4 text-primary" /> Target Date:
+                          </span>
+                          <span className="font-mono font-bold text-foreground text-sm bg-white px-2.5 py-0.5 rounded-md border border-neutral-300">
+                            {selectedEnquiry.date}
+                          </span>
+                        </div>
+                        <div className="flex justify-between py-2 border-b border-neutral-300 items-center">
+                          <span className="text-muted-foreground">City &amp; Venue:</span>
+                          <span className="font-semibold text-foreground text-right">{selectedEnquiry.venue}, {selectedEnquiry.city}</span>
+                        </div>
+                        <div className="flex justify-between py-2 border-b border-neutral-300 items-center">
+                          <span className="text-muted-foreground">Event Format:</span>
+                          <span className="font-semibold text-foreground">{selectedEnquiry.format}</span>
+                        </div>
+                        <div className="flex justify-between py-2 border-b border-neutral-300 items-center">
+                          <span className="text-muted-foreground">Audience Size:</span>
+                          <span className="font-semibold text-foreground">{selectedEnquiry.crowdSize}</span>
+                        </div>
+                        <div className="flex justify-between py-2 border-b border-neutral-300 items-center">
+                          <span className="text-muted-foreground flex items-center gap-1.5">
+                            <IndianRupee className="h-4 w-4 text-primary" /> Budget Indicator:
+                          </span>
+                          <span className="font-mono font-extrabold text-foreground text-sm sm:text-base bg-white px-2.5 py-0.5 rounded-md border border-neutral-300">
+                            {selectedEnquiry.budget}
+                          </span>
+                        </div>
+                      </div>
+
+                      {/* Special Brief */}
+                      <div className="border-t border-neutral-300 pt-3">
+                        <p className="text-xs font-bold uppercase tracking-wider text-muted-foreground mb-1.5">
+                          Organizer Event Brief
+                        </p>
+                        <p className="text-sm text-foreground bg-white p-3.5 rounded-xl border border-neutral-300 leading-relaxed">
+                          {selectedEnquiry.brief}
+                        </p>
+                      </div>
+
+                      {/* Internal Notes */}
+                      <div className="border-t border-neutral-300 pt-3 space-y-2.5">
+                        <p className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
+                          Internal Management Notes
+                        </p>
+                        {selectedEnquiry.notes && selectedEnquiry.notes.length > 0 ? (
+                          <div className="space-y-1.5">
+                            {selectedEnquiry.notes.map((n, idx) => (
+                              <div key={idx} className="rounded-lg bg-white p-2.5 text-sm text-foreground flex items-start gap-2 border border-neutral-300">
+                                <span className="text-primary font-bold">•</span>
+                                <span>{n}</span>
+                              </div>
+                            ))}
+                          </div>
+                        ) : (
+                          <p className="text-sm text-muted-foreground">No notes added yet.</p>
+                        )}
+
+                        <div className="flex gap-2 mt-2">
+                          <input
+                            type="text"
+                            value={newNoteText}
+                            onChange={(e) => setNewNoteText(e.target.value)}
+                            placeholder="Add private note for Sid..."
+                            className="flex-1 rounded-xl border border-neutral-300 bg-white py-2 px-3 text-sm text-foreground focus:border-primary focus:outline-none"
+                          />
+                          <button
+                            onClick={() => handleAddNote(selectedEnquiry.id)}
+                            className="btn-red !py-2 !px-4 text-sm cursor-pointer"
+                          >
+                            Add
+                          </button>
+                        </div>
                       </div>
                     </div>
                   </div>
@@ -1666,7 +1767,7 @@ https://sidwizz-portfolio.vercel.app`
                   <div
                     key={m.id}
                     onClick={() => handleOpenAssetModal(m)}
-                    className="group card-lift rounded-2xl border border-border bg-card p-4 sm:p-5 shadow-sm hover:border-primary/50 transition-all flex flex-col justify-between cursor-pointer"
+                    className="group panel-card p-4 sm:p-5 shadow-sm hover:border-primary/50 transition-all flex flex-col justify-between cursor-pointer"
                   >
                     <div>
                       {/* Media Header Badge */}
@@ -1676,10 +1777,10 @@ https://sidwizz-portfolio.vercel.app`
                             m.type === "image"
                               ? "bg-primary/20 text-primary border border-primary/30"
                               : m.type === "video"
-                              ? "bg-red-500/20 text-red-400 border border-red-500/30"
+                              ? "bg-red-500/20 text-red-500 border border-red-500/30"
                               : m.type === "audio"
-                              ? "bg-amber-500/20 text-amber-400 border border-amber-500/30"
-                              : "bg-muted text-foreground border border-border"
+                              ? "bg-amber-500/20 text-amber-500 border border-amber-500/30"
+                              : "bg-muted text-foreground border border-neutral-300"
                           }`}
                         >
                           {m.type}
@@ -1688,42 +1789,34 @@ https://sidwizz-portfolio.vercel.app`
                       </div>
 
                       {/* Visual Media Thumbnail (Clickable to Open) */}
-                      <div className="relative h-36 w-full rounded-xl overflow-hidden bg-ink/90 border border-border flex items-center justify-center group/thumb mb-3">
-                        {m.type === "image" ? (
-                          m.url ? (
-                            <img
-                              src={m.url}
-                              alt={m.title}
-                              className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
-                              onError={(ev) => {
-                                (ev.target as HTMLImageElement).src = stageBeams;
-                              }}
-                            />
-                          ) : (
-                            <ImageIcon className="h-10 w-10 text-primary" />
-                          )
-                        ) : m.type === "video" ? (
-                          <div className="flex flex-col items-center justify-center gap-1.5 text-foreground">
-                            <div className="grid h-12 w-12 place-items-center rounded-full bg-primary/25 text-primary border border-primary/50 group-hover:scale-110 transition shadow-lg">
-                              <Play className="h-5 w-5 ml-0.5 fill-current" />
-                            </div>
-                            <span className="text-[11px] font-mono font-bold text-muted-foreground">Click to Watch</span>
-                          </div>
-                        ) : m.type === "audio" ? (
-                          <div className="flex flex-col items-center justify-center gap-1.5 text-foreground">
-                            <div className="grid h-12 w-12 place-items-center rounded-full bg-amber-500/20 text-amber-400 border border-amber-500/40 group-hover:scale-110 transition shadow-lg">
-                              <Volume2 className="h-5 w-5" />
-                            </div>
-                            <span className="text-[11px] font-mono font-bold text-muted-foreground">Click to Listen</span>
-                          </div>
-                        ) : (
-                          <div className="flex flex-col items-center justify-center gap-1.5 text-foreground">
-                            <div className="grid h-12 w-12 place-items-center rounded-full bg-primary/20 text-primary border border-primary/40 group-hover:scale-110 transition shadow-lg">
-                              <FileText className="h-5 w-5" />
-                            </div>
-                            <span className="text-[11px] font-mono font-bold text-muted-foreground">Click to Read PDF</span>
-                          </div>
-                        )}
+                      <div className="relative h-40 w-full rounded-xl overflow-hidden bg-neutral-200 border border-neutral-300 flex items-center justify-center group/thumb mb-3">
+                        <img
+                          src={getDefaultThumbnail(m)}
+                          alt={m.title}
+                          className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
+                          onError={(ev) => {
+                            (ev.target as HTMLImageElement).src = stageBeams;
+                          }}
+                        />
+
+                        {/* Category/Type icon badge overlay */}
+                        <div className="absolute top-2 left-2 z-10">
+                          {m.type === "video" && (
+                            <span className="grid h-8 w-8 place-items-center rounded-full bg-black/60 text-white backdrop-blur shadow">
+                              <Play className="h-4 w-4 ml-0.5 fill-current" />
+                            </span>
+                          )}
+                          {m.type === "audio" && (
+                            <span className="grid h-8 w-8 place-items-center rounded-full bg-black/60 text-amber-400 backdrop-blur shadow">
+                              <Volume2 className="h-4 w-4" />
+                            </span>
+                          )}
+                          {m.type === "document" && (
+                            <span className="grid h-8 w-8 place-items-center rounded-full bg-black/60 text-white backdrop-blur shadow">
+                              <FileText className="h-4 w-4" />
+                            </span>
+                          )}
+                        </div>
 
                         {/* Hover Click Action Overlay */}
                         <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
@@ -1741,8 +1834,8 @@ https://sidwizz-portfolio.vercel.app`
                       </p>
                     </div>
 
-                    {/* Card Footer: Date, Copy Link & Delete Button */}
-                    <div className="mt-4 border-t border-border pt-3 flex items-center justify-between gap-2">
+                    {/* Card Footer: Date, Set Thumbnail, Copy Link & Delete Button */}
+                    <div className="mt-4 border-t border-neutral-300 pt-3 flex items-center justify-between gap-2">
                       <span className="text-xs text-muted-foreground font-mono">{m.createdAt}</span>
 
                       <div className="flex items-center gap-1">
@@ -1750,9 +1843,23 @@ https://sidwizz-portfolio.vercel.app`
                           type="button"
                           onClick={(ev) => {
                             ev.stopPropagation();
+                            setThumbnailModalMedia(m);
+                            setSelectedThumbnailPreview(m.thumbnail || getDefaultThumbnail(m));
+                          }}
+                          className="inline-flex items-center gap-1 rounded-md px-2 py-1 text-xs font-bold text-muted-foreground hover:bg-white hover:text-primary transition cursor-pointer border border-transparent hover:border-neutral-300"
+                          title="Set / Change Thumbnail"
+                        >
+                          <ImagePlus className="h-3.5 w-3.5" />
+                          <span>Thumb</span>
+                        </button>
+
+                        <button
+                          type="button"
+                          onClick={(ev) => {
+                            ev.stopPropagation();
                             handleCopyLink(m.url);
                           }}
-                          className="inline-flex items-center gap-1 rounded-md px-2 py-1 text-xs font-bold text-muted-foreground hover:bg-accent hover:text-foreground transition cursor-pointer"
+                          className="inline-flex items-center gap-1 rounded-md px-2 py-1 text-xs font-bold text-muted-foreground hover:bg-white hover:text-foreground transition cursor-pointer border border-transparent hover:border-neutral-300"
                           title="Copy Link"
                         >
                           <Copy className="h-3.5 w-3.5" />
@@ -1765,8 +1872,7 @@ https://sidwizz-portfolio.vercel.app`
                           className="inline-flex items-center gap-1 rounded-md px-2 py-1 text-xs font-bold text-muted-foreground hover:bg-primary/20 hover:text-primary transition cursor-pointer"
                           title="Delete Asset from Database"
                         >
-                          <Trash2 className="h-3.5 w-3.5 text-primary" />
-                          <span>Delete</span>
+                          <Trash2 className="h-3.5 w-3.5" />
                         </button>
                       </div>
                     </div>
@@ -1896,6 +2002,63 @@ https://sidwizz-portfolio.vercel.app`
                         </div>
                       </div>
 
+                      {newMediaType !== "image" && (
+                        <div className="panel-inner-tile p-3 rounded-xl space-y-2">
+                          <div className="flex items-center justify-between">
+                            <label className="text-xs font-bold uppercase text-muted-foreground flex items-center gap-1.5">
+                              <ImageIcon className="h-3.5 w-3.5 text-primary" /> Optional Custom Thumbnail
+                            </label>
+                            {uploadMediaThumbnail && (
+                              <button
+                                type="button"
+                                onClick={() => setUploadMediaThumbnail(null)}
+                                className="text-[11px] text-destructive hover:underline"
+                              >
+                                Clear
+                              </button>
+                            )}
+                          </div>
+                          <div className="flex items-center gap-3">
+                            <div className="h-12 w-16 shrink-0 rounded-lg overflow-hidden border border-neutral-300 bg-neutral-200">
+                              <img
+                                src={uploadMediaThumbnail || getDefaultThumbnail({ type: newMediaType })}
+                                alt="Thumb"
+                                className="h-full w-full object-cover"
+                              />
+                            </div>
+                            <div className="flex-1">
+                              <input
+                                ref={uploadThumbnailInputRef}
+                                type="file"
+                                accept="image/*"
+                                className="hidden"
+                                onChange={(e) => {
+                                  const file = e.target.files?.[0];
+                                  if (file) {
+                                    const reader = new FileReader();
+                                    reader.onload = (event) => {
+                                      setUploadMediaThumbnail(event.target?.result as string);
+                                    };
+                                    reader.readAsDataURL(file);
+                                  }
+                                }}
+                              />
+                              <button
+                                type="button"
+                                onClick={() => uploadThumbnailInputRef.current?.click()}
+                                className="text-xs font-semibold px-3 py-1.5 rounded-lg border border-neutral-300 bg-white hover:bg-neutral-100 transition inline-flex items-center gap-1.5 text-foreground shadow-sm"
+                              >
+                                <Upload className="h-3.5 w-3.5 text-primary" />
+                                {uploadMediaThumbnail ? "Change Custom Thumbnail" : "Upload Custom Thumbnail"}
+                              </button>
+                              <p className="text-[11px] text-muted-foreground mt-1">
+                                Defaults to curated stage photography if left blank.
+                              </p>
+                            </div>
+                          </div>
+                        </div>
+                      )}
+
                       <div className="flex justify-end gap-2 pt-2 border-t border-border">
                         <button
                           type="button"
@@ -1942,41 +2105,43 @@ https://sidwizz-portfolio.vercel.app`
               />
 
               {/* Host Profile & Photo Studio Card */}
-              <div className="rounded-2xl border border-border bg-card p-6 shadow-sm space-y-6">
-                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-border pb-5">
-                  <div className="flex items-center gap-4">
-                    {/* Interactive Avatar with Camera Upload Badge */}
-                    <div className="relative group">
-                      {user?.avatar ? (
-                        <img
-                          src={user.avatar}
-                          alt={adminName}
-                          className="h-20 w-20 rounded-full object-cover border-2 border-primary shadow-xl"
-                        />
-                      ) : (
-                        <div className="grid h-20 w-20 place-items-center rounded-full bg-primary/20 text-3xl font-black text-primary border-2 border-primary/30">
-                          SM
-                        </div>
-                      )}
-                      <button
-                        type="button"
-                        onClick={() => fileInputRef.current?.click()}
-                        className="absolute -bottom-1 -right-1 rounded-full bg-primary p-2 text-white shadow-lg hover:scale-110 transition cursor-pointer"
-                        title="Upload new profile photo"
-                      >
-                        <Camera className="h-4 w-4" />
-                      </button>
-                    </div>
-
-                    <div>
-                      <div className="flex flex-wrap items-center gap-2">
-                        <h2 className="font-display text-2xl font-extrabold text-foreground">{adminName}</h2>
-                        <span className="rounded-full bg-primary/20 text-primary px-3 py-0.5 text-xs font-bold border border-primary/30 uppercase tracking-wider">
-                          Host & Super Admin
-                        </span>
+              <div className="panel-card shadow-sm space-y-0">
+                <div className="panel-card-header flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                  <div className="flex items-center gap-3">
+                    <span className="h-5 w-1.5 rounded-full bg-primary shrink-0" />
+                    <div className="flex items-center gap-3">
+                      <div className="relative group">
+                        {user?.avatar ? (
+                          <img
+                            src={user.avatar}
+                            alt={adminName}
+                            className="h-16 w-16 rounded-full object-cover border-2 border-primary shadow"
+                          />
+                        ) : (
+                          <div className="grid h-16 w-16 place-items-center rounded-full bg-primary/20 text-xl font-black text-primary border-2 border-primary/30">
+                            SM
+                          </div>
+                        )}
+                        <button
+                          type="button"
+                          onClick={() => fileInputRef.current?.click()}
+                          className="absolute -bottom-1 -right-1 rounded-full bg-primary p-1.5 text-white shadow hover:scale-110 transition cursor-pointer"
+                          title="Upload new profile photo"
+                        >
+                          <Camera className="h-3.5 w-3.5" />
+                        </button>
                       </div>
-                      <p className="text-sm text-muted-foreground mt-0.5">{adminTitle}</p>
-                      <p className="text-sm font-mono text-primary mt-0.5">{adminEmail}</p>
+
+                      <div>
+                        <div className="flex flex-wrap items-center gap-2">
+                          <h2 className="font-display text-lg sm:text-xl font-extrabold text-foreground">{adminName}</h2>
+                          <span className="rounded-full bg-primary/20 text-primary px-2.5 py-0.5 text-xs font-bold border border-primary/30 uppercase tracking-wider">
+                            Host &amp; Super Admin
+                          </span>
+                        </div>
+                        <p className="text-xs text-muted-foreground mt-0.5">{adminTitle}</p>
+                        <p className="text-xs font-mono text-primary mt-0.5">{adminEmail}</p>
+                      </div>
                     </div>
                   </div>
 
@@ -1986,262 +2151,271 @@ https://sidwizz-portfolio.vercel.app`
                         logout();
                         navigate({ to: "/" });
                       }}
-                      className="btn-outline !py-2 !px-4 text-sm text-foreground hover:bg-accent"
+                      className="btn-outline !py-2 !px-4 text-xs sm:text-sm !border-neutral-300 !text-foreground hover:!bg-white cursor-pointer"
                     >
                       <LogOut className="h-4 w-4" /> Sign Out
                     </button>
                   </div>
                 </div>
 
-                {/* Profile Photo Studio Section */}
-                <div className="rounded-xl border border-border/80 bg-background/60 p-5 space-y-4">
-                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
-                    <div>
-                      <h4 className="text-sm font-bold uppercase tracking-wider text-foreground flex items-center gap-2">
-                        <ImagePlus className="h-4 w-4 text-primary" /> Profile Photo & Stage Headshot
-                      </h4>
-                      <p className="text-sm text-muted-foreground mt-0.5">
-                        Upload your personal photo or select from Siddharth Maurya's curated stage portfolio presets.
-                      </p>
-                    </div>
-                    <div className="flex gap-2">
-                      <button
-                        type="button"
-                        onClick={() => fileInputRef.current?.click()}
-                        className="btn-red !py-2 !px-4 text-sm flex items-center gap-1.5"
-                      >
-                        <Upload className="h-4 w-4" /> Upload File
-                      </button>
-                      {user?.avatar && (
+                <div className="panel-card-body p-6 space-y-6">
+                  {/* Profile Photo Studio Section */}
+                  <div className="panel-inner-tile p-5 space-y-4">
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                      <div>
+                        <h4 className="text-sm font-bold uppercase tracking-wider text-foreground flex items-center gap-2">
+                          <ImagePlus className="h-4 w-4 text-primary" /> Profile Photo &amp; Stage Headshot
+                        </h4>
+                        <p className="text-xs text-muted-foreground mt-0.5">
+                          Upload your personal photo or select from Siddharth Maurya's curated stage portfolio presets.
+                        </p>
+                      </div>
+                      <div className="flex gap-2">
                         <button
                           type="button"
-                          onClick={handleRemovePhoto}
-                          className="btn-outline !py-2 !px-3 text-sm text-destructive hover:bg-destructive/10"
-                          title="Remove custom photo"
+                          onClick={() => fileInputRef.current?.click()}
+                          className="btn-red !py-1.5 !px-3.5 text-xs flex items-center gap-1.5 cursor-pointer"
                         >
-                          <Trash2 className="h-4 w-4" />
+                          <Upload className="h-3.5 w-3.5" /> Upload File
                         </button>
-                      )}
+                        {user?.avatar && (
+                          <button
+                            type="button"
+                            onClick={handleRemovePhoto}
+                            className="btn-outline !py-1.5 !px-3 text-xs !border-neutral-300 text-destructive hover:!bg-white cursor-pointer"
+                            title="Remove custom photo"
+                          >
+                            <Trash2 className="h-3.5 w-3.5" />
+                          </button>
+                        )}
+                      </div>
+                    </div>
+
+                    {/* Preset Photo Cards */}
+                    <div>
+                      <span className="text-xs font-bold uppercase text-muted-foreground block mb-2.5">
+                        Quick Stage Presets:
+                      </span>
+                      <div className="grid grid-cols-3 gap-3">
+                        <button
+                          type="button"
+                          onClick={() => handleSelectPresetPhoto(hostBowtie)}
+                          className={`group rounded-xl border p-2.5 flex flex-col items-center gap-2 transition cursor-pointer text-center ${
+                            user?.avatar === hostBowtie
+                              ? "border-primary bg-primary/15 ring-2 ring-primary"
+                              : "border-neutral-300 bg-white hover:border-primary/50"
+                          }`}
+                        >
+                          <img
+                            src={hostBowtie}
+                            alt="Gala Bowtie"
+                            className="h-12 w-12 rounded-full object-cover"
+                          />
+                          <span className="text-xs font-bold text-foreground group-hover:text-primary">
+                            Gala Bowtie
+                          </span>
+                        </button>
+
+                        <button
+                          type="button"
+                          onClick={() => handleSelectPresetPhoto(hostPurple)}
+                          className={`group rounded-xl border p-2.5 flex flex-col items-center gap-2 transition cursor-pointer text-center ${
+                            user?.avatar === hostPurple
+                              ? "border-primary bg-primary/15 ring-2 ring-primary"
+                              : "border-neutral-300 bg-white hover:border-primary/50"
+                          }`}
+                        >
+                          <img
+                            src={hostPurple}
+                            alt="Summit Anchor"
+                            className="h-12 w-12 rounded-full object-cover"
+                          />
+                          <span className="text-xs font-bold text-foreground group-hover:text-primary">
+                            Summit Anchor
+                          </span>
+                        </button>
+
+                        <button
+                          type="button"
+                          onClick={() => handleSelectPresetPhoto(hostSmileRed)}
+                          className={`group rounded-xl border p-2.5 flex flex-col items-center gap-2 transition cursor-pointer text-center ${
+                            user?.avatar === hostSmileRed
+                              ? "border-primary bg-primary/15 ring-2 ring-primary"
+                              : "border-neutral-300 bg-white hover:border-primary/50"
+                          }`}
+                        >
+                          <img
+                            src={hostSmileRed}
+                            alt="Festival Energy"
+                            className="h-12 w-12 rounded-full object-cover"
+                          />
+                          <span className="text-xs font-bold text-foreground group-hover:text-primary">
+                            Live Energy
+                          </span>
+                        </button>
+                      </div>
                     </div>
                   </div>
 
-                  {/* Preset Photo Cards */}
-                  <div>
-                    <span className="text-xs font-bold uppercase text-muted-foreground block mb-2.5">
-                      Quick Stage Presets:
-                    </span>
-                    <div className="grid grid-cols-3 gap-3">
-                      <button
-                        type="button"
-                        onClick={() => handleSelectPresetPhoto(hostBowtie)}
-                        className={`group rounded-xl border p-3 flex flex-col items-center gap-2 transition cursor-pointer text-center ${
-                          user?.avatar === hostBowtie
-                            ? "border-primary bg-primary/15 ring-2 ring-primary"
-                            : "border-border bg-card hover:border-primary/50"
-                        }`}
-                      >
-                        <img
-                          src={hostBowtie}
-                          alt="Gala Bowtie"
-                          className="h-14 w-14 rounded-full object-cover"
+                  {/* Profile Edit Form */}
+                  <form onSubmit={handleSaveAccount} className="space-y-4 text-sm">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                      <div>
+                        <label className="font-bold text-muted-foreground block mb-1.5">Full Legal Name</label>
+                        <input
+                          type="text"
+                          required
+                          value={adminName}
+                          onChange={(e) => setAdminName(e.target.value)}
+                          className="w-full rounded-xl border border-neutral-300 bg-white py-2.5 px-3.5 text-sm text-foreground focus:border-primary focus:outline-none"
                         />
-                        <span className="text-xs font-bold text-foreground group-hover:text-primary">
-                          Gala Bowtie
-                        </span>
-                      </button>
+                      </div>
 
-                      <button
-                        type="button"
-                        onClick={() => handleSelectPresetPhoto(hostPurple)}
-                        className={`group rounded-xl border p-3 flex flex-col items-center gap-2 transition cursor-pointer text-center ${
-                          user?.avatar === hostPurple
-                            ? "border-primary bg-primary/15 ring-2 ring-primary"
-                            : "border-border bg-card hover:border-primary/50"
-                        }`}
-                      >
-                        <img
-                          src={hostPurple}
-                          alt="Summit Anchor"
-                          className="h-14 w-14 rounded-full object-cover"
+                      <div>
+                        <label className="font-bold text-muted-foreground block mb-1.5">Official Host Email</label>
+                        <input
+                          type="email"
+                          required
+                          value={adminEmail}
+                          onChange={(e) => setAdminEmail(e.target.value)}
+                          className="w-full rounded-xl border border-neutral-300 bg-white py-2.5 px-3.5 text-sm text-foreground focus:border-primary focus:outline-none"
                         />
-                        <span className="text-xs font-bold text-foreground group-hover:text-primary">
-                          Summit Anchor
-                        </span>
-                      </button>
+                      </div>
+                    </div>
 
-                      <button
-                        type="button"
-                        onClick={() => handleSelectPresetPhoto(hostSmileRed)}
-                        className={`group rounded-xl border p-3 flex flex-col items-center gap-2 transition cursor-pointer text-center ${
-                          user?.avatar === hostSmileRed
-                            ? "border-primary bg-primary/15 ring-2 ring-primary"
-                            : "border-border bg-card hover:border-primary/50"
-                        }`}
-                      >
-                        <img
-                          src={hostSmileRed}
-                          alt="Festival Energy"
-                          className="h-14 w-14 rounded-full object-cover"
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                      <div>
+                        <label className="font-bold text-muted-foreground block mb-1.5">Direct Mobile (WhatsApp)</label>
+                        <input
+                          type="text"
+                          value={adminPhone}
+                          onChange={(e) => setAdminPhone(e.target.value)}
+                          className="w-full rounded-xl border border-neutral-300 bg-white py-2.5 px-3.5 text-sm text-foreground focus:border-primary focus:outline-none"
                         />
-                        <span className="text-xs font-bold text-foreground group-hover:text-primary">
-                          Live Energy
-                        </span>
+                      </div>
+
+                      <div>
+                        <label className="font-bold text-muted-foreground block mb-1.5">Display Title</label>
+                        <input
+                          type="text"
+                          value={adminTitle}
+                          onChange={(e) => setAdminTitle(e.target.value)}
+                          className="w-full rounded-xl border border-neutral-300 bg-white py-2.5 px-3.5 text-sm text-foreground focus:border-primary focus:outline-none"
+                        />
+                      </div>
+                    </div>
+
+                    <div>
+                      <label className="font-bold text-muted-foreground block mb-1.5">Host Bio Summary</label>
+                      <textarea
+                        rows={3}
+                        value={adminBio}
+                        onChange={(e) => setAdminBio(e.target.value)}
+                        className="w-full rounded-xl border border-neutral-300 bg-white py-2.5 px-3.5 text-sm text-foreground focus:border-primary focus:outline-none"
+                      />
+                    </div>
+
+                    <div className="pt-2">
+                      <button type="submit" className="btn-red !py-2.5 !px-5 text-sm cursor-pointer">
+                        Save Profile Information
                       </button>
                     </div>
-                  </div>
+                  </form>
                 </div>
-
-                {/* Profile Edit Form */}
-                <form onSubmit={handleSaveAccount} className="space-y-4 text-sm">
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                    <div>
-                      <label className="font-bold text-muted-foreground block mb-1.5">Full Legal Name</label>
-                      <input
-                        type="text"
-                        required
-                        value={adminName}
-                        onChange={(e) => setAdminName(e.target.value)}
-                        className="w-full rounded-xl border border-input bg-background py-2.5 px-3.5 text-sm text-foreground focus:border-primary focus:outline-none"
-                      />
-                    </div>
-
-                    <div>
-                      <label className="font-bold text-muted-foreground block mb-1.5">Official Host Email</label>
-                      <input
-                        type="email"
-                        required
-                        value={adminEmail}
-                        onChange={(e) => setAdminEmail(e.target.value)}
-                        className="w-full rounded-xl border border-input bg-background py-2.5 px-3.5 text-sm text-foreground focus:border-primary focus:outline-none"
-                      />
-                    </div>
-                  </div>
-
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                    <div>
-                      <label className="font-bold text-muted-foreground block mb-1.5">Direct Mobile (WhatsApp)</label>
-                      <input
-                        type="text"
-                        value={adminPhone}
-                        onChange={(e) => setAdminPhone(e.target.value)}
-                        className="w-full rounded-xl border border-input bg-background py-2.5 px-3.5 text-sm text-foreground focus:border-primary focus:outline-none"
-                      />
-                    </div>
-
-                    <div>
-                      <label className="font-bold text-muted-foreground block mb-1.5">Display Title</label>
-                      <input
-                        type="text"
-                        value={adminTitle}
-                        onChange={(e) => setAdminTitle(e.target.value)}
-                        className="w-full rounded-xl border border-input bg-background py-2.5 px-3.5 text-sm text-foreground focus:border-primary focus:outline-none"
-                      />
-                    </div>
-                  </div>
-
-                  <div>
-                    <label className="font-bold text-muted-foreground block mb-1.5">Host Bio Summary</label>
-                    <textarea
-                      rows={3}
-                      value={adminBio}
-                      onChange={(e) => setAdminBio(e.target.value)}
-                      className="w-full rounded-xl border border-input bg-background py-2.5 px-3.5 text-sm text-foreground focus:border-primary focus:outline-none"
-                    />
-                  </div>
-
-                  <div className="pt-2">
-                    <button type="submit" className="btn-red !py-2.5 !px-5 text-sm">
-                      Save Profile Information
-                    </button>
-                  </div>
-                </form>
               </div>
 
               {/* Password & Security Card */}
-              <div className="rounded-2xl border border-border bg-card p-6 shadow-sm space-y-4">
-                <div className="flex items-center gap-2.5 border-b border-border pb-3">
+              <div className="panel-card shadow-sm space-y-0">
+                <div className="panel-card-header flex items-center gap-2.5">
+                  <span className="h-5 w-1.5 rounded-full bg-primary shrink-0" />
                   <KeyRound className="h-5 w-5 text-primary" />
                   <div>
-                    <h3 className="font-display text-lg font-extrabold text-foreground">Change Password & Security</h3>
-                    <p className="text-sm text-muted-foreground">Keep your admin authentication credentials secure.</p>
+                    <h3 className="font-display text-base sm:text-lg font-extrabold text-foreground uppercase tracking-tight">Change Password &amp; Security</h3>
+                    <p className="text-xs text-muted-foreground">Keep your admin authentication credentials secure.</p>
                   </div>
                 </div>
 
-                <form onSubmit={handlePasswordSubmit} className="space-y-4 text-sm">
-                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                    <div>
-                      <label className="font-bold text-muted-foreground block mb-1.5">Current Password</label>
-                      <input
-                        type="password"
-                        required
-                        value={currentPassword}
-                        onChange={(e) => setCurrentPassword(e.target.value)}
-                        placeholder="••••••••"
-                        className="w-full rounded-xl border border-input bg-background py-2.5 px-3.5 text-sm text-foreground focus:border-primary focus:outline-none"
-                      />
-                      <span className="text-xs text-muted-foreground mt-1 block">Default: sid123</span>
+                <div className="panel-card-body p-6">
+                  <form onSubmit={handlePasswordSubmit} className="space-y-4 text-sm">
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                      <div>
+                        <label className="font-bold text-muted-foreground block mb-1.5">Current Password</label>
+                        <input
+                          type="password"
+                          required
+                          value={currentPassword}
+                          onChange={(e) => setCurrentPassword(e.target.value)}
+                          placeholder="••••••••"
+                          className="w-full rounded-xl border border-neutral-300 bg-white py-2.5 px-3.5 text-sm text-foreground focus:border-primary focus:outline-none"
+                        />
+                        <span className="text-xs text-muted-foreground mt-1 block">Default: sid123</span>
+                      </div>
+
+                      <div>
+                        <label className="font-bold text-muted-foreground block mb-1.5">New Password</label>
+                        <input
+                          type="password"
+                          required
+                          value={newPassword}
+                          onChange={(e) => setNewPassword(e.target.value)}
+                          placeholder="At least 6 characters"
+                          className="w-full rounded-xl border border-neutral-300 bg-white py-2.5 px-3.5 text-sm text-foreground focus:border-primary focus:outline-none"
+                        />
+                      </div>
+
+                      <div>
+                        <label className="font-bold text-muted-foreground block mb-1.5">Confirm New Password</label>
+                        <input
+                          type="password"
+                          required
+                          value={confirmPassword}
+                          onChange={(e) => setConfirmPassword(e.target.value)}
+                          placeholder="Re-enter new password"
+                          className="w-full rounded-xl border border-neutral-300 bg-white py-2.5 px-3.5 text-sm text-foreground focus:border-primary focus:outline-none"
+                        />
+                      </div>
                     </div>
 
-                    <div>
-                      <label className="font-bold text-muted-foreground block mb-1.5">New Password</label>
-                      <input
-                        type="password"
-                        required
-                        value={newPassword}
-                        onChange={(e) => setNewPassword(e.target.value)}
-                        placeholder="At least 6 characters"
-                        className="w-full rounded-xl border border-input bg-background py-2.5 px-3.5 text-sm text-foreground focus:border-primary focus:outline-none"
-                      />
-                    </div>
-
-                    <div>
-                      <label className="font-bold text-muted-foreground block mb-1.5">Confirm New Password</label>
-                      <input
-                        type="password"
-                        required
-                        value={confirmPassword}
-                        onChange={(e) => setConfirmPassword(e.target.value)}
-                        placeholder="Re-enter new password"
-                        className="w-full rounded-xl border border-input bg-background py-2.5 px-3.5 text-sm text-foreground focus:border-primary focus:outline-none"
-                      />
-                    </div>
-                  </div>
-
-                  <button
-                    type="submit"
-                    className="btn-red !py-2.5 !px-5 text-sm"
-                  >
-                    Update Password & Save
-                  </button>
-                </form>
+                    <button
+                      type="submit"
+                      className="btn-red !py-2.5 !px-5 text-sm cursor-pointer"
+                    >
+                      Update Password &amp; Save
+                    </button>
+                  </form>
+                </div>
               </div>
 
               {/* Management Team Members */}
-              <div className="rounded-2xl border border-border bg-card p-6 shadow-sm space-y-4">
-                <div className="flex items-center justify-between border-b border-border pb-3">
-                  <div>
-                    <h3 className="font-display text-lg font-extrabold text-foreground">Team Permissions & Management</h3>
-                    <p className="text-sm text-muted-foreground">Authorized team members with access to the Admin Panel.</p>
+              <div className="panel-card shadow-sm space-y-0">
+                <div className="panel-card-header flex items-center justify-between">
+                  <div className="flex items-center gap-2.5">
+                    <span className="h-5 w-1.5 rounded-full bg-primary shrink-0" />
+                    <div>
+                      <h3 className="font-display text-base sm:text-lg font-extrabold text-foreground uppercase tracking-tight">Team Permissions &amp; Management</h3>
+                      <p className="text-xs text-muted-foreground">Authorized team members with access to the Admin Panel.</p>
+                    </div>
                   </div>
                   <button
                     onClick={() => toast.info("Invitation link generated for team manager.")}
-                    className="btn-outline !py-2 !px-3.5 text-sm flex items-center gap-1.5"
+                    className="btn-outline !py-2 !px-3.5 text-xs sm:text-sm flex items-center gap-1.5 !border-neutral-300 !text-foreground hover:!bg-white cursor-pointer"
                   >
                     <Plus className="h-4 w-4" /> Add Team Member
                   </button>
                 </div>
 
-                <div className="overflow-x-auto -mx-2 px-2 sm:mx-0 sm:px-0">
-                  <table className="w-full min-w-[600px] text-left text-sm">
-                    <thead className="border-b border-border bg-muted/30 text-xs font-bold text-muted-foreground uppercase tracking-wider">
-                      <tr>
-                        <th className="p-3.5 whitespace-nowrap">User</th>
-                        <th className="p-3.5 whitespace-nowrap">Role</th>
-                        <th className="p-3.5 whitespace-nowrap">Access Level</th>
-                        <th className="p-3.5 text-right whitespace-nowrap">Status</th>
-                      </tr>
-                    </thead>
-                    <tbody className="divide-y divide-border">
+                <div className="panel-card-body p-0 sm:p-4">
+                  <div className="overflow-x-auto -mx-2 px-2 sm:mx-0 sm:px-0">
+                    <table className="w-full min-w-[600px] text-left text-sm">
+                      <thead className="border-b border-neutral-300 bg-neutral-100 text-xs font-bold text-muted-foreground uppercase tracking-wider">
+                        <tr>
+                          <th className="p-3.5 whitespace-nowrap">User</th>
+                          <th className="p-3.5 whitespace-nowrap">Role</th>
+                          <th className="p-3.5 whitespace-nowrap">Access Level</th>
+                          <th className="p-3.5 text-right whitespace-nowrap">Status</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-neutral-300">
                       <tr>
                         <td className="p-3.5 whitespace-nowrap">
                           <p className="font-bold text-foreground whitespace-nowrap">Siddharth Maurya</p>
@@ -2274,7 +2448,8 @@ https://sidwizz-portfolio.vercel.app`
                 </div>
               </div>
             </div>
-          )}
+          </div>
+        )}
 
           {/* ========================================================= */}
           {/* 6. SETTINGS VIEW                                          */}
@@ -2288,18 +2463,23 @@ https://sidwizz-portfolio.vercel.app`
                 </h2>
               </div>
 
-              <div className="rounded-2xl border border-border bg-card p-6 shadow-sm space-y-6">
-                <div>
-                  <h3 className="font-display text-lg font-extrabold text-foreground">Website & Booking Configuration</h3>
-                  <p className="text-sm text-muted-foreground">Control public calendar availability and lead routing rules.</p>
+              <div className="panel-card shadow-sm">
+                <div className="panel-card-header flex items-center gap-2">
+                  <div className="h-5 w-1.5 rounded-full bg-primary" />
+                  <div>
+                    <h3 className="font-display text-base sm:text-lg font-black uppercase tracking-wider text-foreground">
+                      Website &amp; Booking Configuration
+                    </h3>
+                    <p className="text-xs text-muted-foreground font-medium">Control public calendar availability and lead routing rules.</p>
+                  </div>
                 </div>
 
-                <div className="space-y-4 text-sm">
+                <div className="panel-card-body space-y-4 text-sm">
                   {/* Availability switch */}
-                  <div className="flex items-center justify-between border-b border-border pb-4">
+                  <div className="flex items-center justify-between border-b border-neutral-300 pb-4">
                     <div>
                       <p className="font-bold text-foreground">Live Booking Acceptance</p>
-                      <p className="text-muted-foreground mt-0.5">Show "Accepting Bookings" on the homepage and contact form.</p>
+                      <p className="text-muted-foreground text-xs mt-0.5">Show "Accepting Bookings" on the homepage and contact form.</p>
                     </div>
                     <button
                       onClick={() => {
@@ -2309,7 +2489,7 @@ https://sidwizz-portfolio.vercel.app`
                         toast.success(`Public booking availability changed to ${next ? "Active" : "Paused"}`);
                       }}
                       className={`relative inline-flex h-6 w-11 items-center rounded-full transition cursor-pointer ${
-                        bookingAvailable ? "bg-primary" : "bg-muted"
+                        bookingAvailable ? "bg-primary" : "bg-neutral-300"
                       }`}
                     >
                       <span
@@ -2321,10 +2501,10 @@ https://sidwizz-portfolio.vercel.app`
                   </div>
 
                   {/* WhatsApp Alerts switch */}
-                  <div className="flex items-center justify-between border-b border-border pb-4">
+                  <div className="flex items-center justify-between border-b border-neutral-300 pb-4">
                     <div>
                       <p className="font-bold text-foreground">Instant WhatsApp Lead Alerts</p>
-                      <p className="text-muted-foreground mt-0.5">Send immediate notification to host phone when new high-value enquiry lands.</p>
+                      <p className="text-muted-foreground text-xs mt-0.5">Send immediate notification to host phone when new high-value enquiry lands.</p>
                     </div>
                     <button
                       onClick={() => {
@@ -2334,7 +2514,7 @@ https://sidwizz-portfolio.vercel.app`
                         toast.success("Notification preferences updated.");
                       }}
                       className={`relative inline-flex h-6 w-11 items-center rounded-full transition cursor-pointer ${
-                        whatsappNotifications ? "bg-primary" : "bg-muted"
+                        whatsappNotifications ? "bg-primary" : "bg-neutral-300"
                       }`}
                     >
                       <span
@@ -2346,10 +2526,10 @@ https://sidwizz-portfolio.vercel.app`
                   </div>
 
                   {/* Auto-reply email */}
-                  <div className="flex items-center justify-between border-b border-border pb-4">
+                  <div className="flex items-center justify-between border-b border-neutral-300 pb-4">
                     <div>
                       <p className="font-bold text-foreground">Automated Organizer Acknowledgment Email</p>
-                      <p className="text-muted-foreground mt-0.5">Instantly email organizer with host tech rider and showreel link.</p>
+                      <p className="text-muted-foreground text-xs mt-0.5">Instantly email organizer with host tech rider and showreel link.</p>
                     </div>
                     <button
                       onClick={() => {
@@ -2359,7 +2539,7 @@ https://sidwizz-portfolio.vercel.app`
                         toast.success("Auto-reply preferences updated.");
                       }}
                       className={`relative inline-flex h-6 w-11 items-center rounded-full transition cursor-pointer ${
-                        autoReplyEnabled ? "bg-primary" : "bg-muted"
+                        autoReplyEnabled ? "bg-primary" : "bg-neutral-300"
                       }`}
                     >
                       <span
@@ -2371,14 +2551,14 @@ https://sidwizz-portfolio.vercel.app`
                   </div>
 
                   {/* Direct Contact Phone */}
-                  <div>
-                    <label className="font-bold text-foreground block mb-1.5">Official Host Booking Hotline</label>
+                  <div className="border-b border-neutral-300 pb-4">
+                    <label className="font-bold text-foreground block mb-1.5 text-xs uppercase tracking-wide">Official Host Booking Hotline</label>
                     <div className="flex flex-wrap gap-2">
                       <input
                         type="text"
                         value={hotlinePhone}
                         onChange={(e) => setHotlinePhone(e.target.value)}
-                        className="w-full max-w-sm rounded-xl border border-input bg-background py-2.5 px-3.5 text-sm text-foreground focus:border-primary focus:outline-none"
+                        className="w-full max-w-sm rounded-xl border border-neutral-300 bg-white py-2.5 px-3.5 text-sm text-foreground focus:border-primary focus:outline-none"
                       />
                       <button
                         type="button"
@@ -2394,18 +2574,18 @@ https://sidwizz-portfolio.vercel.app`
                   </div>
 
                   {/* Neon Database Status */}
-                  <div className="rounded-xl border border-border bg-background p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                  <div className="panel-inner-tile p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                     <div className="flex items-center gap-3">
                       <div className="rounded-xl bg-primary/20 p-2.5 text-primary border border-primary/30">
                         <Database className="h-5 w-5" />
                       </div>
                       <div>
                         <p className="font-bold text-foreground">Neon PostgreSQL Database</p>
-                        <p className="text-xs text-muted-foreground">Connected via DATABASE_URL (.env)</p>
+                        <p className="text-xs text-muted-foreground font-mono">Connected via DATABASE_URL (.env)</p>
                       </div>
                     </div>
 
-                    <Link to="/db-status" className="btn-outline !py-2 !px-4 text-sm">
+                    <Link to="/db-status" className="btn-outline !py-2 !px-4 text-sm bg-white">
                       Diagnostics →
                     </Link>
                   </div>
@@ -2427,94 +2607,108 @@ https://sidwizz-portfolio.vercel.app`
               </div>
 
               {/* Dedicated Developer Hotline Card */}
-              <div className="rounded-2xl border border-primary/30 bg-primary/5 p-6 shadow-sm space-y-4">
-                <div className="flex items-start gap-4">
-                  <div className="rounded-2xl bg-primary/20 p-3 text-primary border border-primary/30">
-                    <HelpCircle className="h-8 w-8" />
+              <div className="panel-card border-primary/40 shadow-sm">
+                <div className="panel-card-header flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <div className="h-5 w-1.5 rounded-full bg-primary" />
+                    <div>
+                      <span className="text-[10px] font-black uppercase tracking-wider text-primary bg-primary/20 px-2 py-0.5 rounded border border-primary/30">
+                        Direct Developer Support Channel
+                      </span>
+                      <h3 className="font-display text-base sm:text-lg font-black uppercase tracking-wider text-foreground mt-0.5">
+                        Developer &amp; Technical Assistance
+                      </h3>
+                    </div>
                   </div>
-                  <div>
-                    <span className="text-xs font-black uppercase tracking-wider text-primary bg-primary/20 px-2.5 py-0.5 rounded border border-primary/30">
-                      Direct Developer Support Channel
-                    </span>
-                    <h3 className="font-display text-xl font-extrabold text-foreground mt-1.5">
-                      Developer & Technical Assistance
-                    </h3>
-                    <p className="text-sm text-muted-foreground mt-1 leading-relaxed">
-                      Need custom features, database migration, or experiencing any issue on the live website? Your dedicated engineering team is directly accessible via WhatsApp and email.
-                    </p>
-                  </div>
+                  <HelpCircle className="h-6 w-6 text-primary" />
                 </div>
 
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-2">
-                  <a
-                    href="https://wa.me/919999999999?text=Hi%20Developer,%20I%20need%20support%20with%20SiddWhizz%20portfolio%20website"
-                    target="_blank"
-                    rel="noreferrer"
-                    className="flex items-center gap-2 rounded-xl bg-primary/20 border border-primary/40 p-3.5 text-primary hover:bg-primary/30 transition text-sm font-bold"
-                  >
-                    <MessageCircle className="h-4 w-4" />
-                    <span>WhatsApp Developer</span>
-                  </a>
+                <div className="panel-card-body space-y-4">
+                  <p className="text-sm text-muted-foreground leading-relaxed">
+                    Need custom features, database migration, or experiencing any issue on the live website? Your dedicated engineering team is directly accessible via WhatsApp and email.
+                  </p>
 
-                  <a
-                    href="mailto:support@siddwhizz.com?subject=Developer%20Support%20Request%20-%20SiddWhizz"
-                    className="flex items-center gap-2 rounded-xl bg-muted border border-border p-3.5 text-foreground hover:bg-accent transition text-sm font-bold"
-                  >
-                    <Mail className="h-4 w-4" />
-                    <span>Email Technical Lead</span>
-                  </a>
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                    <a
+                      href="https://wa.me/919999999999?text=Hi%20Developer,%20I%20need%20support%20with%20SiddWhizz%20portfolio%20website"
+                      target="_blank"
+                      rel="noreferrer"
+                      className="flex items-center gap-2 rounded-xl bg-primary/20 border border-primary/40 p-3.5 text-primary hover:bg-primary/30 transition text-sm font-bold shadow-sm"
+                    >
+                      <MessageCircle className="h-4 w-4" />
+                      <span>WhatsApp Developer</span>
+                    </a>
 
-                  <Link
-                    to="/db-status"
-                    className="flex items-center gap-2 rounded-xl bg-primary/10 border border-primary/30 p-3.5 text-primary hover:bg-primary/20 transition text-sm font-bold"
-                  >
-                    <Database className="h-4 w-4" />
-                    <span>Neon Database Check</span>
-                  </Link>
+                    <a
+                      href="mailto:support@siddwhizz.com?subject=Developer%20Support%20Request%20-%20SiddWhizz"
+                      className="flex items-center gap-2 rounded-xl bg-white border border-neutral-300 p-3.5 text-foreground hover:bg-neutral-100 transition text-sm font-bold shadow-sm"
+                    >
+                      <Mail className="h-4 w-4" />
+                      <span>Email Technical Lead</span>
+                    </a>
+
+                    <Link
+                      to="/db-status"
+                      className="flex items-center gap-2 rounded-xl bg-white border border-neutral-300 p-3.5 text-primary hover:bg-neutral-100 transition text-sm font-bold shadow-sm"
+                    >
+                      <Database className="h-4 w-4" />
+                      <span>Neon Database Check</span>
+                    </Link>
+                  </div>
                 </div>
               </div>
 
               {/* System Diagnostics */}
-              <div className="rounded-2xl border border-border bg-card p-6 shadow-sm space-y-4">
-                <h4 className="font-display text-lg font-extrabold text-foreground">System Health & Runtime Diagnostics</h4>
-                <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 text-sm">
-                  <div className="p-3.5 rounded-xl bg-background border border-border">
-                    <p className="text-xs text-muted-foreground uppercase font-bold">Framework</p>
-                    <p className="font-semibold text-foreground mt-0.5">TanStack Start v1.168</p>
-                  </div>
-                  <div className="p-3.5 rounded-xl bg-background border border-border">
-                    <p className="text-xs text-muted-foreground uppercase font-bold">Engine</p>
-                    <p className="font-semibold text-foreground mt-0.5">Vite 8 & Nitro SSR</p>
-                  </div>
-                  <div className="p-3.5 rounded-xl bg-background border border-border">
-                    <p className="text-xs text-muted-foreground uppercase font-bold">Database</p>
-                    <p className="font-semibold text-primary mt-0.5">Neon PostgreSQL</p>
-                  </div>
-                  <div className="p-3.5 rounded-xl bg-background border border-border">
-                    <p className="text-xs text-muted-foreground uppercase font-bold">Production Node</p>
-                    <p className="font-semibold text-foreground mt-0.5">v22.16 LTS</p>
+              <div className="panel-card shadow-sm">
+                <div className="panel-card-header flex items-center gap-2">
+                  <div className="h-5 w-1.5 rounded-full bg-primary" />
+                  <h4 className="font-display text-base sm:text-lg font-black uppercase tracking-wider text-foreground">
+                    System Health &amp; Runtime Diagnostics
+                  </h4>
+                </div>
+                <div className="panel-card-body">
+                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 text-sm">
+                    <div className="p-3.5 rounded-xl panel-inner-tile">
+                      <p className="text-xs text-muted-foreground uppercase font-bold">Framework</p>
+                      <p className="font-semibold text-foreground mt-0.5">TanStack Start v1.168</p>
+                    </div>
+                    <div className="p-3.5 rounded-xl panel-inner-tile">
+                      <p className="text-xs text-muted-foreground uppercase font-bold">Engine</p>
+                      <p className="font-semibold text-foreground mt-0.5">Vite 8 &amp; Nitro SSR</p>
+                    </div>
+                    <div className="p-3.5 rounded-xl panel-inner-tile">
+                      <p className="text-xs text-muted-foreground uppercase font-bold">Database</p>
+                      <p className="font-semibold text-primary mt-0.5">Neon PostgreSQL</p>
+                    </div>
+                    <div className="p-3.5 rounded-xl panel-inner-tile">
+                      <p className="text-xs text-muted-foreground uppercase font-bold">Production Node</p>
+                      <p className="font-semibold text-foreground mt-0.5">v22.16 LTS</p>
+                    </div>
                   </div>
                 </div>
               </div>
 
               {/* Live Organizer Technical Rider & Support Tickets */}
-              <div className="rounded-2xl border border-border bg-card p-6 shadow-sm space-y-4">
-                <div className="flex items-center justify-between border-b border-border pb-3">
-                  <div>
-                    <h4 className="font-display text-lg font-extrabold text-foreground">
-                      Organizer Technical Rider &amp; Support Tickets ({tickets.length})
-                    </h4>
-                    <p className="text-sm text-muted-foreground">
-                      Live stage AV requests from Event Organizers and internal engineering tickets.
-                    </p>
+              <div className="panel-card shadow-sm">
+                <div className="panel-card-header flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <div className="h-5 w-1.5 rounded-full bg-primary" />
+                    <div>
+                      <h4 className="font-display text-base sm:text-lg font-black uppercase tracking-wider text-foreground">
+                        Organizer Rider &amp; Support Tickets ({tickets.length})
+                      </h4>
+                      <p className="text-xs text-muted-foreground font-medium">
+                        Live stage AV requests from Event Organizers and internal engineering tickets.
+                      </p>
+                    </div>
                   </div>
                 </div>
 
-                <div className="space-y-3">
+                <div className="panel-card-body space-y-3">
                   {tickets.map((tkt) => (
                     <div
                       key={tkt.id}
-                      className="rounded-xl border border-border bg-background p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-sm"
+                      className="panel-inner-tile p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-sm"
                     >
                       <div className="space-y-1">
                         <div className="flex flex-wrap items-center gap-2">
@@ -2542,8 +2736,8 @@ https://sidwizz-portfolio.vercel.app`
                             }}
                             className={`rounded-lg px-2.5 py-1.5 text-xs font-bold transition cursor-pointer ${
                               tkt.status === st
-                                ? "bg-primary text-primary-foreground"
-                                : "border border-border bg-card text-muted-foreground hover:text-foreground"
+                                ? "bg-primary text-primary-foreground shadow-sm"
+                                : "border border-neutral-300 bg-white text-muted-foreground hover:text-foreground"
                             }`}
                           >
                             {st}
@@ -2556,51 +2750,58 @@ https://sidwizz-portfolio.vercel.app`
               </div>
 
               {/* Submit Ticket Form */}
-              <div className="rounded-2xl border border-border bg-card p-6 shadow-sm space-y-4">
-                <h4 className="font-display text-lg font-extrabold text-foreground">Log an Issue or Feature Request to Developer</h4>
-                <form onSubmit={handleSubmitTicket} className="space-y-4 text-sm">
-                  <div>
-                    <label className="font-bold text-muted-foreground block mb-1.5">Issue / Feature Summary</label>
-                    <input
-                      type="text"
-                      required
-                      value={ticketSubject}
-                      onChange={(e) => setTicketSubject(e.target.value)}
-                      placeholder="e.g. Need to add a new video embed format on portfolio page"
-                      className="w-full rounded-xl border border-input bg-background py-2.5 px-3.5 text-sm text-foreground focus:border-primary focus:outline-none"
-                    />
-                  </div>
+              <div className="panel-card shadow-sm">
+                <div className="panel-card-header flex items-center gap-2">
+                  <div className="h-5 w-1.5 rounded-full bg-primary" />
+                  <h4 className="font-display text-base sm:text-lg font-black uppercase tracking-wider text-foreground">
+                    Log an Issue or Feature Request to Developer
+                  </h4>
+                </div>
+                <div className="panel-card-body">
+                  <form onSubmit={handleSubmitTicket} className="space-y-4 text-sm">
+                    <div>
+                      <label className="font-bold text-muted-foreground text-xs uppercase block mb-1.5">Issue / Feature Summary</label>
+                      <input
+                        type="text"
+                        required
+                        value={ticketSubject}
+                        onChange={(e) => setTicketSubject(e.target.value)}
+                        placeholder="e.g. Need to add a new video embed format on portfolio page"
+                        className="w-full rounded-xl border border-neutral-300 bg-white py-2.5 px-3.5 text-sm text-foreground focus:border-primary focus:outline-none"
+                      />
+                    </div>
 
-                  <div>
-                    <label className="font-bold text-muted-foreground block mb-1.5">Priority Level</label>
-                    <select
-                      value={ticketSeverity}
-                      onChange={(e) => setTicketSeverity(e.target.value)}
-                      className="w-full max-w-xs rounded-xl border border-input bg-background py-2.5 px-3.5 text-sm text-foreground focus:border-primary focus:outline-none"
-                    >
-                      <option value="Low">Low (General inquiry / suggestion)</option>
-                      <option value="Medium">Medium (Feature enhancement)</option>
-                      <option value="High">High (Stage booking flow impacted)</option>
-                      <option value="Critical">Critical (Production blocker)</option>
-                    </select>
-                  </div>
+                    <div>
+                      <label className="font-bold text-muted-foreground text-xs uppercase block mb-1.5">Priority Level</label>
+                      <select
+                        value={ticketSeverity}
+                        onChange={(e) => setTicketSeverity(e.target.value)}
+                        className="w-full max-w-xs rounded-xl border border-neutral-300 bg-white py-2.5 px-3.5 text-sm text-foreground focus:border-primary focus:outline-none"
+                      >
+                        <option value="Low">Low (General inquiry / suggestion)</option>
+                        <option value="Medium">Medium (Feature enhancement)</option>
+                        <option value="High">High (Stage booking flow impacted)</option>
+                        <option value="Critical">Critical (Production blocker)</option>
+                      </select>
+                    </div>
 
-                  <div>
-                    <label className="font-bold text-muted-foreground block mb-1.5">Detailed Description</label>
-                    <textarea
-                      required
-                      rows={3}
-                      value={ticketMessage}
-                      onChange={(e) => setTicketMessage(e.target.value)}
-                      placeholder="Describe what you want changed or what happened..."
-                      className="w-full rounded-xl border border-input bg-background py-2.5 px-3.5 text-sm text-foreground focus:border-primary focus:outline-none"
-                    />
-                  </div>
+                    <div>
+                      <label className="font-bold text-muted-foreground text-xs uppercase block mb-1.5">Detailed Description</label>
+                      <textarea
+                        required
+                        rows={3}
+                        value={ticketMessage}
+                        onChange={(e) => setTicketMessage(e.target.value)}
+                        placeholder="Describe what you want changed or what happened..."
+                        className="w-full rounded-xl border border-neutral-300 bg-white py-2.5 px-3.5 text-sm text-foreground focus:border-primary focus:outline-none"
+                      />
+                    </div>
 
-                  <button type="submit" className="btn-red !py-2.5 !px-5 text-sm flex items-center gap-2">
-                    <Send className="h-4 w-4" /> Submit to Engineering Team
-                  </button>
-                </form>
+                    <button type="submit" className="btn-red !py-2.5 !px-5 text-sm flex items-center gap-2 cursor-pointer shadow-md">
+                      <Send className="h-4 w-4" /> Submit to Engineering Team
+                    </button>
+                  </form>
+                </div>
               </div>
             </div>
           )}
@@ -2772,7 +2973,7 @@ https://sidwizz-portfolio.vercel.app`
           {/* ========================================================= */}
           {viewingMedia && (
             <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/85 p-4 backdrop-blur-md animate-in fade-in-50">
-              <div className="w-full max-w-4xl rounded-2xl border border-border bg-card p-6 shadow-2xl space-y-4 max-h-[92vh] flex flex-col">
+              <div className="w-full max-w-4xl rounded-2xl border border-neutral-300 bg-card p-6 shadow-2xl space-y-4 max-h-[92vh] flex flex-col">
                 {/* Header */}
                 <div className="flex items-start justify-between border-b border-border pb-3 shrink-0">
                   <div>
@@ -2811,13 +3012,13 @@ https://sidwizz-portfolio.vercel.app`
                   </button>
                 </div>
 
-                {/* Main Media Content Viewer */}
-                <div className="flex-1 overflow-auto rounded-xl bg-ink/80 border border-border flex items-center justify-center p-3 min-h-[300px]">
+                {/* Main Media Content Viewer - Seamless full width without ugly dark grey box framing */}
+                <div className="flex-1 overflow-auto rounded-xl flex items-center justify-center min-h-[300px] w-full">
                   {viewingMedia.type === "image" ? (
                     <img
                       src={viewingMedia.url}
                       alt={viewingMedia.title}
-                      className="max-h-[62vh] max-w-full rounded-lg object-contain shadow-2xl"
+                      className="w-full max-h-[68vh] rounded-xl object-contain shadow-2xl"
                     />
                   ) : viewingMedia.type === "video" ? (
                     viewingMedia.url.includes("youtube.com") || viewingMedia.url.includes("youtu.be") ? (
@@ -2839,13 +3040,18 @@ https://sidwizz-portfolio.vercel.app`
                         src={viewingMedia.url}
                         controls
                         autoPlay
-                        className="w-full max-h-[62vh] rounded-xl shadow-2xl bg-black"
+                        className="w-full max-h-[68vh] rounded-xl shadow-2xl bg-black"
                       />
                     )
                   ) : viewingMedia.type === "audio" ? (
-                    <div className="w-full max-w-md p-8 rounded-2xl bg-card border border-border shadow-2xl text-center space-y-4">
-                      <div className="mx-auto grid h-16 w-16 place-items-center rounded-full bg-amber-500/20 text-amber-400 border border-amber-500/30">
-                        <Volume2 className="h-8 w-8" />
+                    <div className="w-full max-w-xl p-8 rounded-2xl bg-card border border-neutral-300 shadow-2xl text-center space-y-4">
+                      <img
+                        src={getDefaultThumbnail(viewingMedia)}
+                        alt={viewingMedia.title}
+                        className="h-44 w-full object-cover rounded-xl border border-neutral-300 shadow-sm"
+                      />
+                      <div className="mx-auto grid h-14 w-14 place-items-center rounded-full bg-amber-500/20 text-amber-500 border border-amber-500/30">
+                        <Volume2 className="h-7 w-7" />
                       </div>
                       <div>
                         <p className="font-display text-base font-bold text-foreground">{viewingMedia.title}</p>
@@ -2854,13 +3060,18 @@ https://sidwizz-portfolio.vercel.app`
                       <audio src={viewingMedia.url} controls autoPlay className="w-full" />
                     </div>
                   ) : (
-                    <div className="w-full max-w-md p-8 rounded-2xl bg-card border border-border shadow-2xl text-center space-y-4">
-                      <div className="mx-auto grid h-16 w-16 place-items-center rounded-full bg-primary/20 text-primary border border-primary/30">
-                        <FileText className="h-8 w-8" />
+                    <div className="w-full max-w-xl p-8 rounded-2xl bg-card border border-neutral-300 shadow-2xl text-center space-y-4">
+                      <img
+                        src={getDefaultThumbnail(viewingMedia)}
+                        alt={viewingMedia.title}
+                        className="h-44 w-full object-cover rounded-xl border border-neutral-300 shadow-sm"
+                      />
+                      <div className="mx-auto grid h-14 w-14 place-items-center rounded-full bg-primary/20 text-primary border border-primary/30">
+                        <FileText className="h-7 w-7" />
                       </div>
                       <div>
                         <p className="font-display text-base font-bold text-foreground">{viewingMedia.title}</p>
-                        <p className="text-xs text-muted-foreground mt-0.5">Official Stage Rider & Specification PDF</p>
+                        <p className="text-xs text-muted-foreground mt-0.5">Official Stage Rider &amp; Specification PDF</p>
                       </div>
                       <div className="flex justify-center gap-3">
                         <a
@@ -2874,7 +3085,7 @@ https://sidwizz-portfolio.vercel.app`
                         <a
                           href={viewingMedia.url}
                           download
-                          className="btn-outline !py-2 !px-4 text-xs flex items-center gap-1.5"
+                          className="btn-outline !py-2 !px-4 text-xs flex items-center gap-1.5 !border-neutral-300 !text-foreground hover:!bg-white"
                         >
                           <Download className="h-3.5 w-3.5" /> Download
                         </a>
@@ -2885,20 +3096,33 @@ https://sidwizz-portfolio.vercel.app`
 
                 {/* Footer Controls */}
                 <div className="flex flex-wrap items-center justify-between gap-3 border-t border-border pt-3 shrink-0">
-                  <button
-                    type="button"
-                    onClick={() => setMediaToDelete(viewingMedia)}
-                    className="inline-flex items-center gap-1.5 rounded-lg border border-primary/40 bg-primary/10 px-3 py-2 text-xs font-bold text-primary hover:bg-primary hover:text-white transition cursor-pointer"
-                  >
-                    <Trash2 className="h-3.5 w-3.5" />
-                    <span>Delete from Database</span>
-                  </button>
+                  <div className="flex items-center gap-2">
+                    <button
+                      type="button"
+                      onClick={() => setMediaToDelete(viewingMedia)}
+                      className="inline-flex items-center gap-1.5 rounded-lg border border-primary/40 bg-primary/10 px-3 py-2 text-xs font-bold text-primary hover:bg-primary hover:text-white transition cursor-pointer"
+                    >
+                      <Trash2 className="h-3.5 w-3.5" />
+                      <span>Delete from Database</span>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setThumbnailModalMedia(viewingMedia);
+                        setSelectedThumbnailPreview(viewingMedia.thumbnail || getDefaultThumbnail(viewingMedia));
+                      }}
+                      className="inline-flex items-center gap-1.5 rounded-lg border border-neutral-300 bg-white px-3 py-2 text-xs font-bold text-foreground hover:border-primary hover:text-primary transition cursor-pointer shadow-2xs"
+                    >
+                      <ImagePlus className="h-3.5 w-3.5 text-primary" />
+                      <span>Set / Change Thumbnail</span>
+                    </button>
+                  </div>
 
                   <div className="flex items-center gap-2">
                     <button
                       type="button"
                       onClick={() => handleCopyLink(viewingMedia.url)}
-                      className="btn-outline !py-2 !px-4 text-xs flex items-center gap-1.5 cursor-pointer"
+                      className="btn-outline !py-2 !px-4 text-xs flex items-center gap-1.5 cursor-pointer !border-neutral-300 !text-foreground hover:!bg-white"
                     >
                       <Copy className="h-3.5 w-3.5" />
                       <span>Copy Link</span>
@@ -2913,6 +3137,148 @@ https://sidwizz-portfolio.vercel.app`
                       <span>Open in New Tab</span>
                     </a>
                   </div>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* ========================================================= */}
+          {/* THUMBNAIL PICKER & MANAGEMENT MODAL                       */}
+          {/* ========================================================= */}
+          {thumbnailModalMedia && (
+            <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-4 backdrop-blur-sm animate-in fade-in-50">
+              <div className="w-full max-w-xl rounded-2xl border border-neutral-300 bg-card p-6 shadow-2xl space-y-5 max-h-[90vh] overflow-y-auto">
+                <div className="flex items-center justify-between border-b border-border pb-3">
+                  <div>
+                    <h3 className="font-display text-lg font-extrabold text-foreground">
+                      Set Thumbnail for Media
+                    </h3>
+                    <p className="text-xs text-muted-foreground mt-0.5 line-clamp-1">
+                      {thumbnailModalMedia.title}
+                    </p>
+                  </div>
+                  <button
+                    onClick={() => {
+                      setThumbnailModalMedia(null);
+                      setSelectedThumbnailPreview(null);
+                    }}
+                    className="rounded-lg p-1 text-muted-foreground hover:bg-accent hover:text-foreground cursor-pointer"
+                  >
+                    <X className="h-5 w-5" />
+                  </button>
+                </div>
+
+                {/* Current / Selected Preview */}
+                <div>
+                  <label className="text-xs font-bold uppercase tracking-wider text-muted-foreground block mb-2">
+                    Active Thumbnail Preview:
+                  </label>
+                  <div className="relative h-44 w-full rounded-xl overflow-hidden border-2 border-primary/60 bg-neutral-100 shadow-sm flex items-center justify-center">
+                    <img
+                      src={selectedThumbnailPreview || getDefaultThumbnail(thumbnailModalMedia)}
+                      alt="Thumbnail Preview"
+                      className="h-full w-full object-cover"
+                    />
+                    <span className="absolute bottom-2 left-2 rounded-md bg-black/70 px-2 py-0.5 text-[11px] font-bold text-white backdrop-blur">
+                      Selected Thumbnail
+                    </span>
+                  </div>
+                </div>
+
+                {/* Option 1: Upload Custom File */}
+                <div className="panel-inner-tile p-4 space-y-2">
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs font-bold uppercase tracking-wider text-foreground">
+                      Upload Custom Image:
+                    </span>
+                    <input
+                      type="file"
+                      ref={thumbnailInputRef}
+                      onChange={(e) => {
+                        const file = e.target.files?.[0];
+                        if (file) handleThumbnailFileSelect(file);
+                      }}
+                      accept="image/*"
+                      className="hidden"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => thumbnailInputRef.current?.click()}
+                      className="btn-red !py-1.5 !px-3 text-xs flex items-center gap-1.5 cursor-pointer"
+                    >
+                      <Upload className="h-3.5 w-3.5" /> Choose Image File
+                    </button>
+                  </div>
+                  <p className="text-xs text-muted-foreground">
+                    Upload your own custom thumbnail from computer (JPG, PNG, WebP).
+                  </p>
+                </div>
+
+                {/* Option 2: Curated Stage Presets */}
+                <div className="space-y-2">
+                  <span className="text-xs font-bold uppercase tracking-wider text-muted-foreground block">
+                    Or Select from Siddharth's Stage Photography Presets:
+                  </span>
+                  <div className="grid grid-cols-3 gap-2.5">
+                    {[
+                      { name: "Tech Summit", img: techSummit },
+                      { name: "Purple Anchor", img: hostPurple },
+                      { name: "Stage Beams", img: stageBeams },
+                      { name: "Gala Bowtie", img: hostBowtie },
+                      { name: "Conclave Stage", img: conclaveStage },
+                      { name: "Studio Mic", img: micDark },
+                      { name: "Conference Hall", img: conferenceHall },
+                      { name: "Festival Crowd", img: festivalCrowd },
+                      { name: "Star Trophy", img: starTrophy },
+                    ].map((preset) => (
+                      <button
+                        key={preset.name}
+                        type="button"
+                        onClick={() => setSelectedThumbnailPreview(preset.img)}
+                        className={`group rounded-xl border p-2 flex flex-col items-center gap-1.5 transition cursor-pointer text-center ${
+                          (selectedThumbnailPreview || getDefaultThumbnail(thumbnailModalMedia)) === preset.img
+                            ? "border-primary bg-primary/10 ring-2 ring-primary"
+                            : "border-neutral-300 bg-white hover:border-primary/50"
+                        }`}
+                      >
+                        <img
+                          src={preset.img}
+                          alt={preset.name}
+                          className="h-14 w-full rounded-lg object-cover"
+                        />
+                        <span className="text-[11px] font-bold text-foreground truncate w-full">
+                          {preset.name}
+                        </span>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Save action */}
+                <div className="flex items-center justify-end gap-2 border-t border-border pt-4">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setThumbnailModalMedia(null);
+                      setSelectedThumbnailPreview(null);
+                    }}
+                    className="btn-outline !py-2 !px-4 text-xs !border-neutral-300 !text-foreground hover:!bg-white cursor-pointer"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      if (selectedThumbnailPreview) {
+                        handleSaveThumbnail(selectedThumbnailPreview);
+                      } else {
+                        handleSaveThumbnail(getDefaultThumbnail(thumbnailModalMedia));
+                      }
+                    }}
+                    className="btn-red !py-2 !px-5 text-xs cursor-pointer font-bold"
+                  >
+                    Save Thumbnail
+                  </button>
                 </div>
               </div>
             </div>

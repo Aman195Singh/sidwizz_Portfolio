@@ -487,7 +487,7 @@ export function OrganizerPanel() {
         </header>
 
         {/* Tab Content Body (Scrolls Independently) */}
-        <main className="flex-1 overflow-y-auto p-4 sm:p-6 lg:p-8 space-y-8 bg-background">
+        <main className="flex-1 overflow-y-auto p-4 sm:p-6 lg:p-8 space-y-8 panel-canvas">
           {/* ========================================================= */}
           {/* 1. OVERVIEW VIEW                                          */}
           {/* ========================================================= */}
@@ -501,101 +501,127 @@ export function OrganizerPanel() {
               </div>
 
               {/* Welcome Banner */}
-              <div className="rounded-2xl border border-border bg-card p-6 shadow-md flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-                <div>
-                  <span className="text-xs font-bold uppercase tracking-wider text-primary bg-primary/10 border border-primary/30 px-2.5 py-0.5 rounded">
-                    Verified Event Partner
-                  </span>
-                  <h3 className="font-display text-2xl font-extrabold text-foreground mt-2">
-                    Welcome back, Priya!
-                  </h3>
-                  <p className="text-sm text-muted-foreground mt-1">
-                    Managing stage hosting requirements for <strong className="text-foreground">Apex Global Tech Summits</strong>.
-                  </p>
+              <div className="panel-card shadow-md">
+                <div className="panel-card-header flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                  <div className="flex items-center gap-2.5">
+                    <span className="h-5 w-1.5 rounded-full bg-primary shrink-0" />
+                    <div>
+                      <span className="text-xs font-bold uppercase tracking-wider text-primary bg-primary/10 border border-primary/30 px-2.5 py-0.5 rounded">
+                        Verified Event Partner
+                      </span>
+                      <h3 className="font-display text-lg sm:text-xl font-black tracking-tight text-foreground uppercase mt-1">
+                        Welcome back, {contactPerson || "Priya"}!
+                      </h3>
+                    </div>
+                  </div>
+                  <div className="flex flex-wrap gap-2.5">
+                    <button
+                      onClick={() => setActiveTab("bookings")}
+                      className="btn-outline !py-2 !px-3.5 text-xs sm:text-sm !border-neutral-300 !text-foreground hover:!bg-white cursor-pointer"
+                    >
+                      View Active Show
+                    </button>
+                    <button
+                      onClick={() => setCreateModalOpen(true)}
+                      className="btn-red !py-2 !px-3.5 text-xs sm:text-sm cursor-pointer"
+                    >
+                      + Enquire Another Event
+                    </button>
+                  </div>
                 </div>
-
-                <div className="flex flex-wrap gap-2.5">
-                  <button
-                    onClick={() => setActiveTab("bookings")}
-                    className="btn-outline !py-2.5 !px-4 text-sm !border-border !text-foreground hover:!bg-muted"
-                  >
-                    View Active Show
-                  </button>
-                  <button
-                    onClick={() => setCreateModalOpen(true)}
-                    className="btn-red !py-2.5 !px-4 text-sm"
-                  >
-                    + Enquire Another Event
-                  </button>
+                <div className="panel-card-body p-6">
+                  <p className="text-sm sm:text-base text-muted-foreground">
+                    Managing stage hosting requirements for <strong className="text-foreground">{companyName || "Apex Global Tech Summits"}</strong>.
+                  </p>
                 </div>
               </div>
 
               {/* Next Event Countdown Card */}
-              <div className="rounded-2xl border border-border bg-card p-6 shadow-sm">
-                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-border pb-5">
-                  <div>
-                    <span className="text-xs font-bold uppercase tracking-wider text-primary bg-primary/10 px-2.5 py-0.5 rounded border border-primary/30">
-                      Next Confirmed Show
-                    </span>
-                    <h3 className="font-display text-xl font-extrabold text-foreground mt-2">
-                      Apex Global Tech Summits 2026
-                    </h3>
-                    <p className="text-sm text-muted-foreground mt-1 flex items-center gap-1.5">
-                      <MapPin className="h-4 w-4 text-primary" /> Jio World Convention Centre, Mumbai
-                    </p>
+              <div className="panel-card shadow-sm">
+                <div className="panel-card-header flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                  <div className="flex items-center gap-2.5">
+                    <span className="h-5 w-1.5 rounded-full bg-primary shrink-0" />
+                    <div>
+                      <span className="text-xs font-bold uppercase tracking-wider text-primary bg-primary/10 px-2.5 py-0.5 rounded border border-primary/30">
+                        Next Confirmed Show
+                      </span>
+                      <h3 className="font-display text-lg sm:text-xl font-extrabold text-foreground mt-1">
+                        Apex Global Tech Summits 2026
+                      </h3>
+                      <p className="text-xs sm:text-sm text-muted-foreground mt-0.5 flex items-center gap-1.5">
+                        <MapPin className="h-4 w-4 text-primary shrink-0" /> Jio World Convention Centre, Mumbai
+                      </p>
+                    </div>
                   </div>
 
-                  <div className="flex items-center gap-5 bg-muted/40 p-4 rounded-xl border border-border">
+                  <div className="flex items-center gap-5 bg-white p-3.5 rounded-xl border border-neutral-300 shadow-2xs">
                     <div className="text-center">
                       <p className="text-2xl font-black font-display text-primary">40</p>
-                      <p className="text-xs text-muted-foreground uppercase font-bold">Days Left</p>
+                      <p className="text-[11px] text-muted-foreground uppercase font-bold">Days Left</p>
                     </div>
-                    <div className="h-9 w-px bg-border" />
+                    <div className="h-8 w-px bg-neutral-300" />
                     <div className="text-center">
                       <p className="text-2xl font-black font-display text-foreground">Dec 14</p>
-                      <p className="text-xs text-muted-foreground uppercase font-bold">Stage Date</p>
+                      <p className="text-[11px] text-muted-foreground uppercase font-bold">Stage Date</p>
                     </div>
                   </div>
                 </div>
 
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 pt-5 text-sm">
-                  <div className="p-4 rounded-xl bg-background border border-border">
-                    <span className="text-muted-foreground block text-xs uppercase font-bold tracking-wider mb-1">Host Role:</span>
-                    <span className="font-bold text-foreground">Keynote Intro & Panel Moderator</span>
-                  </div>
-                  <div className="p-4 rounded-xl bg-background border border-border">
-                    <span className="text-muted-foreground block text-xs uppercase font-bold tracking-wider mb-1">Stage Rider:</span>
-                    <span className="font-bold text-foreground flex items-center gap-1.5">
-                      <CheckCircle2 className="h-4 w-4 text-primary" /> Acknowledged & Approved
-                    </span>
-                  </div>
-                  <div className="p-4 rounded-xl bg-background border border-border">
-                    <span className="text-muted-foreground block text-xs uppercase font-bold tracking-wider mb-1">Run-of-Show Rundown:</span>
-                    <span className="font-bold text-foreground">Draft v2 in Review</span>
+                <div className="panel-card-body p-6">
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 text-sm">
+                    <div className="panel-inner-tile p-4">
+                      <span className="text-muted-foreground block text-xs uppercase font-bold tracking-wider mb-1">Host Role:</span>
+                      <span className="font-bold text-foreground">Keynote Intro &amp; Panel Moderator</span>
+                    </div>
+                    <div className="panel-inner-tile p-4">
+                      <span className="text-muted-foreground block text-xs uppercase font-bold tracking-wider mb-1">Stage Rider:</span>
+                      <span className="font-bold text-foreground flex items-center gap-1.5">
+                        <CheckCircle2 className="h-4 w-4 text-primary shrink-0" /> Acknowledged &amp; Approved
+                      </span>
+                    </div>
+                    <div className="panel-inner-tile p-4">
+                      <span className="text-muted-foreground block text-xs uppercase font-bold tracking-wider mb-1">Run-of-Show Rundown:</span>
+                      <span className="font-bold text-foreground">Draft v2 in Review</span>
+                    </div>
                   </div>
                 </div>
               </div>
 
               {/* Status Summary */}
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                <div className="card-lift rounded-2xl border border-border bg-card p-6 shadow-sm">
-                  <span className="text-xs font-bold text-muted-foreground uppercase tracking-wider">Confirmed Stage Dates</span>
-                  <p className="text-3xl font-black font-display text-foreground mt-1.5">{bookings.length} {bookings.length === 1 ? "Show" : "Shows"}</p>
-                  <p className="text-sm text-muted-foreground mt-1">Contract executed & locked</p>
+                <div className="panel-card card-lift shadow-sm">
+                  <div className="panel-card-header py-3 px-5 flex items-center justify-between">
+                    <span className="text-xs font-bold text-foreground/80 uppercase tracking-wider">Confirmed Stage Dates</span>
+                    <span className="h-2 w-2 rounded-full bg-emerald-500" />
+                  </div>
+                  <div className="panel-card-body p-5">
+                    <p className="text-3xl font-black font-display text-foreground">{bookings.length} {bookings.length === 1 ? "Show" : "Shows"}</p>
+                    <p className="text-xs text-muted-foreground mt-1">Contract executed &amp; locked</p>
+                  </div>
                 </div>
 
-                <div className="card-lift rounded-2xl border border-border bg-card p-6 shadow-sm">
-                  <span className="text-xs font-bold text-muted-foreground uppercase tracking-wider">Pending Inquiries</span>
-                  <p className="text-3xl font-black font-display text-primary mt-1.5">
-                    {enquiries.filter((e) => e.status !== "Confirmed").length} Proposals
-                  </p>
-                  <p className="text-sm text-muted-foreground mt-1">Under commercial review</p>
+                <div className="panel-card card-lift shadow-sm">
+                  <div className="panel-card-header py-3 px-5 flex items-center justify-between">
+                    <span className="text-xs font-bold text-foreground/80 uppercase tracking-wider">Pending Inquiries</span>
+                    <span className="h-2 w-2 rounded-full bg-primary" />
+                  </div>
+                  <div className="panel-card-body p-5">
+                    <p className="text-3xl font-black font-display text-primary">
+                      {enquiries.filter((e) => e.status !== "Confirmed").length} Proposals
+                    </p>
+                    <p className="text-xs text-muted-foreground mt-1">Under commercial review</p>
+                  </div>
                 </div>
 
-                <div className="card-lift rounded-2xl border border-border bg-card p-6 shadow-sm">
-                  <span className="text-xs font-bold text-muted-foreground uppercase tracking-wider">Dedicated Emcee Manager</span>
-                  <p className="font-display text-xl font-extrabold text-foreground mt-1.5">Neha Sharma</p>
-                  <p className="text-sm text-muted-foreground mt-1">Direct support hotline available</p>
+                <div className="panel-card card-lift shadow-sm">
+                  <div className="panel-card-header py-3 px-5 flex items-center justify-between">
+                    <span className="text-xs font-bold text-foreground/80 uppercase tracking-wider">Dedicated Emcee Manager</span>
+                    <span className="h-2 w-2 rounded-full bg-primary" />
+                  </div>
+                  <div className="panel-card-body p-5">
+                    <p className="font-display text-xl font-extrabold text-foreground">Neha Sharma</p>
+                    <p className="text-xs text-muted-foreground mt-1">Direct support hotline available</p>
+                  </div>
                 </div>
               </div>
             </div>
@@ -624,22 +650,25 @@ export function OrganizerPanel() {
 
               <div className="space-y-4">
                 {enquiries.map((enq) => (
-                  <div key={enq.id} className="rounded-2xl border border-border bg-card p-6 shadow-sm space-y-4">
-                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-border pb-3.5">
-                      <div>
-                        <div className="flex items-center gap-2.5">
-                          <span className="font-mono text-sm font-bold text-primary">{enq.id}</span>
-                          <span
-                            className={`rounded-full px-2.5 py-0.5 text-xs font-bold ${
-                              enq.status === "Confirmed"
-                                ? "bg-muted text-foreground border border-border"
-                                : "bg-primary/20 text-primary border border-primary/30"
-                            }`}
-                          >
-                            {enq.status}
-                          </span>
+                  <div key={enq.id} className="panel-card shadow-sm">
+                    <div className="panel-card-header flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                      <div className="flex items-center gap-2.5">
+                        <span className="h-5 w-1.5 rounded-full bg-primary shrink-0" />
+                        <div>
+                          <div className="flex items-center gap-2.5">
+                            <span className="font-mono text-sm font-bold text-primary">{enq.id}</span>
+                            <span
+                              className={`rounded-full px-2.5 py-0.5 text-xs font-bold ${
+                                enq.status === "Confirmed"
+                                  ? "bg-muted text-foreground border border-neutral-300"
+                                  : "bg-primary/20 text-primary border border-primary/30"
+                              }`}
+                            >
+                              {enq.status}
+                            </span>
+                          </div>
+                          <h4 className="font-display text-base sm:text-lg font-extrabold text-foreground mt-0.5">{enq.eventName}</h4>
                         </div>
-                        <h4 className="font-display text-lg font-extrabold text-foreground mt-1">{enq.eventName}</h4>
                       </div>
 
                       <div className="text-left sm:text-right">
@@ -647,22 +676,24 @@ export function OrganizerPanel() {
                       </div>
                     </div>
 
-                    <div className="grid grid-cols-1 sm:grid-cols-4 gap-4 text-sm">
-                      <div>
-                        <span className="text-muted-foreground block text-xs uppercase font-bold tracking-wider">Date & City</span>
-                        <p className="font-semibold text-foreground mt-1">📅 {enq.date} • {enq.city}</p>
-                      </div>
-                      <div>
-                        <span className="text-muted-foreground block text-xs uppercase font-bold tracking-wider">Venue</span>
-                        <p className="font-semibold text-foreground mt-1">{enq.venue}</p>
-                      </div>
-                      <div>
-                        <span className="text-muted-foreground block text-xs uppercase font-bold tracking-wider">Format & Crowd</span>
-                        <p className="font-semibold text-foreground mt-1">{enq.format} ({enq.crowdSize})</p>
-                      </div>
-                      <div>
-                        <span className="text-muted-foreground block text-xs uppercase font-bold tracking-wider">Budget Range</span>
-                        <p className="font-mono font-bold text-primary mt-1">{enq.budget}</p>
+                    <div className="panel-card-body p-5">
+                      <div className="grid grid-cols-1 sm:grid-cols-4 gap-4 text-sm">
+                        <div className="panel-inner-tile p-3.5">
+                          <span className="text-muted-foreground block text-xs uppercase font-bold tracking-wider">Date &amp; City</span>
+                          <p className="font-semibold text-foreground mt-1">📅 {enq.date} • {enq.city}</p>
+                        </div>
+                        <div className="panel-inner-tile p-3.5">
+                          <span className="text-muted-foreground block text-xs uppercase font-bold tracking-wider">Venue</span>
+                          <p className="font-semibold text-foreground mt-1">{enq.venue}</p>
+                        </div>
+                        <div className="panel-inner-tile p-3.5">
+                          <span className="text-muted-foreground block text-xs uppercase font-bold tracking-wider">Format &amp; Crowd</span>
+                          <p className="font-semibold text-foreground mt-1">{enq.format} ({enq.crowdSize})</p>
+                        </div>
+                        <div className="panel-inner-tile p-3.5">
+                          <span className="text-muted-foreground block text-xs uppercase font-bold tracking-wider">Budget Range</span>
+                          <p className="font-mono font-bold text-primary mt-1">{enq.budget}</p>
+                        </div>
                       </div>
                     </div>
                   </div>
@@ -683,21 +714,24 @@ export function OrganizerPanel() {
                 </h2>
               </div>
 
-              <div className="rounded-2xl border border-border bg-card p-6 shadow-sm space-y-5">
-                <div className="flex flex-wrap items-center justify-between gap-3 border-b border-border pb-4">
-                  <div>
-                    <h3 className="font-display text-lg font-extrabold text-foreground">Executed Booking Agreements</h3>
-                    <p className="text-sm text-muted-foreground">Official confirmed stage locks for Siddharth Maurya.</p>
+              <div className="panel-card shadow-sm">
+                <div className="panel-card-header flex flex-wrap items-center justify-between gap-3">
+                  <div className="flex items-center gap-2.5">
+                    <span className="h-5 w-1.5 rounded-full bg-primary shrink-0" />
+                    <div>
+                      <h3 className="font-display text-base sm:text-lg font-extrabold text-foreground uppercase tracking-tight">Executed Booking Agreements</h3>
+                      <p className="text-xs text-muted-foreground">Official confirmed stage locks for Siddharth Maurya.</p>
+                    </div>
                   </div>
                   <span className="rounded-full bg-primary/15 text-primary border border-primary/30 px-3 py-1 text-xs font-bold">
                     {bookings.length} Confirmed {bookings.length === 1 ? "Contract" : "Contracts"}
                   </span>
                 </div>
 
-                <div className="space-y-4">
+                <div className="panel-card-body p-6 space-y-4">
                   {bookings.map((bk) => (
-                    <div key={bk.id} className="rounded-xl border border-border bg-background p-6 space-y-4">
-                      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-border pb-4">
+                    <div key={bk.id} className="panel-inner-tile p-5 space-y-4">
+                      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-neutral-300 pb-4">
                         <div>
                           <div className="flex flex-wrap items-center gap-2">
                             <span className="font-mono text-sm font-bold text-primary">{bk.contractRef}</span>
@@ -724,7 +758,7 @@ export function OrganizerPanel() {
                           )}
                           <button
                             onClick={() => setSelectedContract(bk)}
-                            className="btn-outline !py-2 !px-4 text-sm !border-border !text-foreground hover:!bg-muted flex items-center gap-2 cursor-pointer"
+                            className="btn-outline !py-2 !px-4 text-sm !border-neutral-300 !text-foreground hover:!bg-white flex items-center gap-2 cursor-pointer"
                           >
                             <Download className="h-4 w-4 text-primary" /> View &amp; Download Contract
                           </button>
@@ -732,15 +766,15 @@ export function OrganizerPanel() {
                       </div>
 
                       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 text-sm">
-                        <div className="p-4 rounded-lg bg-muted/30 border border-border">
+                        <div className="p-3.5 rounded-lg bg-white border border-neutral-300">
                           <span className="text-muted-foreground block text-xs uppercase font-bold tracking-wider">Show Date &amp; Timing</span>
                           <p className="font-bold text-foreground mt-1">{bk.date} • {bk.time}</p>
                         </div>
-                        <div className="p-4 rounded-lg bg-muted/30 border border-border">
+                        <div className="p-3.5 rounded-lg bg-white border border-neutral-300">
                           <span className="text-muted-foreground block text-xs uppercase font-bold tracking-wider">Location</span>
                           <p className="font-bold text-foreground mt-1">{bk.venue}, {bk.city}</p>
                         </div>
-                        <div className="p-4 rounded-lg bg-muted/30 border border-border">
+                        <div className="p-3.5 rounded-lg bg-white border border-neutral-300">
                           <span className="text-muted-foreground block text-xs uppercase font-bold tracking-wider">Host Status</span>
                           <p className="font-bold text-foreground mt-1 flex items-center gap-1.5">
                             <CheckCircle2 className="h-4 w-4 text-primary" />{" "}
@@ -767,101 +801,104 @@ export function OrganizerPanel() {
                 </h2>
               </div>
 
-              <div className="rounded-2xl border border-border bg-card p-6 shadow-sm space-y-6">
-                <div>
-                  <h3 className="font-display text-lg font-extrabold text-foreground">Host Technical Stage Rider & Hospitality</h3>
-                  <p className="text-sm text-muted-foreground mt-1">
-                    Required audio, video, microphone, and backstage parameters for Siddharth Maurya's stage performance.
-                  </p>
-                </div>
-
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm">
-                  {/* Microphones */}
-                  <div className="card-lift rounded-xl border border-border p-5 bg-background space-y-2">
-                    <div className="flex items-center gap-2 text-primary font-bold text-base">
-                      <Mic className="h-5 w-5" />
-                      <span>Microphone Preference</span>
+              <div className="panel-card shadow-sm">
+                <div className="panel-card-header flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                  <div className="flex items-center gap-2.5">
+                    <span className="h-5 w-1.5 rounded-full bg-primary shrink-0" />
+                    <div>
+                      <h3 className="font-display text-base sm:text-lg font-extrabold text-foreground uppercase tracking-tight">Host Technical Stage Rider &amp; Hospitality</h3>
+                      <p className="text-xs text-muted-foreground mt-0.5">
+                        Required audio, video, microphone, and backstage parameters for Siddharth Maurya's stage performance.
+                      </p>
                     </div>
-                    <p className="text-muted-foreground leading-relaxed">
-                      1x Shure Axient Digital Wireless Handheld (KSM9 or Beta 58 capsule) or Sennheiser Digital 6000. Fresh AA batteries before keynote introduction.
-                    </p>
                   </div>
-
-                  {/* IEM & Monitors */}
-                  <div className="card-lift rounded-xl border border-border p-5 bg-background space-y-2">
-                    <div className="flex items-center gap-2 text-foreground font-bold text-base">
-                      <Headphones className="h-5 w-5 text-primary" />
-                      <span>In-Ear Monitors (IEM) / Stage Cues</span>
-                    </div>
-                    <p className="text-muted-foreground leading-relaxed">
-                      Dedicated stage cue feed from console / show director. Two wedge floor stage monitors angled towards emcee podium.
-                    </p>
-                  </div>
-
-                  {/* Visual Confidence */}
-                  <div className="card-lift rounded-xl border border-border p-5 bg-background space-y-2">
-                    <div className="flex items-center gap-2 text-foreground font-bold text-base">
-                      <Sliders className="h-5 w-5 text-primary" />
-                      <span>Confidence Monitors & Countdown Timer</span>
-                    </div>
-                    <p className="text-muted-foreground leading-relaxed">
-                      Two downstage DSM confidence displays: Left showing current speaker slides / teleprompter, Right showing DStimer speaker countdown clock.
-                    </p>
-                  </div>
-
-                  {/* Green Room */}
-                  <div className="card-lift rounded-xl border border-border p-5 bg-background space-y-2">
-                    <div className="flex items-center gap-2 text-foreground font-bold text-base">
-                      <Building className="h-5 w-5 text-primary" />
-                      <span>Green Room Hospitality</span>
-                    </div>
-                    <p className="text-muted-foreground leading-relaxed">
-                      Quiet backstage dressing room with mirror, steaming iron, ambient lighting, high-speed WiFi, black tea / warm water, and fresh fruit platter.
-                    </p>
-                  </div>
-                </div>
-
-                <div className="border-t border-border pt-4 flex flex-wrap justify-between items-center gap-3 text-sm">
-                  <span className="text-muted-foreground">Need custom rider adjustments or AV modifications?</span>
                   <button
                     onClick={() => setRiderModalOpen(true)}
-                    className="btn-red !py-2 !px-4 text-sm cursor-pointer"
+                    className="btn-red !py-2 !px-4 text-xs sm:text-sm cursor-pointer self-start sm:self-auto"
                   >
                     Request Technical Adjustment
                   </button>
                 </div>
 
-                {riderTickets.length > 0 && (
-                  <div className="border-t border-border pt-5 space-y-3">
-                    <h4 className="font-display text-sm font-extrabold uppercase tracking-wider text-foreground">
-                      Submitted Technical Rider Adjustments ({riderTickets.length})
-                    </h4>
-                    <div className="space-y-2.5">
-                      {riderTickets.map((tkt) => (
-                        <div
-                          key={tkt.id}
-                          className="rounded-xl border border-border bg-background p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-2 text-sm"
-                        >
-                          <div>
-                            <div className="flex items-center gap-2">
-                              <span className="font-mono text-xs font-bold text-primary">{tkt.id}</span>
-                              <span className="font-bold text-foreground">{tkt.subject}</span>
-                            </div>
-                            <p className="text-xs text-muted-foreground mt-1">{tkt.description}</p>
-                          </div>
-                          <div className="flex items-center gap-2 shrink-0">
-                            <span className="rounded-full bg-primary/15 text-primary border border-primary/30 px-2.5 py-0.5 text-xs font-bold">
-                              {tkt.priority} Priority
-                            </span>
-                            <span className="rounded-full bg-muted text-foreground border border-border px-2.5 py-0.5 text-xs font-bold">
-                              {tkt.status}
-                            </span>
-                          </div>
-                        </div>
-                      ))}
+                <div className="panel-card-body p-6 space-y-6">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm">
+                    {/* Microphones */}
+                    <div className="panel-inner-tile p-5 space-y-2">
+                      <div className="flex items-center gap-2 text-primary font-bold text-base">
+                        <Mic className="h-5 w-5" />
+                        <span>Microphone Preference</span>
+                      </div>
+                      <p className="text-muted-foreground leading-relaxed text-xs sm:text-sm">
+                        1x Shure Axient Digital Wireless Handheld (KSM9 or Beta 58 capsule) or Sennheiser Digital 6000. Fresh AA batteries before keynote introduction.
+                      </p>
+                    </div>
+
+                    {/* IEM & Monitors */}
+                    <div className="panel-inner-tile p-5 space-y-2">
+                      <div className="flex items-center gap-2 text-foreground font-bold text-base">
+                        <Headphones className="h-5 w-5 text-primary" />
+                        <span>In-Ear Monitors (IEM) / Stage Cues</span>
+                      </div>
+                      <p className="text-muted-foreground leading-relaxed text-xs sm:text-sm">
+                        Dedicated stage cue feed from console / show director. Two wedge floor stage monitors angled towards emcee podium.
+                      </p>
+                    </div>
+
+                    {/* Visual Confidence */}
+                    <div className="panel-inner-tile p-5 space-y-2">
+                      <div className="flex items-center gap-2 text-foreground font-bold text-base">
+                        <Sliders className="h-5 w-5 text-primary" />
+                        <span>Confidence Monitors &amp; Countdown Timer</span>
+                      </div>
+                      <p className="text-muted-foreground leading-relaxed text-xs sm:text-sm">
+                        Two downstage DSM confidence displays: Left showing current speaker slides / teleprompter, Right showing DStimer speaker countdown clock.
+                      </p>
+                    </div>
+
+                    {/* Green Room */}
+                    <div className="panel-inner-tile p-5 space-y-2">
+                      <div className="flex items-center gap-2 text-foreground font-bold text-base">
+                        <Building className="h-5 w-5 text-primary" />
+                        <span>Green Room Hospitality</span>
+                      </div>
+                      <p className="text-muted-foreground leading-relaxed text-xs sm:text-sm">
+                        Quiet backstage dressing room with mirror, steaming iron, ambient lighting, high-speed WiFi, black tea / warm water, and fresh fruit platter.
+                      </p>
                     </div>
                   </div>
-                )}
+
+                  {riderTickets.length > 0 && (
+                    <div className="border-t border-neutral-300 pt-5 space-y-3">
+                      <h4 className="font-display text-sm font-extrabold uppercase tracking-wider text-foreground">
+                        Submitted Technical Rider Adjustments ({riderTickets.length})
+                      </h4>
+                      <div className="space-y-2.5">
+                        {riderTickets.map((tkt) => (
+                          <div
+                            key={tkt.id}
+                            className="panel-inner-tile p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-2 text-sm"
+                          >
+                            <div>
+                              <div className="flex items-center gap-2">
+                                <span className="font-mono text-xs font-bold text-primary">{tkt.id}</span>
+                                <span className="font-bold text-foreground">{tkt.subject}</span>
+                              </div>
+                              <p className="text-xs text-muted-foreground mt-1">{tkt.description}</p>
+                            </div>
+                            <div className="flex items-center gap-2 shrink-0">
+                              <span className="rounded-full bg-primary/15 text-primary border border-primary/30 px-2.5 py-0.5 text-xs font-bold">
+                                {tkt.priority} Priority
+                              </span>
+                              <span className="rounded-full bg-muted text-foreground border border-neutral-300 px-2.5 py-0.5 text-xs font-bold">
+                                {tkt.status}
+                              </span>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </div>
               </div>
             </div>
           )}
@@ -887,41 +924,44 @@ export function OrganizerPanel() {
                 aria-label="Upload organizer photo"
               />
 
-              <div className="rounded-2xl border border-border bg-card p-6 shadow-sm space-y-6">
+              <div className="panel-card shadow-sm">
                 {/* Organizer Profile Header Card with Avatar Studio */}
-                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-border pb-5">
-                  <div className="flex items-center gap-4">
-                    <div className="relative group">
-                      {user?.avatar ? (
-                        <img
-                          src={user.avatar}
-                          alt={contactPerson}
-                          className="h-20 w-20 rounded-full object-cover border-2 border-primary shadow-lg"
-                        />
-                      ) : (
-                        <div className="grid h-20 w-20 place-items-center rounded-full bg-primary/20 text-2xl font-black text-primary border-2 border-primary/30">
-                          {contactPerson.charAt(0).toUpperCase()}
-                        </div>
-                      )}
-                      <button
-                        type="button"
-                        onClick={() => fileInputRef.current?.click()}
-                        className="absolute -bottom-1 -right-1 rounded-full bg-primary p-2 text-white shadow-md hover:scale-110 transition cursor-pointer"
-                        title="Change profile photo"
-                      >
-                        <Camera className="h-3.5 w-3.5" />
-                      </button>
-                    </div>
-
-                    <div>
-                      <div className="flex flex-wrap items-center gap-2">
-                        <h3 className="font-display text-xl font-extrabold text-foreground">{contactPerson}</h3>
-                        <span className="rounded-full bg-primary/15 text-primary border border-primary/30 px-2.5 py-0.5 text-xs font-bold">
-                          Organizer Account
-                        </span>
+                <div className="panel-card-header flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                  <div className="flex items-center gap-3">
+                    <span className="h-5 w-1.5 rounded-full bg-primary shrink-0" />
+                    <div className="flex items-center gap-3">
+                      <div className="relative group">
+                        {user?.avatar ? (
+                          <img
+                            src={user.avatar}
+                            alt={contactPerson}
+                            className="h-16 w-16 rounded-full object-cover border-2 border-primary shadow"
+                          />
+                        ) : (
+                          <div className="grid h-16 w-16 place-items-center rounded-full bg-primary/20 text-xl font-black text-primary border-2 border-primary/30">
+                            {contactPerson.charAt(0).toUpperCase()}
+                          </div>
+                        )}
+                        <button
+                          type="button"
+                          onClick={() => fileInputRef.current?.click()}
+                          className="absolute -bottom-1 -right-1 rounded-full bg-primary p-1.5 text-white shadow hover:scale-110 transition cursor-pointer"
+                          title="Change profile photo"
+                        >
+                          <Camera className="h-3 w-3" />
+                        </button>
                       </div>
-                      <p className="text-sm text-muted-foreground mt-0.5">{companyName}</p>
-                      <p className="text-sm font-mono text-primary mt-0.5">{contactEmail}</p>
+
+                      <div>
+                        <div className="flex flex-wrap items-center gap-2">
+                          <h3 className="font-display text-lg sm:text-xl font-extrabold text-foreground">{contactPerson}</h3>
+                          <span className="rounded-full bg-primary/15 text-primary border border-primary/30 px-2.5 py-0.5 text-xs font-bold">
+                            Organizer Account
+                          </span>
+                        </div>
+                        <p className="text-xs text-muted-foreground mt-0.5">{companyName}</p>
+                        <p className="text-xs font-mono text-primary mt-0.5">{contactEmail}</p>
+                      </div>
                     </div>
                   </div>
 
@@ -929,138 +969,140 @@ export function OrganizerPanel() {
                     <button
                       type="button"
                       onClick={() => fileInputRef.current?.click()}
-                      className="btn-red !py-2 !px-4 text-sm flex items-center gap-1.5"
+                      className="btn-red !py-2 !px-3.5 text-xs sm:text-sm flex items-center gap-1.5 cursor-pointer"
                     >
-                      <Upload className="h-4 w-4" /> Upload Photo
+                      <Upload className="h-3.5 w-3.5" /> Upload Photo
                     </button>
                     {user?.avatar && (
                       <button
                         type="button"
                         onClick={handleRemovePhoto}
-                        className="btn-outline !py-2 !px-3 text-sm !border-border !text-muted-foreground hover:!bg-muted"
+                        className="btn-outline !py-2 !px-3 text-xs sm:text-sm !border-neutral-300 !text-muted-foreground hover:!bg-white cursor-pointer"
                         title="Remove photo"
                       >
-                        <Trash2 className="h-4 w-4" />
+                        <Trash2 className="h-3.5 w-3.5" />
                       </button>
                     )}
                   </div>
                 </div>
 
-                <form onSubmit={handleSaveAccount} className="space-y-4 text-sm">
-                  <div>
-                    <label className="font-bold text-muted-foreground block mb-1.5">Company / Organization Legal Name</label>
-                    <input
-                      type="text"
-                      required
-                      value={companyName}
-                      onChange={(e) => setCompanyName(e.target.value)}
-                      className="w-full rounded-xl border border-input bg-background/80 py-2.5 px-3.5 text-sm text-foreground placeholder:text-muted-foreground/50 focus:border-primary focus:outline-none"
-                    />
-                  </div>
-
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div className="panel-card-body p-6 space-y-6">
+                  <form onSubmit={handleSaveAccount} className="space-y-4 text-sm">
                     <div>
-                      <label className="font-bold text-muted-foreground block mb-1.5">Primary Event Coordinator</label>
+                      <label className="font-bold text-muted-foreground block mb-1.5">Company / Organization Legal Name</label>
                       <input
                         type="text"
                         required
-                        value={contactPerson}
-                        onChange={(e) => setContactPerson(e.target.value)}
-                        className="w-full rounded-xl border border-input bg-background/80 py-2.5 px-3.5 text-sm text-foreground placeholder:text-muted-foreground/50 focus:border-primary focus:outline-none"
+                        value={companyName}
+                        onChange={(e) => setCompanyName(e.target.value)}
+                        className="w-full rounded-xl border border-neutral-300 bg-white py-2.5 px-3.5 text-sm text-foreground placeholder:text-muted-foreground/50 focus:border-primary focus:outline-none"
                       />
                     </div>
 
-                    <div>
-                      <label className="font-bold text-muted-foreground block mb-1.5">Mobile Phone (WhatsApp Enabled)</label>
-                      <input
-                        type="text"
-                        required
-                        value={contactPhone}
-                        onChange={(e) => setContactPhone(e.target.value)}
-                        className="w-full rounded-xl border border-input bg-background/80 py-2.5 px-3.5 text-sm text-foreground placeholder:text-muted-foreground/50 focus:border-primary focus:outline-none"
-                      />
-                    </div>
-                  </div>
-
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                    <div>
-                      <label className="font-bold text-muted-foreground block mb-1.5">Official Work Email Address</label>
-                      <input
-                        type="email"
-                        required
-                        value={contactEmail}
-                        onChange={(e) => setContactEmail(e.target.value)}
-                        className="w-full rounded-xl border border-input bg-background/80 py-2.5 px-3.5 text-sm text-foreground placeholder:text-muted-foreground/50 focus:border-primary focus:outline-none"
-                      />
-                    </div>
-
-                    <div>
-                      <label className="font-bold text-muted-foreground block mb-1.5">GSTIN Number (For Tax Invoices)</label>
-                      <input
-                        type="text"
-                        value={gstNumber}
-                        onChange={(e) => setGstNumber(e.target.value)}
-                        className="w-full rounded-xl border border-input bg-background/80 py-2.5 px-3.5 text-sm text-foreground font-mono placeholder:text-muted-foreground/50 focus:border-primary focus:outline-none"
-                      />
-                    </div>
-                  </div>
-
-                  <div className="pt-2">
-                    <button type="submit" className="btn-red !py-2.5 !px-5 text-sm">
-                      Save Account Changes
-                    </button>
-                  </div>
-                </form>
-
-                {/* Password / Security Section inside Account */}
-                <div className="border-t border-border pt-6 space-y-4">
-                  <div className="flex items-center gap-2.5">
-                    <KeyRound className="h-5 w-5 text-primary" />
-                    <h4 className="font-display text-lg font-extrabold text-foreground">Security & Password</h4>
-                  </div>
-                  <form onSubmit={handleUpdatePassword} className="space-y-4 text-sm">
-                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                       <div>
-                        <label className="font-bold text-muted-foreground block mb-1.5">Current Password</label>
+                        <label className="font-bold text-muted-foreground block mb-1.5">Primary Event Coordinator</label>
                         <input
-                          type="password"
+                          type="text"
                           required
-                          value={currentPassword}
-                          onChange={(e) => setCurrentPassword(e.target.value)}
-                          placeholder="••••••••"
-                          className="w-full rounded-xl border border-input bg-background/80 py-2.5 px-3.5 text-sm text-foreground focus:border-primary focus:outline-none"
+                          value={contactPerson}
+                          onChange={(e) => setContactPerson(e.target.value)}
+                          className="w-full rounded-xl border border-neutral-300 bg-white py-2.5 px-3.5 text-sm text-foreground placeholder:text-muted-foreground/50 focus:border-primary focus:outline-none"
                         />
                       </div>
+
                       <div>
-                        <label className="font-bold text-muted-foreground block mb-1.5">New Password</label>
+                        <label className="font-bold text-muted-foreground block mb-1.5">Mobile Phone (WhatsApp Enabled)</label>
                         <input
-                          type="password"
+                          type="text"
                           required
-                          value={newPassword}
-                          onChange={(e) => setNewPassword(e.target.value)}
-                          placeholder="Min 6 characters"
-                          className="w-full rounded-xl border border-input bg-background/80 py-2.5 px-3.5 text-sm text-foreground focus:border-primary focus:outline-none"
-                        />
-                      </div>
-                      <div>
-                        <label className="font-bold text-muted-foreground block mb-1.5">Confirm Password</label>
-                        <input
-                          type="password"
-                          required
-                          value={confirmPassword}
-                          onChange={(e) => setConfirmPassword(e.target.value)}
-                          placeholder="Re-enter password"
-                          className="w-full rounded-xl border border-input bg-background/80 py-2.5 px-3.5 text-sm text-foreground focus:border-primary focus:outline-none"
+                          value={contactPhone}
+                          onChange={(e) => setContactPhone(e.target.value)}
+                          className="w-full rounded-xl border border-neutral-300 bg-white py-2.5 px-3.5 text-sm text-foreground placeholder:text-muted-foreground/50 focus:border-primary focus:outline-none"
                         />
                       </div>
                     </div>
-                    <button
-                      type="submit"
-                      className="btn-red !py-2.5 !px-5 text-sm"
-                    >
-                      Update Password & Save
-                    </button>
+
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                      <div>
+                        <label className="font-bold text-muted-foreground block mb-1.5">Official Work Email Address</label>
+                        <input
+                          type="email"
+                          required
+                          value={contactEmail}
+                          onChange={(e) => setContactEmail(e.target.value)}
+                          className="w-full rounded-xl border border-neutral-300 bg-white py-2.5 px-3.5 text-sm text-foreground placeholder:text-muted-foreground/50 focus:border-primary focus:outline-none"
+                        />
+                      </div>
+
+                      <div>
+                        <label className="font-bold text-muted-foreground block mb-1.5">GSTIN Number (For Tax Invoices)</label>
+                        <input
+                          type="text"
+                          value={gstNumber}
+                          onChange={(e) => setGstNumber(e.target.value)}
+                          className="w-full rounded-xl border border-neutral-300 bg-white py-2.5 px-3.5 text-sm text-foreground font-mono placeholder:text-muted-foreground/50 focus:border-primary focus:outline-none"
+                        />
+                      </div>
+                    </div>
+
+                    <div className="pt-2">
+                      <button type="submit" className="btn-red !py-2.5 !px-5 text-sm cursor-pointer">
+                        Save Account Changes
+                      </button>
+                    </div>
                   </form>
+
+                  {/* Password / Security Section inside Account */}
+                  <div className="border-t border-neutral-300 pt-6 space-y-4">
+                    <div className="flex items-center gap-2.5">
+                      <KeyRound className="h-5 w-5 text-primary" />
+                      <h4 className="font-display text-lg font-extrabold text-foreground">Security &amp; Password</h4>
+                    </div>
+                    <form onSubmit={handleUpdatePassword} className="space-y-4 text-sm">
+                      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                        <div>
+                          <label className="font-bold text-muted-foreground block mb-1.5">Current Password</label>
+                          <input
+                            type="password"
+                            required
+                            value={currentPassword}
+                            onChange={(e) => setCurrentPassword(e.target.value)}
+                            placeholder="••••••••"
+                            className="w-full rounded-xl border border-neutral-300 bg-white py-2.5 px-3.5 text-sm text-foreground focus:border-primary focus:outline-none"
+                          />
+                        </div>
+                        <div>
+                          <label className="font-bold text-muted-foreground block mb-1.5">New Password</label>
+                          <input
+                            type="password"
+                            required
+                            value={newPassword}
+                            onChange={(e) => setNewPassword(e.target.value)}
+                            placeholder="Min 6 characters"
+                            className="w-full rounded-xl border border-neutral-300 bg-white py-2.5 px-3.5 text-sm text-foreground focus:border-primary focus:outline-none"
+                          />
+                        </div>
+                        <div>
+                          <label className="font-bold text-muted-foreground block mb-1.5">Confirm Password</label>
+                          <input
+                            type="password"
+                            required
+                            value={confirmPassword}
+                            onChange={(e) => setConfirmPassword(e.target.value)}
+                            placeholder="Re-enter password"
+                            className="w-full rounded-xl border border-neutral-300 bg-white py-2.5 px-3.5 text-sm text-foreground focus:border-primary focus:outline-none"
+                          />
+                        </div>
+                      </div>
+                      <button
+                        type="submit"
+                        className="btn-red !py-2.5 !px-5 text-sm cursor-pointer"
+                      >
+                        Update Password &amp; Save
+                      </button>
+                    </form>
+                  </div>
                 </div>
               </div>
             </div>
