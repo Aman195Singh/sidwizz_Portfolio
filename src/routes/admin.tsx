@@ -5,6 +5,16 @@ import { useAuth } from "@/lib/auth";
 import { ShieldAlert, ArrowRight } from "lucide-react";
 
 export const Route = createFileRoute("/admin")({
+  validateSearch: (search: Record<string, unknown>) => ({
+    tab: (typeof search.tab === "string" ? search.tab : "overview") as
+      | "overview"
+      | "analytics"
+      | "enquiries"
+      | "media"
+      | "account"
+      | "settings"
+      | "support",
+  }),
   head: () => ({
     meta: [
       { title: "Admin Panel — SIDD.WHIZZ Control Center" },
@@ -17,6 +27,7 @@ export const Route = createFileRoute("/admin")({
 
 function AdminRouteComponent() {
   const { user, isAuthenticated, isLoading } = useAuth();
+  const search = Route.useSearch();
   const navigate = useNavigate();
 
   // If user is not logged in as admin, show access guard with demo 1-click option
@@ -44,6 +55,6 @@ function AdminRouteComponent() {
     );
   }
 
-  return <AdminPanel />;
+  return <AdminPanel initialTab={search.tab} />;
 }
 

@@ -309,12 +309,24 @@ export function AdminPanel({ initialTab = "overview" }: { initialTab?: AdminTab 
   const [activeTab, setActiveTab] = useState<AdminTab>(initialTab);
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
+  useEffect(() => {
+    if (initialTab) {
+      setActiveTab(initialTab);
+    }
+  }, [initialTab]);
+
   // Enquiries live state synced with persistent DataStore
   const [enquiries, setEnquiries] = useState<Enquiry[]>(getStoredEnquiries);
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("All");
   const [selectedEnquiry, setSelectedEnquiry] = useState<Enquiry | null>(null);
   const [newNoteText, setNewNoteText] = useState("");
+  const [expandedBriefIds, setExpandedBriefIds] = useState<Record<string, boolean>>({});
+
+  const toggleBriefExpanded = (id: string, ev: React.MouseEvent) => {
+    ev.stopPropagation();
+    setExpandedBriefIds((prev) => ({ ...prev, [id]: !prev[id] }));
+  };
 
   // Communication draft modals
   const [emailModalEnquiry, setEmailModalEnquiry] = useState<Enquiry | null>(null);
@@ -1380,24 +1392,37 @@ https://sidwizz-portfolio.vercel.app`
               </div>
 
               {/* Search & Status Filters */}
-              <div className="flex flex-col sm:flex-row gap-3 items-stretch sm:items-center justify-between">
-                <div className="relative flex-1 max-w-md">
-                  <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+              <div className="flex flex-col lg:flex-row gap-3 items-stretch lg:items-center justify-between">
+                <div className="relative flex-1 min-w-0 max-w-full lg:max-w-md">
+                  <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none" />
                   <input
                     type="text"
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
                     placeholder="Search by event, client, organization, or city..."
-                    className="w-full rounded-xl border border-neutral-300 bg-white py-2.5 pl-10 pr-4 text-sm text-foreground placeholder:text-muted-foreground focus:border-primary focus:outline-none"
+                    aria-label="Search enquiries"
+                    className="w-full rounded-xl border border-neutral-300 bg-white py-2.5 pl-10 pr-9 text-sm text-foreground placeholder:text-muted-foreground focus:border-primary focus:outline-none focus-visible:ring-2 focus-visible:ring-primary shadow-2xs"
                   />
+                  {searchQuery && (
+                    <button
+                      type="button"
+                      onClick={() => setSearchQuery("")}
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground p-1 rounded cursor-pointer"
+                      aria-label="Clear search"
+                    >
+                      <X className="h-3.5 w-3.5" />
+                    </button>
+                  )}
                 </div>
 
-                <div className="flex flex-wrap gap-2">
+                {/* Filter buttons - single horizontally scrollable row on mobile without breaking or dropping last button */}
+                <div className="flex items-center gap-2 overflow-x-auto no-scrollbar py-1 -mx-2 px-2 sm:mx-0 sm:px-0 sm:flex-wrap">
                   {["All", "New", "In Discussion", "Confirmed", "Declined"].map((st) => (
                     <button
                       key={st}
+                      type="button"
                       onClick={() => setStatusFilter(st)}
-                      className={`rounded-lg px-3.5 py-2 text-sm font-bold transition cursor-pointer ${
+                      className={`shrink-0 rounded-lg px-3.5 py-2 text-xs sm:text-sm font-bold transition cursor-pointer min-h-[40px] flex items-center justify-center focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary ${
                         statusFilter === st
                           ? "bg-primary text-primary-foreground shadow-sm"
                           : "border border-neutral-300 bg-white text-muted-foreground hover:bg-neutral-100 hover:text-foreground"
@@ -1420,102 +1445,166 @@ https://sidwizz-portfolio.vercel.app`
                       <p className="text-sm text-muted-foreground">Try adjusting your search query or filter.</p>
                     </div>
                   ) : (
-                    filteredEnquiries.map((e) => (
-                      <div
-                        key={e.id}
-                        onClick={() => setSelectedEnquiry(e)}
-                        className={`panel-card transition cursor-pointer ${
-                          selectedEnquiry?.id === e.id
-                            ? "ring-2 ring-primary border-primary"
-                            : "hover:border-primary/50"
-                        }`}
-                      >
-                        <div className="panel-card-header flex items-start justify-between gap-3">
-                          <div className="flex items-center gap-2.5">
-                            <span className="h-5 w-1.5 rounded-full bg-primary shrink-0" />
-                            <div>
-                              <div className="flex items-center gap-2.5">
-                                <span className="font-mono text-sm font-bold text-primary">{e.id}</span>
-                                <span
-                                  className={`rounded-full px-2.5 py-0.5 text-xs font-bold ${
-                                    e.status === "New"
-                                      ? "bg-primary/20 text-primary border border-primary/30"
-                                      : e.status === "Confirmed"
-                                      ? "bg-white text-black font-bold"
-                                      : "bg-muted text-foreground border border-neutral-300"
-                                  }`}
-                                >
-                                  {e.status}
-                                </span>
-                              </div>
-                              <h4 className="font-display text-base sm:text-lg font-extrabold text-foreground mt-0.5">{e.eventName}</h4>
-                              <p className="text-xs text-muted-foreground font-medium mt-0.5">
-                                {e.clientName} • <span className="text-foreground font-semibold">{e.organization}</span>
-                              </p>
-                            </div>
-                          </div>
+                    filteredEnquiries.map((e) => {
+                      const isSelected = selectedEnquiry?.id === e.id;
+                      const isExpanded = !!expandedBriefIds[e.id];
+                      const isLongBrief = e.brief && e.brief.length > 90;
 
-                          <div className="flex flex-col items-end gap-1 text-right shrink-0">
-                            <div className="inline-flex items-center gap-1.5 rounded-lg border border-neutral-300 bg-white px-2.5 py-1 shadow-2xs">
-                              <IndianRupee className="h-3.5 w-3.5 text-primary shrink-0" />
-                              <span className="font-mono text-xs sm:text-base font-black tracking-tight text-foreground">
-                                {e.budget.replace(/^₹\s*/, "")}
+                      return (
+                        <div
+                          key={e.id}
+                          onClick={() => setSelectedEnquiry(e)}
+                          className={`panel-card transition-all duration-200 cursor-pointer p-4 sm:p-5 lg:p-6 space-y-3.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary ${
+                            isSelected
+                              ? "ring-2 ring-primary border-primary shadow-md"
+                              : "hover:border-primary/40 hover:shadow-md"
+                          }`}
+                          tabIndex={0}
+                          role="button"
+                          aria-label={`Enquiry ${e.id}: ${e.eventName}`}
+                          onKeyDown={(ev) => {
+                            if (ev.key === "Enter" || ev.key === " ") {
+                              ev.preventDefault();
+                              setSelectedEnquiry(e);
+                            }
+                          }}
+                        >
+                          {/* 1. Top Row:
+                              Desktop: Left (ID + Status) | Right (Budget + Date)
+                              Mobile / Tablet: Flex wrap without overlap */}
+                          <div className="flex flex-wrap items-center justify-between gap-2.5">
+                            {/* Left: ID + Status */}
+                            <div className="flex items-center gap-2 shrink-0">
+                              <span className="font-mono text-xs sm:text-sm font-bold text-primary tracking-wide whitespace-nowrap bg-primary/10 px-2.5 py-0.5 rounded-md border border-primary/20">
+                                {e.id}
+                              </span>
+                              <span
+                                className={`rounded-full px-2.5 py-0.5 text-xs font-bold whitespace-nowrap ${
+                                  e.status === "New"
+                                    ? "bg-primary/15 text-primary border border-primary/30"
+                                    : e.status === "Confirmed"
+                                    ? "bg-emerald-50 text-emerald-700 border border-emerald-300 font-bold"
+                                    : e.status === "In Discussion"
+                                    ? "bg-amber-50 text-amber-700 border border-amber-300"
+                                    : "bg-neutral-100 text-neutral-600 border border-neutral-300"
+                                }`}
+                              >
+                                {e.status}
                               </span>
                             </div>
-                            <div className="inline-flex items-center gap-1.5 rounded-md border border-neutral-300 bg-white/70 px-2 py-0.5 text-xs font-bold text-muted-foreground">
-                              <Calendar className="h-3 w-3 text-primary shrink-0" />
-                              <span className="font-mono tracking-wide">{e.date}</span>
+
+                            {/* Right: Budget + Event Date */}
+                            <div className="flex flex-wrap items-center gap-2 text-xs">
+                              {e.budget && (
+                                <div className="inline-flex items-center gap-1 font-mono font-bold text-foreground bg-neutral-100 px-2.5 py-1 rounded-md border border-neutral-200 shadow-2xs">
+                                  <IndianRupee className="h-3 w-3 text-primary shrink-0" />
+                                  <span className="tracking-tight whitespace-nowrap">{e.budget.replace(/^₹\s*/, "")}</span>
+                                </div>
+                              )}
+                              {e.date && (
+                                <div className="inline-flex items-center gap-1 text-xs font-medium text-muted-foreground bg-neutral-50 px-2.5 py-1 rounded-md border border-neutral-200">
+                                  <Calendar className="h-3 w-3 text-primary shrink-0" />
+                                  <span className="font-mono whitespace-nowrap">{e.date}</span>
+                                </div>
+                              )}
                             </div>
                           </div>
-                        </div>
 
-                        <div className="panel-card-body p-5">
-                          <p className="text-sm text-muted-foreground line-clamp-2">{e.brief}</p>
+                          {/* 2. Event Title: Full width, prominent typography, never competes horizontally with budget/date */}
+                          <div className="w-full min-w-0">
+                            <h4 className="font-display text-base sm:text-lg lg:text-xl font-black text-foreground tracking-tight leading-snug break-words">
+                              {e.eventName}
+                            </h4>
+                          </div>
 
-                          {/* Action buttons inside card */}
-                          <div className="mt-4 flex flex-wrap items-center justify-between gap-2 border-t border-neutral-300 pt-3">
-                            <span className="text-xs font-medium text-muted-foreground flex items-center gap-1.5">
-                              <MapPin className="h-4 w-4 text-primary" /> {e.city}
-                            </span>
+                          {/* 3. Client Information: Contact person + Organization */}
+                          <div className="flex items-center gap-1.5 flex-wrap text-xs sm:text-sm min-w-0">
+                            <span className="font-bold text-foreground whitespace-nowrap">{e.clientName}</span>
+                            <span className="text-muted-foreground/60">•</span>
+                            <span className="text-muted-foreground font-medium truncate">{e.organization}</span>
+                            {e.format && (
+                              <>
+                                <span className="text-muted-foreground/60 hidden sm:inline">•</span>
+                                <span className="text-primary font-semibold text-xs hidden sm:inline">{e.format}</span>
+                              </>
+                            )}
+                          </div>
 
-                            <div className="flex items-center gap-2">
+                          {/* 4. Description: Full-width readable text with expandable View Details */}
+                          {e.brief && (
+                            <div className="w-full text-xs sm:text-sm text-foreground/80 leading-relaxed min-w-0">
+                              <p className={isExpanded ? "break-words" : "line-clamp-2 break-words"}>
+                                {e.brief}
+                              </p>
+                              {isLongBrief && (
+                                <button
+                                  type="button"
+                                  onClick={(ev) => toggleBriefExpanded(e.id, ev)}
+                                  className="text-xs font-bold text-primary hover:underline mt-1 inline-flex items-center gap-1 cursor-pointer focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-primary"
+                                  aria-label={isExpanded ? `Show less description for ${e.id}` : `View details description for ${e.id}`}
+                                >
+                                  {isExpanded ? "Show less" : "View details →"}
+                                </button>
+                              )}
+                            </div>
+                          )}
+
+                          {/* 5. Divider */}
+                          <div className="border-t border-neutral-200 !my-3" />
+
+                          {/* 6. Bottom Row: Left (Location) | Right (WhatsApp, Call, Email actions) */}
+                          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pt-0.5">
+                            {/* Location */}
+                            <div className="flex items-center gap-1.5 text-xs sm:text-sm font-semibold text-muted-foreground min-w-0">
+                              <MapPin className="h-4 w-4 text-primary shrink-0" />
+                              <span className="truncate">{e.city || "Venue TBA"}</span>
+                            </div>
+
+                            {/* Actions: Equal widths on mobile (grid-cols-3), compact flex on desktop */}
+                            <div className="grid grid-cols-3 sm:flex sm:items-center gap-2 w-full sm:w-auto">
                               <button
+                                type="button"
                                 onClick={(ev) => {
                                   ev.stopPropagation();
                                   handleWhatsAppReply(e);
                                 }}
-                                className="flex items-center gap-1.5 rounded-lg border border-neutral-300 bg-white px-3 py-1.5 text-xs font-bold text-foreground transition-all duration-200 hover:scale-105 hover:bg-primary hover:text-white hover:border-primary active:scale-95 shadow-2xs cursor-pointer"
+                                aria-label={`Chat with ${e.clientName} on WhatsApp`}
+                                className="min-h-[44px] flex items-center justify-center gap-1.5 rounded-lg border border-neutral-300 bg-white px-3 py-2 text-xs font-bold text-foreground transition-all duration-200 hover:scale-105 hover:bg-emerald-600 hover:text-white hover:border-emerald-600 active:scale-95 shadow-2xs cursor-pointer focus-visible:ring-2 focus-visible:ring-emerald-500"
                               >
-                                <MessageCircle className="h-3.5 w-3.5" />
-                                <span>WhatsApp</span>
+                                <MessageCircle className="h-4 w-4 shrink-0 text-emerald-600 group-hover:text-white" />
+                                <span className="text-xs">WhatsApp</span>
                               </button>
 
                               <button
+                                type="button"
                                 onClick={(ev) => {
                                   ev.stopPropagation();
                                   handlePhoneCall(e);
                                 }}
-                                className="flex items-center gap-1.5 rounded-lg border border-neutral-300 bg-white px-3 py-1.5 text-xs font-bold text-foreground transition-all duration-200 hover:scale-105 hover:bg-primary hover:text-white hover:border-primary active:scale-95 shadow-2xs cursor-pointer"
+                                aria-label={`Call ${e.clientName}`}
+                                className="min-h-[44px] flex items-center justify-center gap-1.5 rounded-lg border border-neutral-300 bg-white px-3 py-2 text-xs font-bold text-foreground transition-all duration-200 hover:scale-105 hover:bg-primary hover:text-white hover:border-primary active:scale-95 shadow-2xs cursor-pointer focus-visible:ring-2 focus-visible:ring-primary"
                               >
-                                <Phone className="h-3.5 w-3.5" />
-                                <span>Call</span>
+                                <Phone className="h-4 w-4 shrink-0 text-primary" />
+                                <span className="text-xs">Call</span>
                               </button>
 
                               <button
+                                type="button"
                                 onClick={(ev) => {
                                   ev.stopPropagation();
                                   handleEmailReply(e);
                                 }}
-                                className="flex items-center gap-1.5 rounded-lg border border-neutral-300 bg-white px-3 py-1.5 text-xs font-bold text-foreground transition-all duration-200 hover:scale-105 hover:bg-primary hover:text-white hover:border-primary active:scale-95 shadow-2xs cursor-pointer"
+                                aria-label={`Email ${e.clientName}`}
+                                className="min-h-[44px] flex items-center justify-center gap-1.5 rounded-lg border border-neutral-300 bg-white px-3 py-2 text-xs font-bold text-foreground transition-all duration-200 hover:scale-105 hover:bg-primary hover:text-white hover:border-primary active:scale-95 shadow-2xs cursor-pointer focus-visible:ring-2 focus-visible:ring-primary"
                               >
-                                <Mail className="h-3.5 w-3.5" />
-                                <span>Email</span>
+                                <Mail className="h-4 w-4 shrink-0 text-primary" />
+                                <span className="text-xs">Email</span>
                               </button>
                             </div>
                           </div>
                         </div>
-                      </div>
-                    ))
+                      );
+                    })
                   )}
                 </div>
 
