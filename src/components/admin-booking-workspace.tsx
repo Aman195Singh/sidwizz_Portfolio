@@ -1347,3 +1347,4 @@ export function AdminBookingWorkspace() {
     </div>
   );
 }
+

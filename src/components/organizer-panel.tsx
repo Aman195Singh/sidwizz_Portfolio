@@ -357,7 +357,7 @@ export function OrganizerPanel() {
             }`}
           >
             <span className="flex items-center gap-3">
-              <CalendarCheck className="h-4 w-4 shrink-0" /> Booking Management
+              <CalendarCheck className="h-4 w-4 shrink-0" /> Booking
             </span>
             <span
               className={`rounded-full px-2 py-0.5 text-xs font-bold ${
