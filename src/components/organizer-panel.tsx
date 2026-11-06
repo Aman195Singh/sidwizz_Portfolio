@@ -51,8 +51,9 @@ import {
   ContractModal,
   TechnicalRiderRequestModal,
 } from "@/components/LiveBookingAndModals";
+import { OrganizerBookingWorkspace } from "@/components/organizer-booking-workspace";
 
-export type OrganizerTab = "overview" | "enquiries" | "bookings" | "events" | "account";
+export type OrganizerTab = "overview" | "booking" | "enquiries" | "bookings" | "events" | "account";
 
 interface OrgEnquiry {
   id: string;
@@ -346,6 +347,31 @@ export function OrganizerPanel() {
 
           <button
             onClick={() => {
+              setActiveTab("booking");
+              setSidebarOpen(false);
+            }}
+            className={`flex w-full items-center justify-between rounded-xl px-3.5 py-3 font-semibold transition ${
+              activeTab === "booking"
+                ? "bg-primary text-primary-foreground shadow-sm font-bold"
+                : "text-foreground/80 hover:bg-accent hover:text-foreground"
+            }`}
+          >
+            <span className="flex items-center gap-3">
+              <CalendarCheck className="h-4 w-4 shrink-0" /> Booking Management
+            </span>
+            <span
+              className={`rounded-full px-2 py-0.5 text-xs font-bold ${
+                activeTab === "booking"
+                  ? "bg-white text-primary"
+                  : "bg-primary/15 text-primary border border-primary/25"
+              }`}
+            >
+              7 Tabs
+            </span>
+          </button>
+
+          <button
+            onClick={() => {
               setActiveTab("enquiries");
               setSidebarOpen(false);
             }}
@@ -454,6 +480,7 @@ export function OrganizerPanel() {
             </button>
             <h1 className="truncate font-display text-lg font-extrabold uppercase tracking-tight text-foreground sm:text-xl">
               {activeTab === "overview" && "Organiser Overview"}
+              {activeTab === "booking" && "Host Booking & Event Operations"}
               {activeTab === "enquiries" && "My Stage Booking Enquiries"}
               {activeTab === "bookings" && "Confirmed Bookings & Contracts"}
               {activeTab === "events" && "Event Details & Host Tech Rider"}
@@ -625,6 +652,13 @@ export function OrganizerPanel() {
                 </div>
               </div>
             </div>
+          )}
+
+          {/* ========================================================= */}
+          {/* 1B. FULL BOOKING MANAGEMENT SYSTEM (Organizer 7 Tabs)     */}
+          {/* ========================================================= */}
+          {activeTab === "booking" && (
+            <OrganizerBookingWorkspace />
           )}
 
           {/* ========================================================= */}

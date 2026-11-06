@@ -63,6 +63,7 @@ import {
   Archive,
   HardDrive,
   Layers,
+  CalendarCheck,
 } from "lucide-react";
 import { useAuth } from "@/lib/auth";
 import { toast } from "sonner";
@@ -76,6 +77,7 @@ import { UniversalFileIcon, detectFileFormat } from "@/components/universal-file
 import { MediaEditorModal } from "@/components/media-editor-modal";
 import { downloadMediaAsZip } from "@/lib/zip-export";
 import { WebAnalyticsDashboard } from "@/components/web-analytics-dashboard";
+import { AdminBookingWorkspace } from "@/components/admin-booking-workspace";
 import {
   getStoredEnquiries,
   updateEnquiryStatus,
@@ -117,6 +119,7 @@ export type AdminTab =
   | "overview"
   | "analytics"
   | "enquiries"
+  | "booking"
   | "media"
   | "account"
   | "settings"
@@ -1079,6 +1082,31 @@ https://sidwizz-portfolio.vercel.app`
 
           <button
             onClick={() => {
+              setActiveTab("booking");
+              setSidebarOpen(false);
+            }}
+            className={`flex w-full items-center justify-between rounded-xl px-3.5 py-3 font-semibold transition ${
+              activeTab === "booking"
+                ? "bg-primary text-primary-foreground shadow-sm font-bold"
+                : "text-foreground/80 hover:bg-accent hover:text-foreground"
+            }`}
+          >
+            <span className="flex items-center gap-3">
+              <CalendarCheck className="h-4 w-4" /> Booking Management
+            </span>
+            <span
+              className={`rounded-full px-2 py-0.5 text-xs font-bold ${
+                activeTab === "booking"
+                  ? "bg-white text-primary"
+                  : "bg-primary/15 text-primary border border-primary/25"
+              }`}
+            >
+              8 Tabs
+            </span>
+          </button>
+
+          <button
+            onClick={() => {
               setActiveTab("media");
               setSidebarOpen(false);
             }}
@@ -1192,6 +1220,7 @@ https://sidwizz-portfolio.vercel.app`
               {activeTab === "overview" && "Dashboard Overview"}
               {activeTab === "analytics" && "Web Page Traffic & Analytics"}
               {activeTab === "enquiries" && "Client Enquiries & Fast Outreach"}
+              {activeTab === "booking" && "Role-Based Booking & Operations"}
               {activeTab === "media" && "Media Asset Library"}
               {activeTab === "account" && "Host Account & Profile Settings"}
               {activeTab === "settings" && "Website & Booking Settings"}
@@ -1888,6 +1917,13 @@ https://sidwizz-portfolio.vercel.app`
                 )}
               </div>
             </div>
+          )}
+
+          {/* ========================================================= */}
+          {/* 3B. BOOKING MANAGEMENT SYSTEM (Role-Based 8 Tabs)         */}
+          {/* ========================================================= */}
+          {activeTab === "booking" && (
+            <AdminBookingWorkspace />
           )}
 
           {/* ========================================================= */}

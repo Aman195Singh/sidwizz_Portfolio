@@ -16,10 +16,19 @@ import {
   X,
   Calendar,
   MapPin,
+  QrCode,
+  Printer,
+  Download,
+  Check,
 } from "lucide-react";
 import { useAuth } from "@/lib/auth";
 import { Logo } from "@/components/site";
 import { VipPassQrModal } from "@/components/LiveBookingAndModals";
+import {
+  getAttendeeTickets,
+  validateAndCheckInTicket,
+  type AttendeeTicketRecord,
+} from "@/lib/booking-store";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/profile")({
@@ -40,6 +49,14 @@ function ProfilePage() {
   const [activeTab, setActiveTab] = useState<"overview" | "account" | "security">("overview");
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [vipPassOpen, setVipPassOpen] = useState(false);
+  const [tickets, setTickets] = useState<AttendeeTicketRecord[]>(() => getAttendeeTickets());
+  const [selectedTicket, setSelectedTicket] = useState<AttendeeTicketRecord | null>(null);
+
+  useEffect(() => {
+    const handleSync = () => setTickets(getAttendeeTickets());
+    window.addEventListener("siddwhizz_booking_system_updated", handleSync);
+    return () => window.removeEventListener("siddwhizz_booking_system_updated", handleSync);
+  }, []);
 
   // If user is Admin or Client, route directly to their merged portal
   useEffect(() => {
@@ -450,34 +467,102 @@ function ProfilePage() {
                     </div>
                   </div>
                   <span className="rounded-full bg-primary/15 text-primary border border-primary/30 px-3 py-1 text-xs font-bold">
-                    1 Active Pass
+                    {tickets.length} Active {tickets.length === 1 ? "Pass" : "Passes"}
                   </span>
                 </div>
 
-                <div className="panel-card-body p-6">
-                  <div className="panel-inner-tile card-lift flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-                    <div className="space-y-1.5">
-                      <span className="font-mono text-sm font-bold text-primary">TICKET: PASS-2026-VIP</span>
-                      <h4 className="font-display text-xl font-extrabold text-foreground">Global FinTech Summit 2026</h4>
-                      <div className="flex flex-wrap items-center gap-4 text-sm text-muted-foreground pt-1">
-                        <span className="flex items-center gap-1.5">
-                          <Calendar className="h-4 w-4 text-primary" /> Dec 14, 2026
-                        </span>
-                        <span className="flex items-center gap-1.5">
-                          <MapPin className="h-4 w-4 text-primary" /> Jio World Convention Centre, Mumbai
-                        </span>
-                        <span className="flex items-center gap-1.5 text-foreground font-semibold">
-                          <CheckCircle2 className="h-4 w-4 text-primary" /> Emcee: Siddharth Maurya
-                        </span>
+                <div className="panel-card-body p-6 space-y-4">
+                  {tickets.map((t) => (
+                    <div
+                      key={t.ticketId}
+                      className="panel-inner-tile card-lift flex flex-col lg:flex-row lg:items-center justify-between gap-4 p-5 rounded-2xl border border-neutral-300 bg-white"
+                    >
+                      <div className="space-y-2">
+                        <div className="flex flex-wrap items-center gap-2.5">
+                          <span className="font-mono text-xs font-black text-primary bg-primary/10 border border-primary/30 px-2.5 py-0.5 rounded">
+                            {t.ticketId}
+                          </span>
+                          <span
+                            className={`rounded-full px-2.5 py-0.5 text-[11px] font-black uppercase tracking-wider ${
+                              t.status === "Checked-in"
+                                ? "bg-emerald-500/15 text-emerald-600 border border-emerald-500/30"
+                                : t.status === "Revoked"
+                                ? "bg-destructive/15 text-destructive border border-destructive/30"
+                                : "bg-primary/15 text-primary border border-primary/30"
+                            }`}
+                          >
+                            ● {t.status}
+                          </span>
+                          {t.checkedInAt && (
+                            <span className="text-[11px] font-semibold text-muted-foreground">
+                              Gate verified at {new Date(t.checkedInAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                            </span>
+                          )}
+                        </div>
+
+                        <h4 className="font-display text-xl font-extrabold text-foreground">
+                          {t.eventName}
+                        </h4>
+
+                        <div className="flex flex-wrap items-center gap-4 text-xs text-muted-foreground pt-0.5">
+                          <span className="flex items-center gap-1.5 font-medium">
+                            <Calendar className="h-3.5 w-3.5 text-primary" /> {t.eventDate}
+                          </span>
+                          <span className="flex items-center gap-1.5 font-medium">
+                            <MapPin className="h-3.5 w-3.5 text-primary" /> {t.eventVenue}
+                          </span>
+                          <span className="flex items-center gap-1.5 font-bold text-foreground">
+                            <Ticket className="h-3.5 w-3.5 text-primary" /> {t.seatZone}
+                          </span>
+                          <span className="flex items-center gap-1.5 font-medium text-muted-foreground">
+                            Delegate: <span className="font-bold text-foreground">{t.attendeeName}</span>
+                          </span>
+                        </div>
+                      </div>
+
+                      <div className="flex flex-wrap items-center gap-2 self-start lg:self-auto shrink-0 pt-2 lg:pt-0">
+                        <button
+                          onClick={() => {
+                            setSelectedTicket(t);
+                            setVipPassOpen(true);
+                          }}
+                          className="btn-red !py-2 !px-4 text-xs flex items-center gap-1.5 cursor-pointer shadow-sm"
+                        >
+                          <QrCode className="h-3.5 w-3.5" /> View QR Pass
+                        </button>
+
+                        <button
+                          onClick={() => {
+                            const res = validateAndCheckInTicket(t.ticketId);
+                            if (res.valid) {
+                              toast.success(res.message);
+                            } else {
+                              toast.info(res.message);
+                            }
+                          }}
+                          className={`btn-outline !py-2 !px-3.5 text-xs flex items-center gap-1.5 cursor-pointer ${
+                            t.status === "Checked-in"
+                              ? "!border-emerald-500 !text-emerald-700 bg-emerald-50"
+                              : "!border-neutral-300 !text-foreground hover:!bg-neutral-100"
+                          }`}
+                          title="Simulate Event Gate QR Scan"
+                        >
+                          <Check className="h-3.5 w-3.5 text-primary" />
+                          <span>{t.status === "Checked-in" ? "Scan Test: Checked-In" : "Test Gate Check-In"}</span>
+                        </button>
+
+                        <button
+                          onClick={() => {
+                            window.print();
+                          }}
+                          className="btn-outline !py-2 !px-3 text-xs !border-neutral-300 !text-foreground hover:!bg-neutral-100 cursor-pointer"
+                          title="Print or Save PDF"
+                        >
+                          <Printer className="h-3.5 w-3.5" />
+                        </button>
                       </div>
                     </div>
-                    <button
-                      onClick={() => setVipPassOpen(true)}
-                      className="btn-red !py-2.5 !px-5 text-sm self-start sm:self-auto shrink-0 cursor-pointer"
-                    >
-                      View VIP Pass (QR)
-                    </button>
-                  </div>
+                  ))}
                 </div>
               </div>
             </div>
@@ -635,9 +720,17 @@ function ProfilePage() {
 
       <VipPassQrModal
         open={vipPassOpen}
-        onClose={() => setVipPassOpen(false)}
-        passHolderName={user.name}
-        passHolderEmail={user.email}
+        onClose={() => {
+          setVipPassOpen(false);
+          setSelectedTicket(null);
+        }}
+        passId={selectedTicket?.ticketId || "SW-TKT-9904"}
+        eventName={selectedTicket?.eventName || "Annual Tech Summit 2026"}
+        attendeeName={selectedTicket?.attendeeName || user.name}
+        attendeeEmail={selectedTicket?.attendeeEmail || user.email}
+        eventDate={selectedTicket?.eventDate || "14 Dec 2026 • 09:30 AM IST"}
+        venue={selectedTicket?.eventVenue || "Jio World Convention Centre, Mumbai"}
+        seatZone={selectedTicket?.seatZone || "VIP Front Row — Stage Left"}
       />
     </div>
   );
