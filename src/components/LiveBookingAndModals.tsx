@@ -23,46 +23,79 @@ import {
 // ============================================================================
 // 1. EXECUTED STAGE CONTRACT VIEWER, PRINTABLE PDF & ADVANCE PAYMENT MODAL
 // ============================================================================
-export interface ContractModalProps {
-  isOpen: boolean;
-  onClose: () => void;
+export interface ContractBookingInfo {
+  id: string;
   contractRef: string;
   eventName: string;
-  organizerName: string;
+  clientName: string;
   organization: string;
-  eventDate: string;
-  eventTime?: string;
+  date: string;
+  time?: string;
   venue: string;
   city?: string;
+  format?: string;
   fee: string;
   advancePaid: boolean;
-  onPayAdvance?: () => Promise<void> | void;
+  gstin?: string;
+}
+
+export interface ContractModalProps {
+  isOpen?: boolean;
+  open?: boolean;
+  onClose: () => void;
+  booking?: ContractBookingInfo | null;
+  contractRef?: string;
+  eventName?: string;
+  organizerName?: string;
+  organization?: string;
+  eventDate?: string;
+  eventTime?: string;
+  venue?: string;
+  city?: string;
+  fee?: string;
+  advancePaid?: boolean;
+  onPayAdvance?: (bookingId: string) => Promise<void> | void;
 }
 
 export function ContractModal({
   isOpen,
+  open,
   onClose,
-  contractRef,
-  eventName,
-  organizerName,
-  organization,
-  eventDate,
-  eventTime = "09:00 AM - 05:30 PM IST",
-  venue,
-  city = "Mumbai",
-  fee,
-  advancePaid,
+  booking,
+  contractRef: propContractRef,
+  eventName: propEventName,
+  organizerName: propOrganizerName,
+  organization: propOrganization,
+  eventDate: propEventDate,
+  eventTime: propEventTime = "09:00 AM - 05:30 PM IST",
+  venue: propVenue,
+  city: propCity = "Mumbai",
+  fee: propFee,
+  advancePaid: propAdvancePaid,
   onPayAdvance,
 }: ContractModalProps) {
   const [paying, setPaying] = useState(false);
 
-  if (!isOpen) return null;
+  const show = isOpen ?? open ?? false;
+  if (!show) return null;
+
+  const contractRef = booking?.contractRef ?? propContractRef ?? "SW-2026-8841";
+  const eventName = booking?.eventName ?? propEventName ?? "Corporate Flagship Event";
+  const organizerName = booking?.clientName ?? propOrganizerName ?? "Event Organizer";
+  const organization = booking?.organization ?? propOrganization ?? "Partner Organization";
+  const eventDate = booking?.date ?? propEventDate ?? "Upcoming Date";
+  const eventTime = booking?.time ?? propEventTime;
+  const venue = booking?.venue ?? propVenue ?? "Main Convention Hall";
+  const city = booking?.city ?? propCity;
+  const fee = booking?.fee ?? propFee ?? "₹3,50,000";
+  const advancePaid = booking?.advancePaid ?? propAdvancePaid ?? false;
+  const bookingId = booking?.id ?? contractRef;
 
   const handleAdvanceClick = async () => {
     if (!onPayAdvance) return;
     setPaying(true);
     try {
-      await onPayAdvance();
+      await onPayAdvance(bookingId);
     } finally {
       setPaying(false);
     }
@@ -199,23 +232,34 @@ export function ContractModal({
 // 2. TECHNICAL RIDER ADJUSTMENT MODAL (/organizer -> support_tickets)
 // ============================================================================
 export interface TechnicalRiderRequestModalProps {
-  isOpen: boolean;
+  isOpen?: boolean;
+  open?: boolean;
   onClose: () => void;
-  organizerEmail: string;
+  organizerEmail?: string;
+  userEmail?: string;
   organizerName?: string;
-  onSubmitTicket: (data: {
+  organization?: string;
+  onSubmitTicket?: (data: {
     userEmail: string;
     subject: string;
     priority: "Low" | "Medium" | "High" | "Critical";
     description: string;
   }) => Promise<{ ticketId: string }> | { ticketId: string };
+  onSubmitRequest?: (data: {
+    subject: string;
+    priority: "Low" | "Medium" | "High" | "Critical";
+    description: string;
+  }) => Promise<void> | void;
 }
 
 export function TechnicalRiderRequestModal({
   isOpen,
+  open,
   onClose,
   organizerEmail,
+  userEmail,
   onSubmitTicket,
+  onSubmitRequest,
 }: TechnicalRiderRequestModalProps) {
   const [subject, setSubject] = useState("AV & Wireless Microphone Frequency Adjustment");
   const [priority, setPriority] = useState<"Low" | "Medium" | "High" | "Critical">("High");
@@ -223,20 +267,32 @@ export function TechnicalRiderRequestModal({
   const [submitting, setSubmitting] = useState(false);
   const [ticketId, setTicketId] = useState<string | null>(null);
 
-  if (!isOpen) return null;
+  const show = isOpen ?? open ?? false;
+  if (!show) return null;
+
+  const effectiveEmail = organizerEmail ?? userEmail ?? "organizer@siddwhizz.com";
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (description.trim().length < 5) return;
     setSubmitting(true);
     try {
-      const res = await onSubmitTicket({
-        userEmail: organizerEmail,
-        subject: subject.trim(),
-        priority,
-        description: description.trim(),
-      });
-      setTicketId(res.ticketId);
+      if (onSubmitTicket) {
+        const res = await onSubmitTicket({
+          userEmail: effectiveEmail,
+          subject: subject.trim(),
+          priority,
+          description: description.trim(),
+        });
+        setTicketId(res.ticketId);
+      } else if (onSubmitRequest) {
+        await onSubmitRequest({
+          subject: subject.trim(),
+          priority,
+          description: description.trim(),
+        });
+        setTicketId(`TKT-${Math.floor(1000 + Math.random() * 9000)}`);
+      }
     } finally {
       setSubmitting(false);
     }
@@ -369,29 +425,39 @@ export function TechnicalRiderRequestModal({
 // 3. INTERACTIVE VIP STAGE PASS QR CODE MODAL (/profile)
 // ============================================================================
 export interface VipPassQrModalProps {
-  isOpen: boolean;
+  isOpen?: boolean;
+  open?: boolean;
   onClose: () => void;
-  passId: string;
-  eventName: string;
-  attendeeName: string;
-  attendeeEmail: string;
-  eventDate: string;
+  passId?: string;
+  eventName?: string;
+  attendeeName?: string;
+  attendeeEmail?: string;
+  passHolderName?: string;
+  passHolderEmail?: string;
+  eventDate?: string;
   venue?: string;
   seatZone?: string;
 }
 
 export function VipPassQrModal({
   isOpen,
+  open,
   onClose,
-  passId,
-  eventName,
+  passId = "SW-VIP-2026-9904",
+  eventName = "Global FinTech Summit 2026 — Keynote & Gala",
   attendeeName,
   attendeeEmail,
-  eventDate,
+  passHolderName,
+  passHolderEmail,
+  eventDate = "14 Dec 2026 • 09:30 AM IST",
   venue = "Jio World Convention Centre, Mumbai",
   seatZone = "VIP Front Row — Stage Left",
 }: VipPassQrModalProps) {
-  if (!isOpen) return null;
+  const show = isOpen ?? open ?? false;
+  if (!show) return null;
+
+  const displayAttendeeName = attendeeName ?? passHolderName ?? "VIP Delegate";
+  const displayAttendeeEmail = attendeeEmail ?? passHolderEmail ?? "member@siddwhizz.com";
 
   return (
     <div
@@ -435,11 +501,11 @@ export function VipPassQrModal({
         <div className="rounded-2xl border border-border bg-background p-3.5 text-left space-y-2 text-xs">
           <div className="flex justify-between items-center">
             <span className="text-muted-foreground">Delegate Name:</span>
-            <span className="font-bold text-foreground">{attendeeName}</span>
+            <span className="font-bold text-foreground">{displayAttendeeName}</span>
           </div>
           <div className="flex justify-between items-center">
             <span className="text-muted-foreground">Registered Email:</span>
-            <span className="text-foreground truncate max-w-[180px] font-mono">{attendeeEmail}</span>
+            <span className="text-foreground truncate max-w-[180px] font-mono">{displayAttendeeEmail}</span>
           </div>
           <div className="flex justify-between items-center">
             <span className="text-muted-foreground">Stage Host:</span>
@@ -468,7 +534,8 @@ export function VipPassQrModal({
 // 4. HD VIDEO SHOWREEL PLAYER MODAL (Fixes static image on /portfolio & /)
 // ============================================================================
 export interface VideoShowreelModalProps {
-  isOpen: boolean;
+  isOpen?: boolean;
+  open?: boolean;
   onClose: () => void;
   title: string;
   subtitle?: string;
@@ -478,13 +545,15 @@ export interface VideoShowreelModalProps {
 
 export function VideoShowreelModal({
   isOpen,
+  open,
   onClose,
   title,
   subtitle = "Siddharth “Sid” Maurya — Live Stage Hosting & Moderation Highlight",
   duration = "04:28",
   videoUrl = "https://www.youtube.com/embed/scWpXEYZEGk?autoplay=1&rel=0",
 }: VideoShowreelModalProps) {
-  if (!isOpen) return null;
+  const show = isOpen ?? open ?? false;
+  if (!show) return null;
 
   return (
     <div
@@ -554,19 +623,26 @@ export interface CaseStudyItem {
   img: string;
   client?: string;
   city?: string;
+  location?: string;
   crowdSize?: string;
+  audience?: string;
   summary?: string;
   quote?: string;
 }
 
 export function CaseStudyModal({
+  isOpen,
+  open,
   item,
   onClose,
 }: {
+  isOpen?: boolean;
+  open?: boolean;
   item: CaseStudyItem | null;
   onClose: () => void;
 }) {
-  if (!item) return null;
+  const show = isOpen ?? open ?? Boolean(item);
+  if (!show || !item) return null;
 
   return (
     <div
@@ -655,12 +731,15 @@ export function CaseStudyModal({
 // ============================================================================
 export function PressKitModal({
   isOpen,
+  open,
   onClose,
 }: {
-  isOpen: boolean;
+  isOpen?: boolean;
+  open?: boolean;
   onClose: () => void;
 }) {
-  if (!isOpen) return null;
+  const show = isOpen ?? open ?? false;
+  if (!show) return null;
 
   return (
     <div

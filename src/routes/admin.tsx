@@ -5,15 +5,28 @@ import { useAuth } from "@/lib/auth";
 import { ShieldAlert, ArrowRight } from "lucide-react";
 
 export const Route = createFileRoute("/admin")({
-  validateSearch: (search: Record<string, unknown>) => ({
-    tab: (typeof search.tab === "string" ? search.tab : "overview") as
+  validateSearch: (
+    search: Record<string, unknown>
+  ): {
+    tab?:
       | "overview"
       | "analytics"
       | "enquiries"
       | "media"
       | "account"
       | "settings"
-      | "support",
+      | "support"
+      | undefined;
+  } => ({
+    tab: (typeof search.tab === "string" ? search.tab : undefined) as
+      | "overview"
+      | "analytics"
+      | "enquiries"
+      | "media"
+      | "account"
+      | "settings"
+      | "support"
+      | undefined,
   }),
   head: () => ({
     meta: [
@@ -55,6 +68,6 @@ function AdminRouteComponent() {
     );
   }
 
-  return <AdminPanel initialTab={search.tab} />;
+  return <AdminPanel initialTab={search.tab || "overview"} />;
 }
 

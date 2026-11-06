@@ -341,7 +341,11 @@ export function SocialAccountsManager() {
   const [formProfileUrl, setFormProfileUrl] = useState("https://www.youtube.com/@SiddharthMauryaOfficial");
   const [formAccountType, setFormAccountType] = useState<SocialAccountType>("Creator");
   const [formIsPrimaryPlatform, setFormIsPrimaryPlatform] = useState(false);
-  const [formErrors, setFormErrors] = useState<{ name?: string; username?: string; url?: string }>({});
+  const [formErrors, setFormErrors] = useState<{
+    name?: string | undefined;
+    username?: string | undefined;
+    url?: string | undefined;
+  }>({});
   const [isSaving, setIsSaving] = useState(false);
 
   // Search in View All Modal
@@ -414,7 +418,7 @@ export function SocialAccountsManager() {
 
     const urlCheck = validatePlatformUrl(formPlatform, formProfileUrl);
     if (!urlCheck.isValid) {
-      errors.url = urlCheck.error;
+      errors.url = urlCheck.error || "Invalid URL.";
     }
 
     if (Object.keys(errors).length > 0) {
@@ -457,7 +461,7 @@ export function SocialAccountsManager() {
 
   // Set as Main from Details Modal
   const handleSetMain = (acc: SocialAccount) => {
-    setSocialAccountPrimary(acc.id, true);
+    setSocialAccountPrimary(acc.id, "platform");
     toast.success(`Marked ${acc.accountName} as primary ${acc.platform} account!`);
     setSelectedAccountForDetails({
       ...acc,
@@ -994,10 +998,13 @@ export function SocialAccountsManager() {
                           disabled={index === 0}
                           onClick={() => {
                             const newOrder = [...socialAccounts];
-                            const temp = newOrder[index];
-                            newOrder[index] = newOrder[index - 1];
-                            newOrder[index - 1] = temp;
-                            reorderSocialAccounts(newOrder.map((a) => a.id));
+                            const curr = newOrder[index];
+                            const prev = newOrder[index - 1];
+                            if (curr && prev) {
+                              newOrder[index] = prev;
+                              newOrder[index - 1] = curr;
+                              reorderSocialAccounts(newOrder.map((a) => a.id));
+                            }
                           }}
                           className="p-1 rounded border border-neutral-200 bg-white disabled:opacity-30 cursor-pointer"
                           title="Move Up"
@@ -1009,10 +1016,13 @@ export function SocialAccountsManager() {
                           disabled={index === arr.length - 1}
                           onClick={() => {
                             const newOrder = [...socialAccounts];
-                            const temp = newOrder[index];
-                            newOrder[index] = newOrder[index + 1];
-                            newOrder[index + 1] = temp;
-                            reorderSocialAccounts(newOrder.map((a) => a.id));
+                            const curr = newOrder[index];
+                            const next = newOrder[index + 1];
+                            if (curr && next) {
+                              newOrder[index] = next;
+                              newOrder[index + 1] = curr;
+                              reorderSocialAccounts(newOrder.map((a) => a.id));
+                            }
                           }}
                           className="p-1 rounded border border-neutral-200 bg-white disabled:opacity-30 cursor-pointer"
                           title="Move Down"

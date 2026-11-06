@@ -1308,7 +1308,7 @@ export function OrganizerPanel() {
             userName: contactPerson,
             organization: companyName,
             subject,
-            priority,
+            priority: priority === "Critical" ? "Urgent" : priority,
             description,
           });
           setRiderTickets(getStoredTickets());

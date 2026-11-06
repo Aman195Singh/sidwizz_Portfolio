@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef, useMemo } from "react";
 import { Link, useNavigate } from "@tanstack/react-router";
 import {
   LayoutDashboard,
@@ -62,6 +62,7 @@ import {
   ChevronUp,
   Archive,
   HardDrive,
+  Layers,
 } from "lucide-react";
 import { useAuth } from "@/lib/auth";
 import { toast } from "sonner";
@@ -237,19 +238,6 @@ const INITIAL_ENQUIRIES: Enquiry[] = [
     notes: ["Flight and suite accommodation confirmed"],
   },
 ];
-
-interface MediaItem {
-  id: string;
-  title: string;
-  type: "image" | "video" | "audio" | "document";
-  category: string;
-  size: string;
-  dimensions?: string;
-  duration?: string;
-  url: string;
-  thumbnail?: string;
-  createdAt: string;
-}
 
 const INITIAL_MEDIA_ITEMS: MediaItem[] = [
   {
@@ -690,8 +678,8 @@ https://sidwizz-portfolio.vercel.app`
           ? "Soundtrack"
           : "Technical Riders",
       size: fileSizeStr,
-      dimensions: newMediaType === "image" ? "High Resolution" : undefined,
-      duration: newMediaType === "video" ? "Show Clip" : newMediaType === "audio" ? "Audio Clip" : undefined,
+      ...(newMediaType === "image" ? { dimensions: "High Resolution" } : {}),
+      ...(newMediaType === "video" ? { duration: "Show Clip" } : newMediaType === "audio" ? { duration: "Audio Clip" } : {}),
       url: selectedMediaPreview || stageBeams,
       thumbnail: finalThumbnail,
       createdAt: new Date().toISOString().split("T")[0] ?? "2026-11-05",
@@ -790,9 +778,9 @@ https://sidwizz-portfolio.vercel.app`
 
   const handleWishlistMedia = (m: MediaItem, e?: React.MouseEvent) => {
     e?.stopPropagation();
-    const updated = toggleMediaWishlist(m.id);
+    const isNowWishlisted = toggleMediaWishlist(m.id);
     setMediaItems(getStoredMedia());
-    if (updated?.isWishlist) {
+    if (isNowWishlisted) {
       toast.success(`Added "${m.title}" to your Wishlist! ⭐`);
     } else {
       toast.info(`Removed "${m.title}" from Wishlist.`);

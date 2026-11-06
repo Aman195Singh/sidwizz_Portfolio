@@ -42,12 +42,23 @@ export type SupportedFormat =
   | "HTML"
   | "OTHER";
 
-export function detectFileFormat(item: {
-  title?: string;
-  type?: string;
-  format?: string;
-  url?: string;
-}): SupportedFormat {
+export function detectFileFormat(
+  itemOrUrl?:
+    | {
+        title?: string | undefined;
+        type?: string | undefined;
+        format?: string | undefined;
+        url?: string | undefined;
+      }
+    | string,
+  titleArg?: string,
+  typeArg?: string
+): SupportedFormat {
+  const item =
+    typeof itemOrUrl === "string"
+      ? { url: itemOrUrl, title: titleArg, type: typeArg, format: undefined }
+      : itemOrUrl || {};
+
   if (item.format) {
     const f = item.format.toUpperCase().trim();
     if (f) return f as SupportedFormat;
@@ -69,13 +80,13 @@ export function detectFileFormat(item: {
   return "OTHER";
 }
 
-interface UniversalFileIconProps {
-  format?: string;
-  type?: string;
-  title?: string;
-  url?: string;
-  variant?: "badge" | "card-art" | "icon";
-  className?: string;
+export interface UniversalFileIconProps {
+  format?: string | undefined;
+  type?: string | undefined;
+  title?: string | undefined;
+  url?: string | undefined;
+  variant?: "badge" | "card-art" | "icon" | undefined;
+  className?: string | undefined;
 }
 
 export function UniversalFileIcon({
@@ -220,7 +231,17 @@ export function UniversalFileIcon({
     },
   };
 
-  const c = config[detected] || config.OTHER;
+  const fallbackConfig = {
+    bg: "bg-neutral-500/10",
+    text: "text-neutral-600",
+    border: "border-neutral-500/30",
+    badgeText: "FILE",
+    Icon: File,
+    glow: "from-neutral-500/20 to-neutral-600/5",
+    accentBg: "bg-neutral-600",
+  };
+
+  const c = config[detected] ?? fallbackConfig;
   const IconComponent = c.Icon;
 
   // 1. Badge Variant (Tiny pill overlaid on thumbnails)
@@ -283,3 +304,4 @@ export function UniversalFileIcon({
     </div>
   );
 }
+

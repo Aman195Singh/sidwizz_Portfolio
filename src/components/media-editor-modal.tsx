@@ -34,18 +34,22 @@ import { toast } from "sonner";
 import { type MediaItem, saveEditedMediaCopy } from "@/lib/data-store";
 import { UniversalFileIcon, detectFileFormat } from "@/components/universal-file-icon";
 
-interface MediaEditorModalProps {
+export interface MediaEditorModalProps {
   item: MediaItem;
-  isOpen: boolean;
+  isOpen?: boolean | undefined;
   onClose: () => void;
-  onSaved: (newItem: MediaItem) => void;
+  onSaved?: ((newItem: MediaItem) => void) | undefined;
+  onSaveCopy?: ((newItem: MediaItem) => void) | undefined;
+  onReplaceOriginal?: ((newItem: MediaItem) => void) | undefined;
 }
 
 export function MediaEditorModal({
   item,
-  isOpen,
+  isOpen = true,
   onClose,
   onSaved,
+  onSaveCopy,
+  onReplaceOriginal,
 }: MediaEditorModalProps) {
   if (!isOpen) return null;
 
@@ -148,7 +152,7 @@ export function MediaEditorModal({
           url: item.url,
           thumbnail: item.thumbnail || item.url,
           type: item.type,
-          format: item.format,
+          ...(item.format ? { format: item.format } : {}),
           size: item.size,
         },
         replace
@@ -159,7 +163,12 @@ export function MediaEditorModal({
           ? "Original media file updated with new version!"
           : "Saved as new media copy in Media Library!"
       );
-      onSaved(editedItem);
+      onSaved?.(editedItem);
+      if (replace) {
+        onReplaceOriginal?.(editedItem);
+      } else {
+        onSaveCopy?.(editedItem);
+      }
       onClose();
     } catch (err) {
       toast.error("Failed to save media changes.");
@@ -772,7 +781,7 @@ export function MediaEditorModal({
                         return;
                       }
                       setPdfPages((prev) => prev.filter((p) => p !== selectedPdfPage));
-                      setSelectedPdfPage(pdfPages[0]);
+                      setSelectedPdfPage(pdfPages[0] ?? 1);
                       toast.success(`Removed page ${selectedPdfPage}`);
                     }}
                     className="p-2 rounded-xl border border-red-300 text-red-600 hover:bg-red-50 flex items-center justify-center gap-1"
@@ -871,3 +880,4 @@ export function MediaEditorModal({
     </div>
   );
 }
+

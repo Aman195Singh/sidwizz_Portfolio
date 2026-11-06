@@ -192,3 +192,4 @@ export async function downloadMediaAsZip(
   document.body.removeChild(a);
   URL.revokeObjectURL(downloadUrl);
 }
+
