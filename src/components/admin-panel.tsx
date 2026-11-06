@@ -47,6 +47,21 @@ import {
   AlertTriangle,
   ChevronRight,
   Share2,
+  MoreVertical,
+  Heart,
+  Bookmark,
+  Eye,
+  Edit3,
+  Tag,
+  Folder,
+  Sparkles,
+  Filter,
+  CheckSquare,
+  Square,
+  ChevronDown,
+  ChevronUp,
+  Archive,
+  HardDrive,
 } from "lucide-react";
 import { useAuth } from "@/lib/auth";
 import { toast } from "sonner";
@@ -56,6 +71,9 @@ import {
   PlatformBrandIcon,
   PLATFORM_CATALOG,
 } from "@/components/social-accounts-manager";
+import { UniversalFileIcon, detectFileFormat } from "@/components/universal-file-icon";
+import { MediaEditorModal } from "@/components/media-editor-modal";
+import { downloadMediaAsZip } from "@/lib/zip-export";
 import {
   getStoredEnquiries,
   updateEnquiryStatus,
@@ -71,7 +89,15 @@ import {
   updateSiteSettings,
   getDefaultThumbnail,
   updateMediaThumbnail,
+  toggleMediaLike,
+  toggleMediaWishlist,
+  updateMediaDetails,
+  duplicateMediaItem,
+  bulkDeleteMedia,
+  bulkWishlistMedia,
+  bulkMoveMedia,
   type SupportTicket,
+  type MediaItem,
 } from "@/lib/data-store";
 import hostBowtie from "@/assets/host-bowtie.jpg";
 import hostPurple from "@/assets/host-purple.jpg";
@@ -364,6 +390,24 @@ export function AdminPanel({ initialTab = "overview" }: { initialTab?: AdminTab 
   const thumbnailInputRef = useRef<HTMLInputElement>(null);
   const uploadThumbnailInputRef = useRef<HTMLInputElement>(null);
   const [uploadMediaThumbnail, setUploadMediaThumbnail] = useState<string | null>(null);
+
+  // Enhanced Media Library states (Search, Sort, Multi-select, Wishlist, Editor, Actions)
+  const [mediaSearchQuery, setMediaSearchQuery] = useState("");
+  const [mediaSort, setMediaSort] = useState<"newest" | "oldest" | "name" | "size">("newest");
+  const [selectedMediaIds, setSelectedMediaIds] = useState<string[]>([]);
+  const [mediaActiveTab, setMediaActiveTab] = useState<"all" | "image" | "video" | "audio" | "document" | "other" | "wishlist">("all");
+  const [mediaViewMode, setMediaViewMode] = useState<"grid" | "list">("grid");
+  const [editorModalItem, setEditorModalItem] = useState<MediaItem | null>(null);
+  const [actionMenuOpenId, setActionMenuOpenId] = useState<string | null>(null);
+  const [renameModalItem, setRenameModalItem] = useState<MediaItem | null>(null);
+  const [newTitleVal, setNewTitleVal] = useState("");
+  const [tagsModalItem, setTagsModalItem] = useState<MediaItem | null>(null);
+  const [tagsVal, setTagsVal] = useState("");
+  const [folderModalItem, setFolderModalItem] = useState<MediaItem | null>(null);
+  const [folderVal, setFolderVal] = useState("Stage Assets");
+  const [detailsModalItem, setDetailsModalItem] = useState<MediaItem | null>(null);
+  const [bulkActionFolderModalOpen, setBulkActionFolderModalOpen] = useState(false);
+  const [bulkFolderVal, setBulkFolderVal] = useState("Press & Media");
 
   // Account merged state
   const [adminName, setAdminName] = useState(user?.name || "Siddharth Maurya");
@@ -719,6 +763,116 @@ https://sidwizz-portfolio.vercel.app`
     toast.success("Public media link copied to clipboard!");
   };
 
+  // Media Handlers for Multi-Select, Likes, Wishlist, Bulk Actions, Rename, Tags, Folder, Duplicate
+  const handleToggleSelectMedia = (id: string, e?: React.MouseEvent) => {
+    e?.stopPropagation();
+    setSelectedMediaIds((prev) =>
+      prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]
+    );
+  };
+
+  const handleSelectAllFilteredMedia = () => {
+    if (selectedMediaIds.length === filteredMedia.length) {
+      setSelectedMediaIds([]);
+    } else {
+      setSelectedMediaIds(filteredMedia.map((m) => m.id));
+    }
+  };
+
+  const handleLikeMedia = (m: MediaItem, e?: React.MouseEvent) => {
+    e?.stopPropagation();
+    const updated = toggleMediaLike(m.id);
+    setMediaItems(getStoredMedia());
+    if (updated?.isLiked) {
+      toast.success(`Liked "${m.title}"! ❤️`);
+    }
+  };
+
+  const handleWishlistMedia = (m: MediaItem, e?: React.MouseEvent) => {
+    e?.stopPropagation();
+    const updated = toggleMediaWishlist(m.id);
+    setMediaItems(getStoredMedia());
+    if (updated?.isWishlist) {
+      toast.success(`Added "${m.title}" to your Wishlist! ⭐`);
+    } else {
+      toast.info(`Removed "${m.title}" from Wishlist.`);
+    }
+  };
+
+  const handleBulkDownload = () => {
+    const items = mediaItems.filter((m) => selectedMediaIds.includes(m.id));
+    if (items.length === 0) {
+      toast.error("Please select at least 1 media file to download.");
+      return;
+    }
+    toast.info(`Preparing ZIP archive for ${items.length} items...`);
+    downloadMediaAsZip(items);
+  };
+
+  const handleBulkAddToWishlist = () => {
+    if (selectedMediaIds.length === 0) return;
+    bulkWishlistMedia(selectedMediaIds, true);
+    setMediaItems(getStoredMedia());
+    toast.success(`Added ${selectedMediaIds.length} items to your Wishlist!`);
+    setSelectedMediaIds([]);
+  };
+
+  const handleBulkDeleteSelected = () => {
+    if (selectedMediaIds.length === 0) return;
+    if (window.confirm(`Are you sure you want to permanently delete ${selectedMediaIds.length} selected items?`)) {
+      bulkDeleteMedia(selectedMediaIds);
+      setMediaItems(getStoredMedia());
+      setSelectedMediaIds([]);
+      toast.success("Selected items deleted permanently.");
+    }
+  };
+
+  const handleBulkMoveConfirm = () => {
+    if (selectedMediaIds.length === 0) return;
+    bulkMoveMedia(selectedMediaIds, bulkFolderVal);
+    setMediaItems(getStoredMedia());
+    toast.success(`Moved ${selectedMediaIds.length} files to folder "${bulkFolderVal}"!`);
+    setBulkActionFolderModalOpen(false);
+    setSelectedMediaIds([]);
+  };
+
+  const handleDuplicateMedia = (m: MediaItem, e?: React.MouseEvent) => {
+    e?.stopPropagation();
+    const copy = duplicateMediaItem(m.id);
+    if (copy) {
+      setMediaItems(getStoredMedia());
+      toast.success(`Created duplicate copy "${copy.title}"!`);
+    }
+  };
+
+  const handleConfirmRename = () => {
+    if (!renameModalItem || !newTitleVal.trim()) return;
+    updateMediaDetails(renameModalItem.id, { title: newTitleVal.trim() });
+    setMediaItems(getStoredMedia());
+    toast.success(`Renamed file to "${newTitleVal.trim()}"!`);
+    setRenameModalItem(null);
+  };
+
+  const handleConfirmSaveTags = () => {
+    if (!tagsModalItem) return;
+    const tagList = tagsVal
+      .split(",")
+      .map((s) => s.trim())
+      .filter(Boolean);
+    updateMediaDetails(tagsModalItem.id, { tags: tagList });
+    setMediaItems(getStoredMedia());
+    toast.success("Tags updated successfully!");
+    setTagsModalItem(null);
+  };
+
+  const handleConfirmSaveFolder = () => {
+    if (!folderModalItem) return;
+    updateMediaDetails(folderModalItem.id, { folder: folderVal.trim() });
+    setMediaItems(getStoredMedia());
+    toast.success(`File moved to folder "${folderVal.trim()}"!`);
+    setFolderModalItem(null);
+  };
+
   // Submit Developer Ticket
   const handleSubmitTicket = (e: React.FormEvent) => {
     e.preventDefault();
@@ -777,10 +931,40 @@ https://sidwizz-portfolio.vercel.app`
     return matchesSearch && matchesStatus;
   });
 
-  // Filtered media
-  const filteredMedia = mediaItems.filter((m) =>
-    mediaTypeFilter === "all" ? true : m.type === mediaTypeFilter
-  );
+  // Enhanced filtered and sorted media
+  const filteredMedia = useMemo(() => {
+    return mediaItems
+      .filter((m) => {
+        // Tab filter
+        if (mediaActiveTab === "wishlist") {
+          if (!m.isWishlist) return false;
+        } else if (mediaActiveTab !== "all") {
+          if (m.type !== mediaActiveTab) return false;
+        }
+
+        // Search query
+        if (mediaSearchQuery.trim()) {
+          const q = mediaSearchQuery.toLowerCase();
+          const matchTitle = m.title.toLowerCase().includes(q);
+          const matchCategory = m.category.toLowerCase().includes(q);
+          const matchType = m.type.toLowerCase().includes(q);
+          const matchTags = m.tags ? m.tags.some((t) => t.toLowerCase().includes(q)) : false;
+          if (!matchTitle && !matchCategory && !matchType && !matchTags) return false;
+        }
+
+        return true;
+      })
+      .sort((a, b) => {
+        if (mediaSort === "newest") return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
+        if (mediaSort === "oldest") return new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime();
+        if (mediaSort === "name") return a.title.localeCompare(b.title);
+        if (mediaSort === "size") {
+          const parseSize = (s: string) => parseFloat(s) * (s.includes("GB") ? 1024 : 1);
+          return parseSize(b.size) - parseSize(a.size);
+        }
+        return 0;
+      });
+  }, [mediaItems, mediaActiveTab, mediaSearchQuery, mediaSort]);
 
   const pendingCount = enquiries.filter((e) => e.status === "New").length;
 
@@ -1168,8 +1352,9 @@ https://sidwizz-portfolio.vercel.app`
                   </button>
                 </div>
 
-                <div className="panel-card-body p-0 sm:p-4">
-                  <div className="overflow-x-auto -mx-2 px-2 sm:mx-0 sm:px-0">
+                <div className="panel-card-body p-3 sm:p-4">
+                  {/* Desktop / Tablet Table View (hidden on mobile) */}
+                  <div className="hidden sm:block overflow-x-auto -mx-2 px-2 sm:mx-0 sm:px-0">
                     <table className="w-full min-w-[780px] text-left text-sm">
                       <thead className="border-b border-neutral-300 bg-neutral-100 font-display text-xs font-extrabold text-muted-foreground uppercase tracking-wider">
                         <tr>
@@ -1200,8 +1385,8 @@ https://sidwizz-portfolio.vercel.app`
                                 e.status === "New"
                                   ? "bg-primary/20 text-primary border border-primary/30"
                                   : e.status === "Confirmed"
-                                  ? "bg-ink text-ink-foreground font-bold"
-                                  : "bg-muted text-foreground border border-border"
+                                  ? "bg-emerald-50 text-emerald-700 border border-emerald-300 font-bold"
+                                  : "bg-neutral-100 text-neutral-600 border border-neutral-300"
                               }`}
                             >
                               {e.status}
@@ -1210,21 +1395,21 @@ https://sidwizz-portfolio.vercel.app`
                           <td className="p-3.5 text-right space-x-1.5 whitespace-nowrap">
                             <button
                               onClick={() => handleWhatsAppReply(e)}
-                              className="inline-flex items-center justify-center rounded-lg border border-border bg-card p-2 text-foreground transition-all duration-200 hover:scale-110 hover:bg-primary hover:text-white hover:border-primary active:scale-95 shadow-2xs cursor-pointer"
+                              className="inline-flex items-center justify-center rounded-lg border border-neutral-300 bg-white p-2 text-foreground transition-all duration-200 hover:scale-110 hover:bg-emerald-600 hover:text-white hover:border-emerald-600 active:scale-95 shadow-2xs cursor-pointer"
                               title="Chat on WhatsApp"
                             >
                               <MessageCircle className="h-4 w-4" />
                             </button>
                             <button
                               onClick={() => handlePhoneCall(e)}
-                              className="inline-flex items-center justify-center rounded-lg border border-border bg-card p-2 text-foreground transition-all duration-200 hover:scale-110 hover:bg-primary hover:text-white hover:border-primary active:scale-95 shadow-2xs cursor-pointer"
+                              className="inline-flex items-center justify-center rounded-lg border border-neutral-300 bg-white p-2 text-foreground transition-all duration-200 hover:scale-110 hover:bg-primary hover:text-white hover:border-primary active:scale-95 shadow-2xs cursor-pointer"
                               title="Direct Phone Call"
                             >
                               <Phone className="h-4 w-4" />
                             </button>
                             <button
                               onClick={() => handleEmailReply(e)}
-                              className="inline-flex items-center justify-center rounded-lg border border-border bg-card p-2 text-foreground transition-all duration-200 hover:scale-110 hover:bg-primary hover:text-white hover:border-primary active:scale-95 shadow-2xs cursor-pointer"
+                              className="inline-flex items-center justify-center rounded-lg border border-neutral-300 bg-white p-2 text-foreground transition-all duration-200 hover:scale-110 hover:bg-primary hover:text-white hover:border-primary active:scale-95 shadow-2xs cursor-pointer"
                               title="Send Email"
                             >
                               <Mail className="h-4 w-4" />
@@ -1232,13 +1417,86 @@ https://sidwizz-portfolio.vercel.app`
                           </td>
                         </tr>
                       ))}
-                    </tbody>
-                  </table>
+                      </tbody>
+                    </table>
+                  </div>
+
+                  {/* Mobile Card View (shown only on small screens <sm) - No wrapping or overflowing */}
+                  <div className="block sm:hidden space-y-3">
+                    {enquiries.slice(0, 4).map((e) => (
+                      <div
+                        key={e.id}
+                        className="rounded-xl border border-neutral-300 bg-white p-3.5 shadow-2xs space-y-2.5"
+                      >
+                        <div className="flex items-center justify-between gap-2">
+                          <span className="font-mono text-xs font-bold text-primary bg-primary/10 px-2 py-0.5 rounded border border-primary/20">
+                            {e.id}
+                          </span>
+                          <span
+                            className={`rounded-full px-2 py-0.5 text-[11px] font-bold ${
+                              e.status === "New"
+                                ? "bg-primary/15 text-primary border border-primary/30"
+                                : e.status === "Confirmed"
+                                ? "bg-emerald-50 text-emerald-700 border border-emerald-300"
+                                : "bg-neutral-100 text-neutral-600 border border-neutral-300"
+                            }`}
+                          >
+                            {e.status}
+                          </span>
+                        </div>
+
+                        <div>
+                          <h4 className="font-display font-extrabold text-sm text-foreground leading-snug">
+                            {e.eventName}
+                          </h4>
+                          <p className="text-xs text-muted-foreground mt-0.5">
+                            {e.clientName} • {e.organization}
+                          </p>
+                        </div>
+
+                        <div className="flex items-center justify-between text-xs text-muted-foreground pt-1 border-t border-neutral-200">
+                          <div className="flex items-center gap-1">
+                            <Calendar className="h-3 w-3 text-primary shrink-0" />
+                            <span className="font-mono">{e.date}</span>
+                            <span>•</span>
+                            <span>{e.city}</span>
+                          </div>
+                          <span className="font-mono font-bold text-foreground">{e.budget}</span>
+                        </div>
+
+                        <div className="grid grid-cols-3 gap-2 pt-1 border-t border-neutral-200">
+                          <button
+                            type="button"
+                            onClick={() => handleWhatsAppReply(e)}
+                            className="min-h-[38px] flex items-center justify-center gap-1 rounded-lg border border-neutral-300 bg-white px-2 py-1.5 text-xs font-bold text-foreground hover:bg-emerald-600 hover:text-white hover:border-emerald-600 transition shadow-2xs cursor-pointer"
+                          >
+                            <MessageCircle className="h-3.5 w-3.5 text-emerald-600 shrink-0" />
+                            <span className="text-[11px]">WhatsApp</span>
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => handlePhoneCall(e)}
+                            className="min-h-[38px] flex items-center justify-center gap-1 rounded-lg border border-neutral-300 bg-white px-2 py-1.5 text-xs font-bold text-foreground hover:bg-primary hover:text-white hover:border-primary transition shadow-2xs cursor-pointer"
+                          >
+                            <Phone className="h-3.5 w-3.5 text-primary shrink-0" />
+                            <span className="text-[11px]">Call</span>
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => handleEmailReply(e)}
+                            className="min-h-[38px] flex items-center justify-center gap-1 rounded-lg border border-neutral-300 bg-white px-2 py-1.5 text-xs font-bold text-foreground hover:bg-primary hover:text-white hover:border-primary transition shadow-2xs cursor-pointer"
+                          >
+                            <Mail className="h-3.5 w-3.5 text-primary shrink-0" />
+                            <span className="text-[11px]">Email</span>
+                          </button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
                 </div>
               </div>
             </div>
-          </div>
-        )}
+          )}
 
           {/* ========================================================= */}
           {/* 2. WEB PAGE ANALYTICS VIEW                                */}
@@ -1784,207 +2042,978 @@ https://sidwizz-portfolio.vercel.app`
           )}
 
           {/* ========================================================= */}
-          {/* 4. MEDIA FILE LIBRARY VIEW (Sorted by Type)               */}
+          {/* 4. MEDIA FILE LIBRARY VIEW (Redesigned with Editor & Tools) */}
           {/* ========================================================= */}
           {activeTab === "media" && (
             <div className="space-y-6">
-              <div>
-                <p className="eyebrow mb-1">Press & Stage Assets</p>
-                <h2 className="display text-2xl sm:text-3xl text-foreground">
-                  Media <span className="text-primary">Library</span>
-                </h2>
-              </div>
-
-              {/* Type Filter Chips + Upload Button */}
+              {/* Header: Eyebrow, Title & Storage Meter + Upload Button */}
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-                <div className="flex flex-wrap gap-2">
-                  <button
-                    onClick={() => setMediaTypeFilter("all")}
-                    className={`rounded-xl px-4 py-2 text-sm font-bold transition ${
-                      mediaTypeFilter === "all"
-                        ? "bg-primary text-primary-foreground shadow"
-                        : "border border-border bg-card text-muted-foreground hover:bg-accent hover:text-foreground"
-                    }`}
-                  >
-                    All Media ({mediaItems.length})
-                  </button>
-                  <button
-                    onClick={() => setMediaTypeFilter("image")}
-                    className={`rounded-xl px-4 py-2 text-sm font-bold flex items-center gap-1.5 transition ${
-                      mediaTypeFilter === "image"
-                        ? "bg-primary text-primary-foreground shadow"
-                        : "border border-border bg-card text-muted-foreground hover:bg-accent hover:text-foreground"
-                    }`}
-                  >
-                    <ImageIcon className="h-4 w-4" /> Stage Photos
-                  </button>
-                  <button
-                    onClick={() => setMediaTypeFilter("video")}
-                    className={`rounded-xl px-4 py-2 text-sm font-bold flex items-center gap-1.5 transition ${
-                      mediaTypeFilter === "video"
-                        ? "bg-primary text-primary-foreground shadow"
-                        : "border border-border bg-card text-muted-foreground hover:bg-accent hover:text-foreground"
-                    }`}
-                  >
-                    <Video className="h-4 w-4" /> Showreel Videos
-                  </button>
-                  <button
-                    onClick={() => setMediaTypeFilter("audio")}
-                    className={`rounded-xl px-4 py-2 text-sm font-bold flex items-center gap-1.5 transition ${
-                      mediaTypeFilter === "audio"
-                        ? "bg-primary text-primary-foreground shadow"
-                        : "border border-border bg-card text-muted-foreground hover:bg-accent hover:text-foreground"
-                    }`}
-                  >
-                    <Music className="h-4 w-4" /> Audio Intros
-                  </button>
-                  <button
-                    onClick={() => setMediaTypeFilter("document")}
-                    className={`rounded-xl px-4 py-2 text-sm font-bold flex items-center gap-1.5 transition ${
-                      mediaTypeFilter === "document"
-                        ? "bg-primary text-primary-foreground shadow"
-                        : "border border-border bg-card text-muted-foreground hover:bg-accent hover:text-foreground"
-                    }`}
-                  >
-                    <FileText className="h-4 w-4" /> Tech Riders & PDFs
-                  </button>
+                <div>
+                  <p className="eyebrow mb-1">Press, Stage &amp; Digital Assets</p>
+                  <h2 className="display text-2xl sm:text-3xl text-foreground">
+                    Media <span className="text-primary">Library</span>
+                  </h2>
                 </div>
 
-                <button
-                  onClick={() => setUploadModalOpen(true)}
-                  className="btn-red !py-2.5 !px-5 text-sm flex items-center gap-2 self-start sm:self-auto"
-                >
-                  <Plus className="h-4 w-4" /> Upload Media File
-                </button>
-              </div>
-
-              {/* Media Grid */}
-              <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-4">
-                {filteredMedia.map((m) => (
-                  <div
-                    key={m.id}
-                    onClick={() => handleOpenAssetModal(m)}
-                    className="group panel-card p-4 sm:p-5 shadow-sm hover:border-primary/50 transition-all flex flex-col justify-between cursor-pointer"
-                  >
-                    <div>
-                      {/* Media Header Badge */}
-                      <div className="flex items-center justify-between mb-3">
-                        <span
-                          className={`rounded-full px-2.5 py-0.5 text-xs font-bold uppercase ${
-                            m.type === "image"
-                              ? "bg-primary/20 text-primary border border-primary/30"
-                              : m.type === "video"
-                              ? "bg-red-500/20 text-red-500 border border-red-500/30"
-                              : m.type === "audio"
-                              ? "bg-amber-500/20 text-amber-500 border border-amber-500/30"
-                              : "bg-muted text-foreground border border-neutral-300"
-                          }`}
-                        >
-                          {m.type}
-                        </span>
-                        <span className="text-xs text-muted-foreground font-mono">{m.size}</span>
-                      </div>
-
-                      {/* Visual Media Thumbnail (Clickable to Open) */}
-                      <div className="relative h-40 w-full rounded-xl overflow-hidden bg-neutral-200 border border-neutral-300 flex items-center justify-center group/thumb mb-3">
-                        <img
-                          src={getDefaultThumbnail(m)}
-                          alt={m.title}
-                          className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
-                          onError={(ev) => {
-                            (ev.target as HTMLImageElement).src = stageBeams;
-                          }}
-                        />
-
-                        {/* Category/Type icon badge overlay */}
-                        <div className="absolute top-2 left-2 z-10">
-                          {m.type === "video" && (
-                            <span className="grid h-8 w-8 place-items-center rounded-full bg-black/60 text-white backdrop-blur shadow">
-                              <Play className="h-4 w-4 ml-0.5 fill-current" />
-                            </span>
-                          )}
-                          {m.type === "audio" && (
-                            <span className="grid h-8 w-8 place-items-center rounded-full bg-black/60 text-amber-400 backdrop-blur shadow">
-                              <Volume2 className="h-4 w-4" />
-                            </span>
-                          )}
-                          {m.type === "document" && (
-                            <span className="grid h-8 w-8 place-items-center rounded-full bg-black/60 text-white backdrop-blur shadow">
-                              <FileText className="h-4 w-4" />
-                            </span>
-                          )}
-                        </div>
-
-                        {/* Hover Click Action Overlay */}
-                        <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-                          <span className="inline-flex items-center gap-1.5 rounded-full bg-primary px-3 py-1.5 text-xs font-bold text-white shadow-xl">
-                            <Maximize2 className="h-3.5 w-3.5" /> View Asset
-                          </span>
-                        </div>
-                      </div>
-
-                      <h4 className="font-display font-bold text-sm text-foreground line-clamp-2 leading-snug group-hover:text-primary transition-colors">
-                        {m.title}
-                      </h4>
-                      <p className="text-xs text-muted-foreground mt-1">
-                        {m.category} {m.dimensions ? `• ${m.dimensions}` : m.duration ? `• ${m.duration}` : ""}
-                      </p>
-                    </div>
-
-                    {/* Card Footer: Date, Set Thumbnail, Copy Link & Delete Button */}
-                    <div className="mt-4 border-t border-neutral-300 pt-3 flex items-center justify-between gap-2">
-                      <span className="text-xs text-muted-foreground font-mono">{m.createdAt}</span>
-
-                      <div className="flex items-center gap-1">
-                        <button
-                          type="button"
-                          onClick={(ev) => {
-                            ev.stopPropagation();
-                            setThumbnailModalMedia(m);
-                            setSelectedThumbnailPreview(m.thumbnail || getDefaultThumbnail(m));
-                          }}
-                          className="inline-flex items-center gap-1 rounded-md px-2 py-1 text-xs font-bold text-muted-foreground hover:bg-white hover:text-primary transition cursor-pointer border border-transparent hover:border-neutral-300"
-                          title="Set / Change Thumbnail"
-                        >
-                          <ImagePlus className="h-3.5 w-3.5" />
-                          <span>Thumb</span>
-                        </button>
-
-                        <button
-                          type="button"
-                          onClick={(ev) => {
-                            ev.stopPropagation();
-                            handleCopyLink(m.url);
-                          }}
-                          className="inline-flex items-center gap-1 rounded-md px-2 py-1 text-xs font-bold text-muted-foreground hover:bg-white hover:text-foreground transition cursor-pointer border border-transparent hover:border-neutral-300"
-                          title="Copy Link"
-                        >
-                          <Copy className="h-3.5 w-3.5" />
-                          <span>Copy</span>
-                        </button>
-
-                        <button
-                          type="button"
-                          onClick={(ev) => handleDeleteClick(ev, m)}
-                          className="inline-flex items-center gap-1 rounded-md px-2 py-1 text-xs font-bold text-muted-foreground hover:bg-primary/20 hover:text-primary transition cursor-pointer"
-                          title="Delete Asset from Database"
-                        >
-                          <Trash2 className="h-3.5 w-3.5" />
-                        </button>
-                      </div>
+                <div className="flex items-center gap-3">
+                  {/* Storage Meter Pill */}
+                  <div className="hidden md:flex items-center gap-2 rounded-xl border border-neutral-300 bg-white px-3.5 py-2 shadow-2xs">
+                    <HardDrive className="h-4 w-4 text-primary shrink-0" />
+                    <div className="text-xs">
+                      <span className="font-bold text-foreground">12.4 GB</span>
+                      <span className="text-muted-foreground"> / 50 GB (24%)</span>
                     </div>
                   </div>
-                ))}
+
+                  <button
+                    onClick={() => setUploadModalOpen(true)}
+                    className="btn-red !py-2.5 !px-5 text-sm flex items-center gap-2 self-start sm:self-auto cursor-pointer shadow-sm"
+                  >
+                    <Plus className="h-4 w-4" /> Upload Media File
+                  </button>
+                </div>
               </div>
 
-              {/* Upload Modal with Real File Drag-and-Drop and Preview */}
+              {/* Navigation Tabs: All Media, Images, Videos, Audio, Documents, Others, Wishlist */}
+              <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar border-b border-neutral-300 pb-2 -mx-2 px-2 sm:mx-0 sm:px-0">
+                {[
+                  { id: "all", label: "All Media", count: mediaItems.length, icon: Layers },
+                  { id: "image", label: "Images", count: mediaItems.filter((m) => m.type === "image").length, icon: ImageIcon },
+                  { id: "video", label: "Videos", count: mediaItems.filter((m) => m.type === "video").length, icon: Video },
+                  { id: "audio", label: "Audio", count: mediaItems.filter((m) => m.type === "audio").length, icon: Music },
+                  { id: "document", label: "Documents", count: mediaItems.filter((m) => m.type === "document").length, icon: FileText },
+                  { id: "other", label: "Others", count: mediaItems.filter((m) => m.type === "other").length, icon: Archive },
+                  { id: "wishlist", label: "My Wishlist", count: mediaItems.filter((m) => m.isWishlist).length, icon: Heart, highlight: true },
+                ].map((tab) => {
+                  const Icon = tab.icon;
+                  const isActive = mediaActiveTab === tab.id;
+                  return (
+                    <button
+                      key={tab.id}
+                      type="button"
+                      onClick={() => {
+                        setMediaActiveTab(tab.id as any);
+                        setSelectedMediaIds([]);
+                      }}
+                      className={`shrink-0 rounded-xl px-3.5 py-2 text-xs sm:text-sm font-bold transition flex items-center gap-2 cursor-pointer ${
+                        isActive
+                          ? tab.highlight
+                            ? "bg-rose-500 text-white shadow-sm"
+                            : "bg-primary text-primary-foreground shadow-sm"
+                          : tab.highlight
+                          ? "bg-rose-50 text-rose-600 border border-rose-200 hover:bg-rose-100"
+                          : "border border-neutral-300 bg-white text-muted-foreground hover:bg-neutral-100 hover:text-foreground"
+                      }`}
+                    >
+                      <Icon className={`h-3.5 w-3.5 ${tab.highlight && !isActive ? "text-rose-500 fill-rose-500" : ""}`} />
+                      <span>{tab.label}</span>
+                      <span className={`text-[11px] px-1.5 py-0.2 rounded-full font-mono ${
+                        isActive ? "bg-black/20 text-white" : "bg-neutral-100 text-muted-foreground"
+                      }`}>
+                        {tab.count}
+                      </span>
+                    </button>
+                  );
+                })}
+              </div>
+
+              {/* Search, Sort, View Mode & Multi-Select Toolbar */}
+              <div className="flex flex-col lg:flex-row gap-3 items-stretch lg:items-center justify-between">
+                <div className="relative flex-1 min-w-0 max-w-full lg:max-w-md">
+                  <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none" />
+                  <input
+                    type="text"
+                    value={mediaSearchQuery}
+                    onChange={(e) => setMediaSearchQuery(e.target.value)}
+                    placeholder="Search by title, category, format, tags, or folder..."
+                    aria-label="Search media files"
+                    className="w-full rounded-xl border border-neutral-300 bg-white py-2.5 pl-10 pr-9 text-xs sm:text-sm text-foreground placeholder:text-muted-foreground focus:border-primary focus:outline-none focus-visible:ring-2 focus-visible:ring-primary shadow-2xs"
+                  />
+                  {mediaSearchQuery && (
+                    <button
+                      type="button"
+                      onClick={() => setMediaSearchQuery("")}
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground p-1 rounded cursor-pointer"
+                    >
+                      <X className="h-3.5 w-3.5" />
+                    </button>
+                  )}
+                </div>
+
+                <div className="flex items-center gap-2 flex-wrap">
+                  {/* Sort Dropdown */}
+                  <div className="flex items-center gap-1.5 text-xs">
+                    <span className="text-muted-foreground font-bold hidden sm:inline">Sort:</span>
+                    <select
+                      value={mediaSort}
+                      onChange={(e) => setMediaSort(e.target.value as any)}
+                      className="rounded-xl border border-neutral-300 bg-white py-2 px-3 text-xs font-bold text-foreground focus:border-primary focus:outline-none shadow-2xs cursor-pointer"
+                    >
+                      <option value="newest">Newest First</option>
+                      <option value="oldest">Oldest First</option>
+                      <option value="name">Name (A-Z)</option>
+                      <option value="size">Size (Largest)</option>
+                    </select>
+                  </div>
+
+                  {/* Multi-Select Toggle */}
+                  <button
+                    type="button"
+                    onClick={() => {
+                      if (selectedMediaIds.length > 0) {
+                        setSelectedMediaIds([]);
+                      } else {
+                        setSelectedMediaIds(filteredMedia.map((m) => m.id));
+                      }
+                    }}
+                    className={`rounded-xl px-3 py-2 text-xs font-bold transition flex items-center gap-1.5 cursor-pointer shadow-2xs border ${
+                      selectedMediaIds.length > 0
+                        ? "bg-primary text-white border-primary"
+                        : "border-neutral-300 bg-white text-muted-foreground hover:bg-neutral-100 hover:text-foreground"
+                    }`}
+                  >
+                    {selectedMediaIds.length > 0 ? (
+                      <>
+                        <CheckSquare className="h-3.5 w-3.5" />
+                        <span>{selectedMediaIds.length} Selected</span>
+                      </>
+                    ) : (
+                      <>
+                        <Square className="h-3.5 w-3.5" />
+                        <span>Select Mode</span>
+                      </>
+                    )}
+                  </button>
+
+                  {/* Grid / List Toggle */}
+                  <div className="flex items-center rounded-xl border border-neutral-300 bg-white p-0.5 shadow-2xs">
+                    <button
+                      type="button"
+                      onClick={() => setMediaViewMode("grid")}
+                      className={`p-1.5 rounded-lg transition cursor-pointer ${
+                        mediaViewMode === "grid" ? "bg-primary text-white" : "text-muted-foreground hover:text-foreground"
+                      }`}
+                      title="Grid View"
+                    >
+                      <Layers className="h-4 w-4" />
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setMediaViewMode("list")}
+                      className={`p-1.5 rounded-lg transition cursor-pointer ${
+                        mediaViewMode === "list" ? "bg-primary text-white" : "text-muted-foreground hover:text-foreground"
+                      }`}
+                      title="List View"
+                    >
+                      <FileText className="h-4 w-4" />
+                    </button>
+                  </div>
+                </div>
+              </div>
+
+              {/* Bulk Actions Floating Bar */}
+              {selectedMediaIds.length > 0 && (
+                <div className="sticky top-20 z-20 flex flex-wrap items-center justify-between gap-3 rounded-2xl border-2 border-primary/50 bg-white p-3.5 shadow-xl animate-in slide-in-from-top-2">
+                  <div className="flex items-center gap-2">
+                    <span className="font-display font-extrabold text-sm text-foreground">
+                      {selectedMediaIds.length} of {filteredMedia.length} files selected
+                    </span>
+                    <button
+                      type="button"
+                      onClick={handleSelectAllFilteredMedia}
+                      className="text-xs font-bold text-primary hover:underline ml-2 cursor-pointer"
+                    >
+                      {selectedMediaIds.length === filteredMedia.length ? "Deselect All" : "Select All"}
+                    </button>
+                  </div>
+
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <button
+                      type="button"
+                      onClick={handleBulkDownload}
+                      className="btn-red !py-1.5 !px-3 text-xs flex items-center gap-1.5 cursor-pointer shadow-sm"
+                    >
+                      <Download className="h-3.5 w-3.5" /> Download ZIP
+                    </button>
+                    <button
+                      type="button"
+                      onClick={handleBulkAddToWishlist}
+                      className="btn-outline !py-1.5 !px-3 text-xs flex items-center gap-1.5 !border-neutral-300 !text-foreground hover:!bg-neutral-100 cursor-pointer"
+                    >
+                      <Heart className="h-3.5 w-3.5 text-rose-500 fill-rose-500" /> Add to Wishlist
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setBulkActionFolderModalOpen(true)}
+                      className="btn-outline !py-1.5 !px-3 text-xs flex items-center gap-1.5 !border-neutral-300 !text-foreground hover:!bg-neutral-100 cursor-pointer"
+                    >
+                      <Folder className="h-3.5 w-3.5 text-primary" /> Move to Folder
+                    </button>
+                    <button
+                      type="button"
+                      onClick={handleBulkDeleteSelected}
+                      className="btn-outline !py-1.5 !px-3 text-xs flex items-center gap-1.5 !border-neutral-300 text-destructive hover:!bg-red-50 cursor-pointer"
+                    >
+                      <Trash2 className="h-3.5 w-3.5" /> Delete Selected
+                    </button>
+                  </div>
+                </div>
+              )}
+
+              {/* No Items Empty State */}
+              {filteredMedia.length === 0 && (
+                <div className="panel-card p-12 text-center space-y-3">
+                  <FolderOpen className="mx-auto h-12 w-12 text-muted-foreground/50" />
+                  <p className="font-display font-extrabold text-lg text-foreground">No media assets found</p>
+                  <p className="text-xs sm:text-sm text-muted-foreground max-w-md mx-auto">
+                    {mediaSearchQuery
+                      ? `No files matched "${mediaSearchQuery}". Try adjusting your keywords or clearing the filter.`
+                      : mediaActiveTab === "wishlist"
+                      ? "You haven't added any media items to your wishlist yet. Tap the heart or star on any card to save it here!"
+                      : "No files found in this category. Click '+ Upload Media File' to add stage photos, showreel videos, audio intros, or tech riders."}
+                  </p>
+                  {mediaSearchQuery && (
+                    <button
+                      type="button"
+                      onClick={() => setMediaSearchQuery("")}
+                      className="btn-outline !py-1.5 !px-4 text-xs !border-neutral-300 !text-foreground mt-2"
+                    >
+                      Clear Search Filter
+                    </button>
+                  )}
+                </div>
+              )}
+
+              {/* ------------------------------------------------------------- */}
+              {/* GRID VIEW                                                     */}
+              {/* ------------------------------------------------------------- */}
+              {mediaViewMode === "grid" && filteredMedia.length > 0 && (
+                <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-4">
+                  {filteredMedia.map((m) => {
+                    const isSelected = selectedMediaIds.includes(m.id);
+                    const format = m.format || detectFileFormat(m.url, m.title, m.type);
+                    const isActionOpen = actionMenuOpenId === m.id;
+
+                    return (
+                      <div
+                        key={m.id}
+                        className={`group panel-card p-4 sm:p-5 shadow-sm transition-all flex flex-col justify-between relative ${
+                          isSelected ? "border-primary ring-2 ring-primary/40 bg-primary/5" : "hover:border-primary/50"
+                        }`}
+                      >
+                        <div>
+                          {/* Top Row: Select Checkbox, Format Badge, Size, and Wishlist/Like */}
+                          <div className="flex items-center justify-between gap-1.5 mb-2.5">
+                            <div className="flex items-center gap-2">
+                              {/* Selection Checkbox */}
+                              <button
+                                type="button"
+                                onClick={(e) => handleToggleSelectMedia(m.id, e)}
+                                className={`h-5 w-5 rounded-md border flex items-center justify-center transition cursor-pointer ${
+                                  isSelected
+                                    ? "bg-primary border-primary text-white"
+                                    : "border-neutral-300 bg-white hover:border-primary"
+                                }`}
+                                aria-label="Select file"
+                              >
+                                {isSelected ? <Check className="h-3 w-3 stroke-[3]" /> : null}
+                              </button>
+
+                              {/* Format Badge using Universal File Icon */}
+                              <UniversalFileIcon
+                                format={format}
+                                type={m.type}
+                                variant="badge"
+                                className="scale-90 origin-left"
+                              />
+                            </div>
+
+                            <div className="flex items-center gap-1">
+                              {/* Like Button */}
+                              <button
+                                type="button"
+                                onClick={(e) => handleLikeMedia(m, e)}
+                                className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[11px] font-bold transition cursor-pointer border ${
+                                  m.isLiked
+                                    ? "bg-rose-50 text-rose-600 border-rose-300"
+                                    : "bg-white text-muted-foreground border-neutral-200 hover:text-rose-500 hover:border-rose-200"
+                                }`}
+                                title={m.isLiked ? "Liked" : "Like asset"}
+                              >
+                                <Heart className={`h-3 w-3 ${m.isLiked ? "fill-rose-500 text-rose-500" : ""}`} />
+                                <span>{m.likes || 0}</span>
+                              </button>
+
+                              {/* Wishlist Button */}
+                              <button
+                                type="button"
+                                onClick={(e) => handleWishlistMedia(m, e)}
+                                className={`p-1 rounded-full transition cursor-pointer border ${
+                                  m.isWishlist
+                                    ? "bg-amber-50 text-amber-600 border-amber-300"
+                                    : "bg-white text-muted-foreground border-neutral-200 hover:text-amber-500 hover:border-amber-200"
+                                }`}
+                                title={m.isWishlist ? "In Wishlist" : "Add to Wishlist"}
+                              >
+                                <Bookmark className={`h-3 w-3 ${m.isWishlist ? "fill-amber-500 text-amber-500" : ""}`} />
+                              </button>
+                            </div>
+                          </div>
+
+                          {/* Visual Media Thumbnail or Universal File Icon Card Art */}
+                          <div
+                            onClick={() => handleOpenAssetModal(m)}
+                            className="relative h-44 w-full rounded-xl overflow-hidden bg-neutral-100 border border-neutral-300 flex items-center justify-center group/thumb mb-3 cursor-pointer"
+                          >
+                            {m.type === "image" || (m.type === "video" && m.thumbnail) ? (
+                              <img
+                                src={m.thumbnail || getDefaultThumbnail(m)}
+                                alt={m.title}
+                                className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
+                                onError={(ev) => {
+                                  (ev.target as HTMLImageElement).src = stageBeams;
+                                }}
+                              />
+                            ) : (
+                              <UniversalFileIcon
+                                format={format}
+                                type={m.type}
+                                variant="card-art"
+                                className="w-full h-full"
+                              />
+                            )}
+
+                            {/* Play overlay for video */}
+                            {m.type === "video" && (
+                              <div className="absolute inset-0 bg-black/25 flex items-center justify-center">
+                                <span className="grid h-10 w-10 place-items-center rounded-full bg-red-600 text-white shadow-lg group-hover:scale-110 transition">
+                                  <Play className="h-5 w-5 ml-0.5 fill-current" />
+                                </span>
+                              </div>
+                            )}
+
+                            {/* Hover Action Overlay */}
+                            <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2">
+                              <span className="inline-flex items-center gap-1.5 rounded-full bg-primary px-3 py-1.5 text-xs font-bold text-white shadow-xl">
+                                <Maximize2 className="h-3.5 w-3.5" /> Preview
+                              </span>
+                            </div>
+
+                            {/* Size badge overlay at bottom right */}
+                            <span className="absolute bottom-2 right-2 rounded-md bg-black/75 px-1.5 py-0.5 text-[10px] font-mono font-bold text-white backdrop-blur">
+                              {m.size}
+                            </span>
+                          </div>
+
+                          {/* File Title */}
+                          <h4
+                            onClick={() => handleOpenAssetModal(m)}
+                            className="font-display font-bold text-sm text-foreground line-clamp-2 leading-snug group-hover:text-primary transition-colors cursor-pointer"
+                          >
+                            {m.title}
+                          </h4>
+
+                          {/* Category & Folder */}
+                          <p className="text-xs text-muted-foreground mt-1 flex items-center gap-1.5 truncate">
+                            <span>{m.category}</span>
+                            <span>•</span>
+                            <span className="text-primary font-semibold">{m.folder || "Stage Assets"}</span>
+                            {m.dimensions && <span>• {m.dimensions}</span>}
+                            {m.duration && <span>• {m.duration}</span>}
+                          </p>
+
+                          {/* Tags Pills */}
+                          {m.tags && m.tags.length > 0 && (
+                            <div className="flex flex-wrap gap-1 mt-2">
+                              {m.tags.slice(0, 3).map((t, idx) => (
+                                <span
+                                  key={idx}
+                                  className="text-[10px] font-semibold text-muted-foreground bg-neutral-100 px-1.5 py-0.2 rounded border border-neutral-200"
+                                >
+                                  #{t}
+                                </span>
+                              ))}
+                              {m.tags.length > 3 && (
+                                <span className="text-[10px] text-muted-foreground font-semibold">
+                                  +{m.tags.length - 3}
+                                </span>
+                              )}
+                            </div>
+                          )}
+                        </div>
+
+                        {/* Card Footer: Date & Unified "Actions ▾" Menu */}
+                        <div className="mt-4 border-t border-neutral-300 pt-3 flex items-center justify-between gap-2 relative">
+                          <span className="text-[11px] text-muted-foreground font-mono">
+                            {m.createdAt}
+                          </span>
+
+                          <div className="relative">
+                            <button
+                              type="button"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setActionMenuOpenId(isActionOpen ? null : m.id);
+                              }}
+                              className="inline-flex items-center gap-1 rounded-lg border border-neutral-300 bg-white px-2.5 py-1 text-xs font-bold text-foreground hover:bg-neutral-100 hover:border-primary transition cursor-pointer shadow-2xs"
+                              aria-label="Actions menu"
+                            >
+                              <span>Actions</span>
+                              <ChevronDown className="h-3.5 w-3.5 text-muted-foreground" />
+                            </button>
+
+                            {/* Dropdown Menu Desktop / Tablet */}
+                            {isActionOpen && (
+                              <>
+                                <div
+                                  className="fixed inset-0 z-30"
+                                  onClick={() => setActionMenuOpenId(null)}
+                                />
+                                <div className="absolute right-0 bottom-full mb-1 z-40 w-52 rounded-xl border border-neutral-300 bg-white shadow-2xl p-1.5 text-xs text-foreground divide-y divide-neutral-100 animate-in fade-in-50 zoom-in-95">
+                                  <div className="py-1">
+                                    <button
+                                      type="button"
+                                      onClick={() => {
+                                        setActionMenuOpenId(null);
+                                        handleOpenAssetModal(m);
+                                      }}
+                                      className="w-full text-left flex items-center gap-2 px-2.5 py-1.5 rounded-lg hover:bg-neutral-100 font-semibold cursor-pointer"
+                                    >
+                                      <Eye className="h-3.5 w-3.5 text-muted-foreground" />
+                                      <span>View / Preview</span>
+                                    </button>
+
+                                    <button
+                                      type="button"
+                                      onClick={() => {
+                                        setActionMenuOpenId(null);
+                                        setEditorModalItem(m);
+                                      }}
+                                      className="w-full text-left flex items-center gap-2 px-2.5 py-1.5 rounded-lg hover:bg-primary/10 hover:text-primary font-bold cursor-pointer"
+                                    >
+                                      <Edit3 className="h-3.5 w-3.5 text-primary" />
+                                      <span>Edit Media File</span>
+                                    </button>
+
+                                    <button
+                                      type="button"
+                                      onClick={() => {
+                                        setActionMenuOpenId(null);
+                                        setThumbnailModalMedia(m);
+                                        setSelectedThumbnailPreview(m.thumbnail || getDefaultThumbnail(m));
+                                      }}
+                                      className="w-full text-left flex items-center gap-2 px-2.5 py-1.5 rounded-lg hover:bg-neutral-100 font-semibold cursor-pointer"
+                                    >
+                                      <ImagePlus className="h-3.5 w-3.5 text-muted-foreground" />
+                                      <span>Set Custom Thumbnail</span>
+                                    </button>
+                                  </div>
+
+                                  <div className="py-1">
+                                    <button
+                                      type="button"
+                                      onClick={() => {
+                                        setActionMenuOpenId(null);
+                                        handleWishlistMedia(m);
+                                      }}
+                                      className="w-full text-left flex items-center gap-2 px-2.5 py-1.5 rounded-lg hover:bg-neutral-100 font-semibold cursor-pointer"
+                                    >
+                                      <Bookmark className="h-3.5 w-3.5 text-amber-500" />
+                                      <span>{m.isWishlist ? "Remove from Wishlist" : "Add to Wishlist"}</span>
+                                    </button>
+
+                                    <button
+                                      type="button"
+                                      onClick={() => {
+                                        setActionMenuOpenId(null);
+                                        setRenameModalItem(m);
+                                        setNewTitleVal(m.title);
+                                      }}
+                                      className="w-full text-left flex items-center gap-2 px-2.5 py-1.5 rounded-lg hover:bg-neutral-100 font-semibold cursor-pointer"
+                                    >
+                                      <Tag className="h-3.5 w-3.5 text-muted-foreground" />
+                                      <span>Rename File</span>
+                                    </button>
+
+                                    <button
+                                      type="button"
+                                      onClick={() => {
+                                        setActionMenuOpenId(null);
+                                        setTagsModalItem(m);
+                                        setTagsVal((m.tags || []).join(", "));
+                                      }}
+                                      className="w-full text-left flex items-center gap-2 px-2.5 py-1.5 rounded-lg hover:bg-neutral-100 font-semibold cursor-pointer"
+                                    >
+                                      <Tag className="h-3.5 w-3.5 text-primary" />
+                                      <span>Edit Tags &amp; Metadata</span>
+                                    </button>
+
+                                    <button
+                                      type="button"
+                                      onClick={() => {
+                                        setActionMenuOpenId(null);
+                                        setFolderModalItem(m);
+                                        setFolderVal(m.folder || "Stage Assets");
+                                      }}
+                                      className="w-full text-left flex items-center gap-2 px-2.5 py-1.5 rounded-lg hover:bg-neutral-100 font-semibold cursor-pointer"
+                                    >
+                                      <Folder className="h-3.5 w-3.5 text-muted-foreground" />
+                                      <span>Move to Folder</span>
+                                    </button>
+
+                                    <button
+                                      type="button"
+                                      onClick={() => {
+                                        setActionMenuOpenId(null);
+                                        handleDuplicateMedia(m);
+                                      }}
+                                      className="w-full text-left flex items-center gap-2 px-2.5 py-1.5 rounded-lg hover:bg-neutral-100 font-semibold cursor-pointer"
+                                    >
+                                      <Copy className="h-3.5 w-3.5 text-muted-foreground" />
+                                      <span>Duplicate Copy</span>
+                                    </button>
+                                  </div>
+
+                                  <div className="py-1">
+                                    <button
+                                      type="button"
+                                      onClick={() => {
+                                        setActionMenuOpenId(null);
+                                        handleCopyLink(m.url);
+                                      }}
+                                      className="w-full text-left flex items-center gap-2 px-2.5 py-1.5 rounded-lg hover:bg-neutral-100 font-semibold cursor-pointer"
+                                    >
+                                      <Copy className="h-3.5 w-3.5 text-muted-foreground" />
+                                      <span>Copy Public Link</span>
+                                    </button>
+
+                                    <a
+                                      href={m.url}
+                                      download={m.title}
+                                      onClick={() => setActionMenuOpenId(null)}
+                                      className="w-full text-left flex items-center gap-2 px-2.5 py-1.5 rounded-lg hover:bg-neutral-100 font-semibold cursor-pointer"
+                                    >
+                                      <Download className="h-3.5 w-3.5 text-muted-foreground" />
+                                      <span>Download File</span>
+                                    </a>
+
+                                    <button
+                                      type="button"
+                                      onClick={(e) => {
+                                        setActionMenuOpenId(null);
+                                        handleDeleteClick(e, m);
+                                      }}
+                                      className="w-full text-left flex items-center gap-2 px-2.5 py-1.5 rounded-lg hover:bg-red-50 text-destructive font-bold cursor-pointer"
+                                    >
+                                      <Trash2 className="h-3.5 w-3.5 text-destructive" />
+                                      <span>Delete Asset</span>
+                                    </button>
+                                  </div>
+                                </div>
+                              </>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+
+              {/* ------------------------------------------------------------- */}
+              {/* LIST VIEW                                                     */}
+              {/* ------------------------------------------------------------- */}
+              {mediaViewMode === "list" && filteredMedia.length > 0 && (
+                <div className="panel-card overflow-hidden shadow-sm">
+                  <div className="overflow-x-auto">
+                    <table className="w-full min-w-[760px] text-left text-xs sm:text-sm">
+                      <thead className="border-b border-neutral-300 bg-neutral-100 font-display text-xs font-extrabold text-muted-foreground uppercase tracking-wider">
+                        <tr>
+                          <th className="p-3 w-10 text-center">
+                            <button
+                              type="button"
+                              onClick={handleSelectAllFilteredMedia}
+                              className={`h-4 w-4 rounded border inline-flex items-center justify-center ${
+                                selectedMediaIds.length === filteredMedia.length
+                                  ? "bg-primary border-primary text-white"
+                                  : "border-neutral-300 bg-white"
+                              }`}
+                            >
+                              {selectedMediaIds.length === filteredMedia.length && <Check className="h-3 w-3" />}
+                            </button>
+                          </th>
+                          <th className="p-3">Asset</th>
+                          <th className="p-3">Category &amp; Folder</th>
+                          <th className="p-3">Format / Size</th>
+                          <th className="p-3">Date</th>
+                          <th className="p-3 text-center">Likes</th>
+                          <th className="p-3 text-right">Actions</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-neutral-200">
+                        {filteredMedia.map((m) => {
+                          const isSelected = selectedMediaIds.includes(m.id);
+                          const format = m.format || detectFileFormat(m.url, m.title, m.type);
+                          return (
+                            <tr key={m.id} className={`hover:bg-neutral-50 transition ${isSelected ? "bg-primary/5" : ""}`}>
+                              <td className="p-3 text-center">
+                                <button
+                                  type="button"
+                                  onClick={(e) => handleToggleSelectMedia(m.id, e)}
+                                  className={`h-4 w-4 rounded border inline-flex items-center justify-center cursor-pointer ${
+                                    isSelected
+                                      ? "bg-primary border-primary text-white"
+                                      : "border-neutral-300 bg-white"
+                                  }`}
+                                >
+                                  {isSelected && <Check className="h-3 w-3" />}
+                                </button>
+                              </td>
+                              <td className="p-3">
+                                <div className="flex items-center gap-3">
+                                  <div
+                                    onClick={() => handleOpenAssetModal(m)}
+                                    className="h-10 w-12 rounded-lg overflow-hidden border border-neutral-200 bg-neutral-100 shrink-0 cursor-pointer"
+                                  >
+                                    {m.type === "image" || m.thumbnail ? (
+                                      <img src={m.thumbnail || getDefaultThumbnail(m)} alt={m.title} className="h-full w-full object-cover" />
+                                    ) : (
+                                      <UniversalFileIcon format={format} type={m.type} variant="icon" className="scale-75 origin-top-left" />
+                                    )}
+                                  </div>
+                                  <div className="min-w-0">
+                                    <p
+                                      onClick={() => handleOpenAssetModal(m)}
+                                      className="font-bold text-foreground hover:text-primary transition truncate cursor-pointer"
+                                    >
+                                      {m.title}
+                                    </p>
+                                    <p className="text-xs text-muted-foreground truncate">
+                                      {m.dimensions || m.duration || "Standard Media"}
+                                    </p>
+                                  </div>
+                                </div>
+                              </td>
+                              <td className="p-3">
+                                <span className="font-semibold text-foreground">{m.category}</span>
+                                <p className="text-xs text-primary font-bold">{m.folder || "Stage Assets"}</p>
+                              </td>
+                              <td className="p-3 font-mono text-xs">
+                                <span className="font-bold uppercase text-foreground">{format}</span>
+                                <span className="text-muted-foreground ml-1">({m.size})</span>
+                              </td>
+                              <td className="p-3 font-mono text-xs text-muted-foreground">
+                                {m.createdAt}
+                              </td>
+                              <td className="p-3 text-center">
+                                <button
+                                  type="button"
+                                  onClick={(e) => handleLikeMedia(m, e)}
+                                  className="inline-flex items-center gap-1 text-xs text-rose-500 font-bold hover:scale-110 transition cursor-pointer"
+                                >
+                                  <Heart className={`h-3 w-3 ${m.isLiked ? "fill-rose-500" : ""}`} />
+                                  <span>{m.likes || 0}</span>
+                                </button>
+                              </td>
+                              <td className="p-3 text-right space-x-1 whitespace-nowrap">
+                                <button
+                                  type="button"
+                                  onClick={() => setEditorModalItem(m)}
+                                  className="p-1.5 rounded-lg border border-neutral-300 bg-white hover:bg-primary/10 hover:text-primary transition shadow-2xs"
+                                  title="Edit Media"
+                                >
+                                  <Edit3 className="h-3.5 w-3.5" />
+                                </button>
+                                <button
+                                  type="button"
+                                  onClick={() => handleOpenAssetModal(m)}
+                                  className="p-1.5 rounded-lg border border-neutral-300 bg-white hover:bg-neutral-100 transition shadow-2xs"
+                                  title="Preview"
+                                >
+                                  <Eye className="h-3.5 w-3.5" />
+                                </button>
+                                <button
+                                  type="button"
+                                  onClick={(e) => handleDeleteClick(e, m)}
+                                  className="p-1.5 rounded-lg border border-neutral-300 bg-white hover:bg-red-50 text-destructive transition shadow-2xs"
+                                  title="Delete"
+                                >
+                                  <Trash2 className="h-3.5 w-3.5" />
+                                </button>
+                              </td>
+                            </tr>
+                          );
+                        })}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              )}
+
+              {/* ------------------------------------------------------------- */}
+              {/* MODALS: EDITOR, RENAME, TAGS, FOLDER, BULK FOLDER             */}
+              {/* ------------------------------------------------------------- */}
+
+              {/* 1. Multi-Type Unified Media Editor Modal */}
+              {editorModalItem && (
+                <MediaEditorModal
+                  item={editorModalItem}
+                  onClose={() => setEditorModalItem(null)}
+                  onSaveCopy={() => {
+                    setMediaItems(getStoredMedia());
+                    setEditorModalItem(null);
+                  }}
+                  onReplaceOriginal={() => {
+                    setMediaItems(getStoredMedia());
+                    setEditorModalItem(null);
+                  }}
+                />
+              )}
+
+              {/* 2. Rename File Modal */}
+              {renameModalItem && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-4 backdrop-blur-sm animate-in fade-in-50">
+                  <div className="w-full max-w-md rounded-2xl border border-neutral-300 bg-white p-6 shadow-2xl space-y-4">
+                    <div className="flex items-center justify-between border-b border-neutral-200 pb-3">
+                      <div className="flex items-center gap-2">
+                        <Tag className="h-4 w-4 text-primary" />
+                        <h3 className="font-display text-base font-extrabold text-foreground">Rename Media File</h3>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => setRenameModalItem(null)}
+                        className="p-1 rounded-lg hover:bg-neutral-100 text-muted-foreground"
+                      >
+                        <X className="h-4 w-4" />
+                      </button>
+                    </div>
+
+                    <div className="space-y-1.5">
+                      <label className="text-xs font-bold uppercase text-muted-foreground">New File Title *</label>
+                      <input
+                        type="text"
+                        value={newTitleVal}
+                        onChange={(e) => setNewTitleVal(e.target.value)}
+                        className="w-full rounded-xl border border-neutral-300 px-3.5 py-2.5 text-sm font-semibold text-foreground focus:border-primary focus:outline-none"
+                        autoFocus
+                      />
+                    </div>
+
+                    <div className="flex items-center justify-end gap-2 pt-2 border-t border-neutral-200">
+                      <button
+                        type="button"
+                        onClick={() => setRenameModalItem(null)}
+                        className="btn-outline !py-2 !px-4 text-xs"
+                      >
+                        Cancel
+                      </button>
+                      <button
+                        type="button"
+                        onClick={handleConfirmRename}
+                        className="btn-red !py-2 !px-5 text-xs font-bold"
+                      >
+                        Save Rename
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* 3. Edit Tags & Metadata Modal */}
+              {tagsModalItem && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-4 backdrop-blur-sm animate-in fade-in-50">
+                  <div className="w-full max-w-md rounded-2xl border border-neutral-300 bg-white p-6 shadow-2xl space-y-4">
+                    <div className="flex items-center justify-between border-b border-neutral-200 pb-3">
+                      <div className="flex items-center gap-2">
+                        <Tag className="h-4 w-4 text-primary" />
+                        <h3 className="font-display text-base font-extrabold text-foreground">Edit File Tags</h3>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => setTagsModalItem(null)}
+                        className="p-1 rounded-lg hover:bg-neutral-100 text-muted-foreground"
+                      >
+                        <X className="h-4 w-4" />
+                      </button>
+                    </div>
+
+                    <div className="space-y-1.5">
+                      <label className="text-xs font-bold uppercase text-muted-foreground">Tags (comma-separated):</label>
+                      <input
+                        type="text"
+                        value={tagsVal}
+                        onChange={(e) => setTagsVal(e.target.value)}
+                        placeholder="e.g. Stage, Keynote, Corporate, Gala, HighRes"
+                        className="w-full rounded-xl border border-neutral-300 px-3.5 py-2.5 text-xs font-semibold text-foreground focus:border-primary focus:outline-none"
+                      />
+                    </div>
+
+                    <div className="space-y-1">
+                      <span className="text-[11px] font-bold text-muted-foreground">Quick Suggestions:</span>
+                      <div className="flex flex-wrap gap-1.5">
+                        {["StageMoments", "TechSummit", "Showreel", "Headshot", "CorporateGala", "4KMaster", "Official"].map((sug) => (
+                          <button
+                            key={sug}
+                            type="button"
+                            onClick={() => {
+                              const existing = tagsVal.split(",").map((s) => s.trim()).filter(Boolean);
+                              if (!existing.includes(sug)) {
+                                setTagsVal(existing.concat(sug).join(", "));
+                              }
+                            }}
+                            className="text-[10px] font-bold px-2 py-0.5 rounded-full border border-neutral-300 bg-neutral-100 hover:border-primary text-foreground"
+                          >
+                            +{sug}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+
+                    <div className="flex items-center justify-end gap-2 pt-2 border-t border-neutral-200">
+                      <button
+                        type="button"
+                        onClick={() => setTagsModalItem(null)}
+                        className="btn-outline !py-2 !px-4 text-xs"
+                      >
+                        Cancel
+                      </button>
+                      <button
+                        type="button"
+                        onClick={handleConfirmSaveTags}
+                        className="btn-red !py-2 !px-5 text-xs font-bold"
+                      >
+                        Save Tags
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* 4. Move to Folder Modal */}
+              {folderModalItem && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-4 backdrop-blur-sm animate-in fade-in-50">
+                  <div className="w-full max-w-md rounded-2xl border border-neutral-300 bg-white p-6 shadow-2xl space-y-4">
+                    <div className="flex items-center justify-between border-b border-neutral-200 pb-3">
+                      <div className="flex items-center gap-2">
+                        <Folder className="h-4 w-4 text-primary" />
+                        <h3 className="font-display text-base font-extrabold text-foreground">Move to Folder</h3>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => setFolderModalItem(null)}
+                        className="p-1 rounded-lg hover:bg-neutral-100 text-muted-foreground"
+                      >
+                        <X className="h-4 w-4" />
+                      </button>
+                    </div>
+
+                    <div className="space-y-1.5">
+                      <label className="text-xs font-bold uppercase text-muted-foreground">Select or Type Folder Name:</label>
+                      <select
+                        value={folderVal}
+                        onChange={(e) => setFolderVal(e.target.value)}
+                        className="w-full rounded-xl border border-neutral-300 px-3.5 py-2.5 text-xs font-bold text-foreground focus:border-primary focus:outline-none mb-2"
+                      >
+                        <option value="Stage Assets">Stage Assets</option>
+                        <option value="Showreels">Showreels</option>
+                        <option value="Press & Media">Press &amp; Media</option>
+                        <option value="Riders & Tech">Riders &amp; Tech</option>
+                        <option value="Brand Kits">Brand Kits</option>
+                        <option value="Archive">Archive</option>
+                      </select>
+                      <input
+                        type="text"
+                        value={folderVal}
+                        onChange={(e) => setFolderVal(e.target.value)}
+                        placeholder="Or custom folder name..."
+                        className="w-full rounded-xl border border-neutral-300 px-3.5 py-2 text-xs text-foreground focus:border-primary focus:outline-none"
+                      />
+                    </div>
+
+                    <div className="flex items-center justify-end gap-2 pt-2 border-t border-neutral-200">
+                      <button
+                        type="button"
+                        onClick={() => setFolderModalItem(null)}
+                        className="btn-outline !py-2 !px-4 text-xs"
+                      >
+                        Cancel
+                      </button>
+                      <button
+                        type="button"
+                        onClick={handleConfirmSaveFolder}
+                        className="btn-red !py-2 !px-5 text-xs font-bold"
+                      >
+                        Move File
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* 5. Bulk Move to Folder Modal */}
+              {bulkActionFolderModalOpen && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-4 backdrop-blur-sm animate-in fade-in-50">
+                  <div className="w-full max-w-md rounded-2xl border border-neutral-300 bg-white p-6 shadow-2xl space-y-4">
+                    <div className="flex items-center justify-between border-b border-neutral-200 pb-3">
+                      <div className="flex items-center gap-2">
+                        <Folder className="h-4 w-4 text-primary" />
+                        <h3 className="font-display text-base font-extrabold text-foreground">
+                          Move {selectedMediaIds.length} Files to Folder
+                        </h3>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => setBulkActionFolderModalOpen(false)}
+                        className="p-1 rounded-lg hover:bg-neutral-100 text-muted-foreground"
+                      >
+                        <X className="h-4 w-4" />
+                      </button>
+                    </div>
+
+                    <div className="space-y-1.5">
+                      <label className="text-xs font-bold uppercase text-muted-foreground">Destination Folder:</label>
+                      <select
+                        value={bulkFolderVal}
+                        onChange={(e) => setBulkFolderVal(e.target.value)}
+                        className="w-full rounded-xl border border-neutral-300 px-3.5 py-2.5 text-xs font-bold text-foreground focus:border-primary focus:outline-none"
+                      >
+                        <option value="Stage Assets">Stage Assets</option>
+                        <option value="Showreels">Showreels</option>
+                        <option value="Press & Media">Press &amp; Media</option>
+                        <option value="Riders & Tech">Riders &amp; Tech</option>
+                        <option value="Brand Kits">Brand Kits</option>
+                        <option value="Archive">Archive</option>
+                      </select>
+                    </div>
+
+                    <div className="flex items-center justify-end gap-2 pt-2 border-t border-neutral-200">
+                      <button
+                        type="button"
+                        onClick={() => setBulkActionFolderModalOpen(false)}
+                        className="btn-outline !py-2 !px-4 text-xs"
+                      >
+                        Cancel
+                      </button>
+                      <button
+                        type="button"
+                        onClick={handleBulkMoveConfirm}
+                        className="btn-red !py-2 !px-5 text-xs font-bold"
+                      >
+                        Move Selected Files
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* 6. Upload Modal with Real File Drag-and-Drop and Preview */}
               {uploadModalOpen && (
                 <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-4 backdrop-blur-sm">
-                  <div className="w-full max-w-lg rounded-2xl border border-border bg-card p-6 shadow-2xl space-y-4">
-                    <div className="flex items-center justify-between border-b border-border pb-3">
+                  <div className="w-full max-w-lg rounded-2xl border border-neutral-300 bg-white p-6 shadow-2xl space-y-4">
+                    <div className="flex items-center justify-between border-b border-neutral-200 pb-3">
                       <div>
                         <h3 className="font-display text-lg font-extrabold text-foreground">Upload Media Asset</h3>
-                        <p className="text-xs text-muted-foreground">Supported formats: Images, Videos, Audio, PDFs & Documents</p>
+                        <p className="text-xs text-muted-foreground">Supported formats: Images, Videos, Audio, PDFs &amp; Documents</p>
                       </div>
                       <button
                         onClick={() => {
@@ -1992,7 +3021,7 @@ https://sidwizz-portfolio.vercel.app`
                           setSelectedMediaFile(null);
                           setSelectedMediaPreview(null);
                         }}
-                        className="text-muted-foreground hover:text-foreground p-1 rounded-lg hover:bg-accent"
+                        className="text-muted-foreground hover:text-foreground p-1 rounded-lg hover:bg-neutral-100"
                       >
                         <X className="h-5 w-5" />
                       </button>
@@ -2030,7 +3059,7 @@ https://sidwizz-portfolio.vercel.app`
                             ? "border-primary bg-primary/10"
                             : selectedMediaFile
                             ? "border-emerald-500/60 bg-emerald-500/5"
-                            : "border-border bg-background hover:border-primary/50 hover:bg-accent/30"
+                            : "border-neutral-300 bg-neutral-50 hover:border-primary/50 hover:bg-neutral-100"
                         }`}
                       >
                         {selectedMediaPreview && newMediaType === "image" ? (
@@ -2038,7 +3067,7 @@ https://sidwizz-portfolio.vercel.app`
                             <img
                               src={selectedMediaPreview}
                               alt="Upload preview"
-                              className="mx-auto h-32 max-w-full rounded-xl object-cover border border-border shadow-sm"
+                              className="mx-auto h-32 max-w-full rounded-xl object-cover border border-neutral-300 shadow-sm"
                             />
                             <p className="text-xs font-bold text-foreground">
                               {selectedMediaFile?.name} ({(selectedMediaFile?.size ? selectedMediaFile.size / (1024 * 1024) : 0).toFixed(2)} MB)
@@ -2058,7 +3087,7 @@ https://sidwizz-portfolio.vercel.app`
                           </div>
                         ) : (
                           <div className="space-y-2 py-3">
-                            <div className="mx-auto grid h-12 w-12 place-items-center rounded-xl bg-accent text-muted-foreground">
+                            <div className="mx-auto grid h-12 w-12 place-items-center rounded-xl bg-neutral-200 text-muted-foreground">
                               <Upload className="h-6 w-6" />
                             </div>
                             <p className="text-sm font-bold text-foreground">
@@ -2077,7 +3106,7 @@ https://sidwizz-portfolio.vercel.app`
                           <select
                             value={newMediaType}
                             onChange={(e) => setNewMediaType(e.target.value as any)}
-                            className="w-full rounded-xl border border-input bg-background py-2.5 px-3 text-sm text-foreground focus:border-primary focus:outline-none"
+                            className="w-full rounded-xl border border-neutral-300 bg-white py-2.5 px-3 text-sm text-foreground focus:border-primary focus:outline-none"
                           >
                             <option value="image">Image (Stage photo, portrait)</option>
                             <option value="video">Video (Showreel, keynote highlight)</option>
@@ -2094,7 +3123,7 @@ https://sidwizz-portfolio.vercel.app`
                             value={newMediaTitle}
                             onChange={(e) => setNewMediaTitle(e.target.value)}
                             placeholder="e.g. Jio World Convention Keynote"
-                            className="w-full rounded-xl border border-input bg-background py-2.5 px-3 text-sm text-foreground focus:border-primary focus:outline-none"
+                            className="w-full rounded-xl border border-neutral-300 bg-white py-2.5 px-3 text-sm text-foreground focus:border-primary focus:outline-none"
                           />
                         </div>
                       </div>
@@ -2156,7 +3185,7 @@ https://sidwizz-portfolio.vercel.app`
                         </div>
                       )}
 
-                      <div className="flex justify-end gap-2 pt-2 border-t border-border">
+                      <div className="flex justify-end gap-2 pt-2 border-t border-neutral-200">
                         <button
                           type="button"
                           onClick={() => {
@@ -2169,7 +3198,7 @@ https://sidwizz-portfolio.vercel.app`
                           Cancel
                         </button>
                         <button type="submit" className="btn-red !py-2 !px-5 text-sm flex items-center gap-2">
-                          <Upload className="h-4 w-4" /> Upload & Index
+                          <Upload className="h-4 w-4" /> Upload &amp; Index
                         </button>
                       </div>
                     </form>
@@ -2510,9 +3539,9 @@ https://sidwizz-portfolio.vercel.app`
             );
 
             return (
-              <div className="space-y-6 w-full max-w-[1600px]">
+              <div className="w-full max-w-4xl mx-auto space-y-6">
                 {/* Header matching Desktop & Mobile Reference */}
-                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-neutral-300 pb-4">
                   <div>
                     <p className="eyebrow mb-1">Host Identity &amp; Security</p>
                     <h2 className="display text-2xl sm:text-3xl text-foreground">
@@ -2525,7 +3554,8 @@ https://sidwizz-portfolio.vercel.app`
                       <span className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse" />
                       Accepting Stage Dates
                     </span>
-                    <span className="inline-flex items-center gap-1.5 rounded-full bg-primary/10 text-primary px-3 py-1 text-xs font-bold border border-primary/20 shadow-2xs">
+                    <span className="inline-flex items-center gap-1.5 rounded-full bg-neutral-100 text-neutral-700 px-3 py-1 text-xs font-bold border border-neutral-300 shadow-2xs">
+                      <Database className="h-3.5 w-3.5 text-primary" />
                       NeonDB Connected
                     </span>
                     {user?.avatar ? (
@@ -2564,271 +3594,20 @@ https://sidwizz-portfolio.vercel.app`
                   aria-label="Upload profile photo"
                 />
 
-                {/* ------------------------------------------------------------------ */}
-                {/* MOBILE VIEW (lg:hidden)                                           */}
-                {/* Navigation menu or selected sub-view matching Mobile UI Spec       */}
-                {/* ------------------------------------------------------------------ */}
-                <div className="block lg:hidden space-y-4">
-                  {mobileAccountSection !== "menu" && (
-                    <button
-                      type="button"
-                      onClick={() => setMobileAccountSection("menu")}
-                      className="inline-flex items-center gap-1.5 text-xs font-bold text-primary hover:underline cursor-pointer bg-white px-3.5 py-2 rounded-xl border border-neutral-300 shadow-2xs"
-                    >
-                      <span>← Back to Account &amp; Profile</span>
-                    </button>
-                  )}
+                {/* Card 1: Profile Photo & Stage Headshot */}
+                {renderPhotoStudioCard()}
 
-                  {/* Mobile Hub Menu */}
-                  {mobileAccountSection === "menu" && (
-                    <div className="space-y-4">
-                      {/* Host Profile Summary Banner */}
-                      <div className="panel-card shadow-sm p-4">
-                        <div className="flex items-center justify-between gap-3">
-                          <div className="flex items-center gap-3">
-                            <div className="relative">
-                              {user?.avatar ? (
-                                <img
-                                  src={user.avatar}
-                                  alt={adminName}
-                                  className="h-14 w-14 rounded-full object-cover border-2 border-primary shadow"
-                                />
-                              ) : (
-                                <div className="grid h-14 w-14 place-items-center rounded-full bg-primary/20 text-lg font-black text-primary border-2 border-primary/30">
-                                  SM
-                                </div>
-                              )}
-                              <button
-                                type="button"
-                                onClick={() => fileInputRef.current?.click()}
-                                className="absolute -bottom-1 -right-1 rounded-full bg-primary p-1 text-white shadow hover:scale-110 transition cursor-pointer"
-                                title="Upload profile photo"
-                              >
-                                <Camera className="h-3 w-3" />
-                              </button>
-                            </div>
-                            <div>
-                              <h3 className="font-display text-base font-extrabold text-foreground">{adminName}</h3>
-                              <span className="inline-block rounded-full bg-primary/20 text-primary px-2 py-0.2 text-[10px] font-bold border border-primary/30 uppercase tracking-wider">
-                                Host &amp; Super Admin
-                              </span>
-                              <p className="text-xs font-mono text-muted-foreground mt-0.5">{adminEmail}</p>
-                            </div>
-                          </div>
+                {/* Card 2: Basic Profile Information */}
+                {renderBasicInfoCard()}
 
-                          <button
-                            type="button"
-                            onClick={() => {
-                              logout();
-                              navigate({ to: "/" });
-                            }}
-                            className="p-2 rounded-xl border border-neutral-300 bg-white hover:bg-neutral-100 text-muted-foreground hover:text-foreground cursor-pointer"
-                            title="Sign Out"
-                          >
-                            <LogOut className="h-4 w-4" />
-                          </button>
-                        </div>
-                      </div>
+                {/* Card 3: Change Password & Security */}
+                {renderPasswordCard()}
 
-                      {/* Navigational Cards matching Mobile Screenshot */}
-                      <div className="space-y-2.5">
-                        <button
-                          type="button"
-                          onClick={() => setMobileAccountSection("photo")}
-                          className="w-full text-left rounded-2xl border border-neutral-300 bg-white p-4 shadow-2xs hover:border-primary/50 transition flex items-center justify-between cursor-pointer"
-                        >
-                          <div className="flex items-center gap-3">
-                            <div className="rounded-xl bg-neutral-100 p-2 text-foreground">
-                              <ImagePlus className="h-4 w-4" />
-                            </div>
-                            <span className="font-bold text-sm text-foreground">Profile Photo &amp; Stage Headshot</span>
-                          </div>
-                          <ChevronRight className="h-4 w-4 text-muted-foreground" />
-                        </button>
+                {/* Card 4: Team Permissions & Management */}
+                {renderTeamPermissionsCard()}
 
-                        <button
-                          type="button"
-                          onClick={() => setMobileAccountSection("info")}
-                          className="w-full text-left rounded-2xl border border-neutral-300 bg-white p-4 shadow-2xs hover:border-primary/50 transition flex items-center justify-between cursor-pointer"
-                        >
-                          <div className="flex items-center gap-3">
-                            <div className="rounded-xl bg-neutral-100 p-2 text-foreground">
-                              <User className="h-4 w-4" />
-                            </div>
-                            <span className="font-bold text-sm text-foreground">Basic Profile Information</span>
-                          </div>
-                          <ChevronRight className="h-4 w-4 text-muted-foreground" />
-                        </button>
-
-                        <button
-                          type="button"
-                          onClick={() => setMobileAccountSection("security")}
-                          className="w-full text-left rounded-2xl border border-neutral-300 bg-white p-4 shadow-2xs hover:border-primary/50 transition flex items-center justify-between cursor-pointer"
-                        >
-                          <div className="flex items-center gap-3">
-                            <div className="rounded-xl bg-neutral-100 p-2 text-foreground">
-                              <KeyRound className="h-4 w-4" />
-                            </div>
-                            <span className="font-bold text-sm text-foreground">Change Password &amp; Security</span>
-                          </div>
-                          <ChevronRight className="h-4 w-4 text-muted-foreground" />
-                        </button>
-
-                        <button
-                          type="button"
-                          onClick={() => setMobileAccountSection("team")}
-                          className="w-full text-left rounded-2xl border border-neutral-300 bg-white p-4 shadow-2xs hover:border-primary/50 transition flex items-center justify-between cursor-pointer"
-                        >
-                          <div className="flex items-center gap-3">
-                            <div className="rounded-xl bg-neutral-100 p-2 text-foreground">
-                              <Users className="h-4 w-4" />
-                            </div>
-                            <span className="font-bold text-sm text-foreground">Team Permissions &amp; Management</span>
-                          </div>
-                          <ChevronRight className="h-4 w-4 text-muted-foreground" />
-                        </button>
-
-                        {/* Highlighted Social Media Accounts Banner / Card */}
-                        <button
-                          type="button"
-                          onClick={() => setMobileAccountSection("social")}
-                          className="w-full text-left rounded-2xl border-2 border-primary/40 bg-primary/5 p-4 shadow-sm hover:border-primary transition flex items-center justify-between cursor-pointer group"
-                        >
-                          <div className="flex items-start gap-3">
-                            <div className="rounded-xl bg-primary/10 p-2 text-primary border border-primary/20 shrink-0">
-                              <Share2 className="h-5 w-5" />
-                            </div>
-                            <div>
-                              <div className="flex items-center gap-2">
-                                <span className="font-bold text-sm text-foreground group-hover:text-primary transition">
-                                  Social Media Accounts
-                                </span>
-                                <span className="rounded-full bg-primary text-white text-[9px] font-black uppercase px-2 py-0.2">
-                                  NEW
-                                </span>
-                              </div>
-                              <p className="text-xs text-muted-foreground mt-0.5 leading-relaxed">
-                                Manage your social profiles, add multiple accounts, set a main account and control their visibility.
-                              </p>
-                            </div>
-                          </div>
-                          <ChevronRight className="h-5 w-5 text-primary shrink-0 ml-2" />
-                        </button>
-                      </div>
-                    </div>
-                  )}
-
-                  {mobileAccountSection === "social" && (
-                    <div className="space-y-4">
-                      <SocialAccountsManager />
-                    </div>
-                  )}
-
-                  {mobileAccountSection === "photo" && (
-                    <div className="space-y-4">
-                      {renderPhotoStudioCard()}
-                    </div>
-                  )}
-
-                  {mobileAccountSection === "info" && (
-                    <div className="space-y-4">
-                      {renderBasicInfoCard()}
-                    </div>
-                  )}
-
-                  {mobileAccountSection === "security" && (
-                    <div className="space-y-4">
-                      {renderPasswordCard()}
-                    </div>
-                  )}
-
-                  {mobileAccountSection === "team" && (
-                    <div className="space-y-4">
-                      {renderTeamPermissionsCard()}
-                    </div>
-                  )}
-                </div>
-
-                {/* ------------------------------------------------------------------ */}
-                {/* DESKTOP TWO-COLUMN GRID (hidden lg:grid)                           */}
-                {/* ------------------------------------------------------------------ */}
-                <div className="hidden lg:grid lg:grid-cols-12 gap-6 items-start">
-                  {/* Left Column (5 cols): Photo Studio, Basic Info, Password, Team */}
-                  <div className="lg:col-span-5 space-y-6">
-                    {renderPhotoStudioCard()}
-                    {renderBasicInfoCard()}
-                    {renderPasswordCard()}
-                    {renderTeamPermissionsCard()}
-                  </div>
-
-                  {/* Right Column (7 cols): Social Media Accounts Module */}
-                  <div className="lg:col-span-7 space-y-6">
-                    <SocialAccountsManager />
-                  </div>
-                </div>
-
-                {/* ------------------------------------------------------------------ */}
-                {/* BOTTOM STRIP: Supported Platforms (V1) + Security & Privacy        */}
-                {/* ------------------------------------------------------------------ */}
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-2">
-                  {/* Supported Platforms (V1) */}
-                  <div className="panel-card shadow-sm p-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
-                    <div className="flex items-center gap-2.5">
-                      <div className="rounded-xl bg-primary/10 p-2 text-primary border border-primary/20 shrink-0">
-                        <Share2 className="h-4 w-4" />
-                      </div>
-                      <div>
-                        <h4 className="font-display text-xs font-black uppercase tracking-wider text-foreground">
-                          Supported Platforms (V1)
-                        </h4>
-                        <p className="text-[11px] text-muted-foreground">Pre-configured branded handlers &amp; URL sanitization</p>
-                      </div>
-                    </div>
-                    <div className="flex items-center gap-1.5 flex-wrap">
-                      {PLATFORM_CATALOG.slice(0, 11).map((p) => (
-                        <span
-                          key={p.id}
-                          className="grid h-7 w-7 place-items-center rounded-lg border border-neutral-200 bg-white shadow-2xs"
-                          title={p.name}
-                        >
-                          <PlatformBrandIcon platform={p.id} className="h-3.5 w-3.5" />
-                        </span>
-                      ))}
-                      <span className="text-[10px] font-bold text-muted-foreground px-1.5 py-0.5 rounded border border-neutral-200 bg-neutral-50">
-                        +Others
-                      </span>
-                    </div>
-                  </div>
-
-                  {/* Security & Privacy Banner */}
-                  <div className="panel-card shadow-sm p-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
-                    <div className="flex items-center gap-2.5">
-                      <div className="rounded-xl bg-emerald-500/10 p-2 text-emerald-600 border border-emerald-500/20 shrink-0">
-                        <ShieldCheck className="h-4 w-4" />
-                      </div>
-                      <div>
-                        <h4 className="font-display text-xs font-black uppercase tracking-wider text-foreground">
-                          Security &amp; Privacy Guaranteed
-                        </h4>
-                        <p className="text-[11px] text-muted-foreground">Zero password capture • Read-only directory • Encrypted</p>
-                      </div>
-                    </div>
-                    <div className="space-y-1 text-[11px] font-medium text-foreground">
-                      <div className="flex items-center gap-1.5">
-                        <Check className="h-3 w-3 text-emerald-600 shrink-0" />
-                        <span>No passwords stored in your system (OAuth based)</span>
-                      </div>
-                      <div className="flex items-center gap-1.5">
-                        <Check className="h-3 w-3 text-emerald-600 shrink-0" />
-                        <span>Read-only access (Import only, no export / posting)</span>
-                      </div>
-                      <div className="flex items-center gap-1.5">
-                        <Check className="h-3 w-3 text-emerald-600 shrink-0" />
-                        <span>Encrypted tokens &amp; secure storage (Neon)</span>
-                      </div>
-                    </div>
-                  </div>
-                </div>
+                {/* Card 5: Social Media Accounts (Integrated 5-account card with Add Account, Details & View All Modals) */}
+                <SocialAccountsManager />
               </div>
             );
           })()}

@@ -76,7 +76,8 @@ export interface Booking {
 export interface MediaItem {
   id: string;
   title: string;
-  type: "image" | "video" | "document" | "audio";
+  type: "image" | "video" | "document" | "audio" | "other";
+  format?: string;
   category: string;
   size: string;
   duration?: string;
@@ -84,6 +85,14 @@ export interface MediaItem {
   url: string;
   thumbnail?: string;
   createdAt: string;
+  likes?: number;
+  isLiked?: boolean;
+  isWishlist?: boolean;
+  wishlistCollection?: string;
+  tags?: string[];
+  folder?: string;
+  description?: string;
+  version?: number;
 }
 
 export interface SupportTicket {
@@ -977,6 +986,226 @@ export function getDefaultThumbnail(item: { type: string; url?: string; thumbnai
   if (item.type === "audio") return micDark;
   if (item.type === "document") return conferenceHall;
   return stageBeams;
+}
+
+export function toggleMediaLike(id: string): { likes: number; isLiked: boolean } {
+  const current = getStoredMedia();
+  const idx = current.findIndex((m) => m.id === id);
+  if (idx === -1) return { likes: 0, isLiked: false };
+
+  const item = current[idx];
+  const isLiked = !item.isLiked;
+  const likes = Math.max(0, (item.likes || 12) + (isLiked ? 1 : -1));
+
+  current[idx] = { ...item, isLiked, likes };
+
+  if (typeof window !== "undefined") {
+    try {
+      localStorage.setItem(MEDIA_KEY, JSON.stringify(current));
+      window.dispatchEvent(new Event("siddwhizz_media_updated"));
+    } catch (err) {
+      console.warn("Failed to toggle media like:", err);
+    }
+  }
+
+  return { likes, isLiked };
+}
+
+export function toggleMediaWishlist(id: string, collection?: string): boolean {
+  const current = getStoredMedia();
+  const idx = current.findIndex((m) => m.id === id);
+  if (idx === -1) return false;
+
+  const item = current[idx];
+  const isWishlist = !item.isWishlist;
+
+  current[idx] = {
+    ...item,
+    isWishlist,
+    wishlistCollection: isWishlist ? collection || "General Wishlist" : undefined,
+  };
+
+  if (typeof window !== "undefined") {
+    try {
+      localStorage.setItem(MEDIA_KEY, JSON.stringify(current));
+      window.dispatchEvent(new Event("siddwhizz_media_updated"));
+    } catch (err) {
+      console.warn("Failed to toggle media wishlist:", err);
+    }
+  }
+
+  return isWishlist;
+}
+
+export function updateMediaDetails(id: string, updates: Partial<MediaItem>): boolean {
+  const current = getStoredMedia();
+  const idx = current.findIndex((m) => m.id === id);
+  if (idx === -1) return false;
+
+  current[idx] = { ...current[idx], ...updates };
+
+  if (typeof window !== "undefined") {
+    try {
+      localStorage.setItem(MEDIA_KEY, JSON.stringify(current));
+      window.dispatchEvent(new Event("siddwhizz_media_updated"));
+    } catch (err) {
+      console.warn("Failed to update media details:", err);
+    }
+  }
+
+  return true;
+}
+
+export function duplicateMediaItem(id: string): MediaItem | null {
+  const current = getStoredMedia();
+  const original = current.find((m) => m.id === id);
+  if (!original) return null;
+
+  const copy: MediaItem = {
+    ...original,
+    id: `med-${Date.now().toString(36)}`,
+    title: `${original.title} (Copy)`,
+    createdAt: new Date().toISOString().split("T")[0],
+    isLiked: false,
+    likes: 0,
+  };
+
+  const updated = [copy, ...current];
+  if (typeof window !== "undefined") {
+    try {
+      localStorage.setItem(MEDIA_KEY, JSON.stringify(updated));
+      window.dispatchEvent(new Event("siddwhizz_media_updated"));
+    } catch (err) {
+      console.warn("Failed to duplicate media item:", err);
+    }
+  }
+
+  return copy;
+}
+
+export function bulkDeleteMedia(ids: string[]): boolean {
+  const current = getStoredMedia();
+  const filtered = current.filter((m) => !ids.includes(m.id));
+
+  if (typeof window !== "undefined") {
+    try {
+      localStorage.setItem(MEDIA_KEY, JSON.stringify(filtered));
+      window.dispatchEvent(new Event("siddwhizz_media_updated"));
+    } catch (err) {
+      console.warn("Failed to bulk delete media:", err);
+    }
+  }
+
+  return true;
+}
+
+export function bulkWishlistMedia(ids: string[], isWishlist: boolean, collection = "Upcoming Events"): boolean {
+  const current = getStoredMedia();
+  const updated = current.map((m) => {
+    if (ids.includes(m.id)) {
+      return {
+        ...m,
+        isWishlist,
+        wishlistCollection: isWishlist ? collection : undefined,
+      };
+    }
+    return m;
+  });
+
+  if (typeof window !== "undefined") {
+    try {
+      localStorage.setItem(MEDIA_KEY, JSON.stringify(updated));
+      window.dispatchEvent(new Event("siddwhizz_media_updated"));
+    } catch (err) {
+      console.warn("Failed to bulk wishlist media:", err);
+    }
+  }
+
+  return true;
+}
+
+export function bulkMoveMedia(ids: string[], folder: string): boolean {
+  const current = getStoredMedia();
+  const updated = current.map((m) => {
+    if (ids.includes(m.id)) {
+      return { ...m, folder };
+    }
+    return m;
+  });
+
+  if (typeof window !== "undefined") {
+    try {
+      localStorage.setItem(MEDIA_KEY, JSON.stringify(updated));
+      window.dispatchEvent(new Event("siddwhizz_media_updated"));
+    } catch (err) {
+      console.warn("Failed to bulk move media:", err);
+    }
+  }
+
+  return true;
+}
+
+export function saveEditedMediaCopy(
+  originalId: string,
+  editedData: {
+    title: string;
+    url: string;
+    thumbnail?: string;
+    format?: string;
+    type?: MediaItem["type"];
+    size?: string;
+  },
+  replaceOriginal = false
+): MediaItem {
+  const current = getStoredMedia();
+  const original = current.find((m) => m.id === originalId);
+
+  if (replaceOriginal && original) {
+    const updatedItem: MediaItem = {
+      ...original,
+      ...editedData,
+      version: (original.version || 1) + 1,
+    };
+    const updated = current.map((m) => (m.id === originalId ? updatedItem : m));
+    if (typeof window !== "undefined") {
+      try {
+        localStorage.setItem(MEDIA_KEY, JSON.stringify(updated));
+        window.dispatchEvent(new Event("siddwhizz_media_updated"));
+      } catch (err) {
+        console.warn("Failed to replace media item:", err);
+      }
+    }
+    return updatedItem;
+  }
+
+  // Save as new copy (Safe default!)
+  const newItem: MediaItem = {
+    id: `med-${Date.now().toString(36)}`,
+    title: editedData.title || (original ? `[Edited] ${original.title}` : "Edited Media"),
+    type: editedData.type || original?.type || "image",
+    format: editedData.format || original?.format,
+    category: original?.category || "Edited Assets",
+    size: editedData.size || original?.size || "2.1 MB",
+    duration: original?.duration,
+    dimensions: original?.dimensions,
+    url: editedData.url,
+    thumbnail: editedData.thumbnail || editedData.url,
+    createdAt: new Date().toISOString().split("T")[0],
+    tags: original?.tags ? [...original.tags, "Edited"] : ["Edited"],
+    version: 1,
+  };
+
+  const updated = [newItem, ...current];
+  if (typeof window !== "undefined") {
+    try {
+      localStorage.setItem(MEDIA_KEY, JSON.stringify(updated));
+      window.dispatchEvent(new Event("siddwhizz_media_updated"));
+    } catch (err) {
+      console.warn("Failed to save edited media copy:", err);
+    }
+  }
+
+  return newItem;
 }
 
 // ============================================================================
