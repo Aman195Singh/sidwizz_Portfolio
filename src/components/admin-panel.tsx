@@ -45,10 +45,17 @@ import {
   Download,
   Clock,
   AlertTriangle,
+  ChevronRight,
+  Share2,
 } from "lucide-react";
 import { useAuth } from "@/lib/auth";
 import { toast } from "sonner";
 import { Logo } from "@/components/site";
+import {
+  SocialAccountsManager,
+  PlatformBrandIcon,
+  PLATFORM_CATALOG,
+} from "@/components/social-accounts-manager";
 import {
   getStoredEnquiries,
   updateEnquiryStatus,
@@ -367,6 +374,7 @@ export function AdminPanel({ initialTab = "overview" }: { initialTab?: AdminTab 
   const [currentPassword, setCurrentPassword] = useState("");
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
+  const [mobileAccountSection, setMobileAccountSection] = useState<"menu" | "photo" | "info" | "security" | "team" | "social">("menu");
 
   // Keep state synchronized with live DataStore events
   const [tickets, setTickets] = useState<SupportTicket[]>(getStoredTickets);
@@ -2174,183 +2182,133 @@ https://sidwizz-portfolio.vercel.app`
           {/* ========================================================= */}
           {/* 5. MERGED ACCOUNT & PROFILE VIEW                          */}
           {/* ========================================================= */}
-          {activeTab === "account" && (
-            <div className="space-y-6 max-w-4xl">
-              <div>
-                <p className="eyebrow mb-1">Host Identity & Security</p>
-                <h2 className="display text-2xl sm:text-3xl text-foreground">
-                  Account & <span className="text-primary">Profile</span>
-                </h2>
-              </div>
-
-              {/* Hidden file input for custom profile photo upload */}
-              <input
-                type="file"
-                ref={fileInputRef}
-                onChange={handlePhotoUpload}
-                accept="image/*"
-                className="hidden"
-                aria-label="Upload profile photo"
-              />
-
-              {/* Host Profile & Photo Studio Card */}
+          {activeTab === "account" && (() => {
+            // Reusable Left Column Cards for Desktop & Mobile Sub-views
+            const renderPhotoStudioCard = () => (
               <div className="panel-card shadow-sm space-y-0">
-                <div className="panel-card-header flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-                  <div className="flex items-center gap-3">
+                <div className="panel-card-header flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                  <div className="flex items-center gap-2.5">
                     <span className="h-5 w-1.5 rounded-full bg-primary shrink-0" />
-                    <div className="flex items-center gap-3">
-                      <div className="relative group">
-                        {user?.avatar ? (
-                          <img
-                            src={user.avatar}
-                            alt={adminName}
-                            className="h-16 w-16 rounded-full object-cover border-2 border-primary shadow"
-                          />
-                        ) : (
-                          <div className="grid h-16 w-16 place-items-center rounded-full bg-primary/20 text-xl font-black text-primary border-2 border-primary/30">
-                            SM
-                          </div>
-                        )}
-                        <button
-                          type="button"
-                          onClick={() => fileInputRef.current?.click()}
-                          className="absolute -bottom-1 -right-1 rounded-full bg-primary p-1.5 text-white shadow hover:scale-110 transition cursor-pointer"
-                          title="Upload new profile photo"
-                        >
-                          <Camera className="h-3.5 w-3.5" />
-                        </button>
-                      </div>
-
-                      <div>
-                        <div className="flex flex-wrap items-center gap-2">
-                          <h2 className="font-display text-lg sm:text-xl font-extrabold text-foreground">{adminName}</h2>
-                          <span className="rounded-full bg-primary/20 text-primary px-2.5 py-0.5 text-xs font-bold border border-primary/30 uppercase tracking-wider">
-                            Host &amp; Super Admin
-                          </span>
-                        </div>
-                        <p className="text-xs text-muted-foreground mt-0.5">{adminTitle}</p>
-                        <p className="text-xs font-mono text-primary mt-0.5">{adminEmail}</p>
-                      </div>
+                    <div className="rounded-xl bg-primary/10 p-2 text-primary border border-primary/20 shrink-0">
+                      <ImagePlus className="h-4 w-4" />
+                    </div>
+                    <div>
+                      <h3 className="font-display text-base font-extrabold text-foreground uppercase tracking-tight">
+                        Profile Photo &amp; Stage Headshot
+                      </h3>
+                      <p className="text-xs text-muted-foreground">Upload your personal photo or select from curated stage presets.</p>
                     </div>
                   </div>
 
-                  <div className="flex items-center gap-2">
+                  <div className="flex items-center gap-2 self-start sm:self-auto shrink-0">
                     <button
-                      onClick={() => {
-                        logout();
-                        navigate({ to: "/" });
-                      }}
-                      className="btn-outline !py-2 !px-4 text-xs sm:text-sm !border-neutral-300 !text-foreground hover:!bg-white cursor-pointer"
+                      type="button"
+                      onClick={() => fileInputRef.current?.click()}
+                      className="btn-red !py-1.5 !px-3.5 text-xs flex items-center gap-1.5 cursor-pointer shadow-sm"
                     >
-                      <LogOut className="h-4 w-4" /> Sign Out
+                      <Upload className="h-3.5 w-3.5" /> Upload File
                     </button>
+                    {user?.avatar && (
+                      <button
+                        type="button"
+                        onClick={handleRemovePhoto}
+                        className="btn-outline !py-1.5 !px-3 text-xs !border-neutral-300 text-destructive hover:!bg-white cursor-pointer"
+                        title="Remove custom photo"
+                      >
+                        <Trash2 className="h-3.5 w-3.5" />
+                      </button>
+                    )}
                   </div>
                 </div>
 
-                <div className="panel-card-body p-6 space-y-6">
-                  {/* Profile Photo Studio Section */}
-                  <div className="panel-inner-tile p-5 space-y-4">
-                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
-                      <div>
-                        <h4 className="text-sm font-bold uppercase tracking-wider text-foreground flex items-center gap-2">
-                          <ImagePlus className="h-4 w-4 text-primary" /> Profile Photo &amp; Stage Headshot
-                        </h4>
-                        <p className="text-xs text-muted-foreground mt-0.5">
-                          Upload your personal photo or select from Siddharth Maurya's curated stage portfolio presets.
-                        </p>
-                      </div>
-                      <div className="flex gap-2">
-                        <button
-                          type="button"
-                          onClick={() => fileInputRef.current?.click()}
-                          className="btn-red !py-1.5 !px-3.5 text-xs flex items-center gap-1.5 cursor-pointer"
-                        >
-                          <Upload className="h-3.5 w-3.5" /> Upload File
-                        </button>
-                        {user?.avatar && (
-                          <button
-                            type="button"
-                            onClick={handleRemovePhoto}
-                            className="btn-outline !py-1.5 !px-3 text-xs !border-neutral-300 text-destructive hover:!bg-white cursor-pointer"
-                            title="Remove custom photo"
-                          >
-                            <Trash2 className="h-3.5 w-3.5" />
-                          </button>
-                        )}
-                      </div>
-                    </div>
+                <div className="panel-card-body p-4 sm:p-5 space-y-4">
+                  <div>
+                    <span className="text-xs font-bold uppercase text-muted-foreground block mb-2.5">
+                      Quick Stage Presets:
+                    </span>
+                    <div className="grid grid-cols-3 gap-3">
+                      <button
+                        type="button"
+                        onClick={() => handleSelectPresetPhoto(hostBowtie)}
+                        className={`group rounded-xl border p-2.5 flex flex-col items-center gap-2 transition cursor-pointer text-center ${
+                          user?.avatar === hostBowtie
+                            ? "border-primary bg-primary/15 ring-2 ring-primary"
+                            : "border-neutral-300 bg-white hover:border-primary/50"
+                        }`}
+                      >
+                        <img
+                          src={hostBowtie}
+                          alt="Gala Bowtie"
+                          className="h-12 w-12 rounded-full object-cover"
+                        />
+                        <span className="text-xs font-bold text-foreground group-hover:text-primary">
+                          Gala Bowtie
+                        </span>
+                      </button>
 
-                    {/* Preset Photo Cards */}
-                    <div>
-                      <span className="text-xs font-bold uppercase text-muted-foreground block mb-2.5">
-                        Quick Stage Presets:
-                      </span>
-                      <div className="grid grid-cols-3 gap-3">
-                        <button
-                          type="button"
-                          onClick={() => handleSelectPresetPhoto(hostBowtie)}
-                          className={`group rounded-xl border p-2.5 flex flex-col items-center gap-2 transition cursor-pointer text-center ${
-                            user?.avatar === hostBowtie
-                              ? "border-primary bg-primary/15 ring-2 ring-primary"
-                              : "border-neutral-300 bg-white hover:border-primary/50"
-                          }`}
-                        >
-                          <img
-                            src={hostBowtie}
-                            alt="Gala Bowtie"
-                            className="h-12 w-12 rounded-full object-cover"
-                          />
-                          <span className="text-xs font-bold text-foreground group-hover:text-primary">
-                            Gala Bowtie
-                          </span>
-                        </button>
+                      <button
+                        type="button"
+                        onClick={() => handleSelectPresetPhoto(hostPurple)}
+                        className={`group rounded-xl border p-2.5 flex flex-col items-center gap-2 transition cursor-pointer text-center ${
+                          user?.avatar === hostPurple
+                            ? "border-primary bg-primary/15 ring-2 ring-primary"
+                            : "border-neutral-300 bg-white hover:border-primary/50"
+                        }`}
+                      >
+                        <img
+                          src={hostPurple}
+                          alt="Summit Anchor"
+                          className="h-12 w-12 rounded-full object-cover"
+                        />
+                        <span className="text-xs font-bold text-foreground group-hover:text-primary">
+                          Summit Anchor
+                        </span>
+                      </button>
 
-                        <button
-                          type="button"
-                          onClick={() => handleSelectPresetPhoto(hostPurple)}
-                          className={`group rounded-xl border p-2.5 flex flex-col items-center gap-2 transition cursor-pointer text-center ${
-                            user?.avatar === hostPurple
-                              ? "border-primary bg-primary/15 ring-2 ring-primary"
-                              : "border-neutral-300 bg-white hover:border-primary/50"
-                          }`}
-                        >
-                          <img
-                            src={hostPurple}
-                            alt="Summit Anchor"
-                            className="h-12 w-12 rounded-full object-cover"
-                          />
-                          <span className="text-xs font-bold text-foreground group-hover:text-primary">
-                            Summit Anchor
-                          </span>
-                        </button>
-
-                        <button
-                          type="button"
-                          onClick={() => handleSelectPresetPhoto(hostSmileRed)}
-                          className={`group rounded-xl border p-2.5 flex flex-col items-center gap-2 transition cursor-pointer text-center ${
-                            user?.avatar === hostSmileRed
-                              ? "border-primary bg-primary/15 ring-2 ring-primary"
-                              : "border-neutral-300 bg-white hover:border-primary/50"
-                          }`}
-                        >
-                          <img
-                            src={hostSmileRed}
-                            alt="Festival Energy"
-                            className="h-12 w-12 rounded-full object-cover"
-                          />
-                          <span className="text-xs font-bold text-foreground group-hover:text-primary">
-                            Live Energy
-                          </span>
-                        </button>
-                      </div>
+                      <button
+                        type="button"
+                        onClick={() => handleSelectPresetPhoto(hostSmileRed)}
+                        className={`group rounded-xl border p-2.5 flex flex-col items-center gap-2 transition cursor-pointer text-center ${
+                          user?.avatar === hostSmileRed
+                            ? "border-primary bg-primary/15 ring-2 ring-primary"
+                            : "border-neutral-300 bg-white hover:border-primary/50"
+                        }`}
+                      >
+                        <img
+                          src={hostSmileRed}
+                          alt="Festival Energy"
+                          className="h-12 w-12 rounded-full object-cover"
+                        />
+                        <span className="text-xs font-bold text-foreground group-hover:text-primary">
+                          Live Energy
+                        </span>
+                      </button>
                     </div>
                   </div>
+                </div>
+              </div>
+            );
 
-                  {/* Profile Edit Form */}
+            const renderBasicInfoCard = () => (
+              <div className="panel-card shadow-sm space-y-0">
+                <div className="panel-card-header flex items-center gap-2.5">
+                  <span className="h-5 w-1.5 rounded-full bg-primary shrink-0" />
+                  <div className="rounded-xl bg-primary/10 p-2 text-primary border border-primary/20 shrink-0">
+                    <User className="h-4 w-4" />
+                  </div>
+                  <div>
+                    <h3 className="font-display text-base font-extrabold text-foreground uppercase tracking-tight">
+                      Basic Profile Information
+                    </h3>
+                    <p className="text-xs text-muted-foreground">Update legal identity, direct stage line, and booking bio.</p>
+                  </div>
+                </div>
+
+                <div className="panel-card-body p-4 sm:p-5">
                   <form onSubmit={handleSaveAccount} className="space-y-4 text-sm">
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                       <div>
-                        <label className="font-bold text-muted-foreground block mb-1.5">Full Legal Name</label>
+                        <label className="font-bold text-muted-foreground block mb-1.5 text-xs">Full Legal Name</label>
                         <input
                           type="text"
                           required
@@ -2361,7 +2319,7 @@ https://sidwizz-portfolio.vercel.app`
                       </div>
 
                       <div>
-                        <label className="font-bold text-muted-foreground block mb-1.5">Official Host Email</label>
+                        <label className="font-bold text-muted-foreground block mb-1.5 text-xs">Official Host Email</label>
                         <input
                           type="email"
                           required
@@ -2374,7 +2332,7 @@ https://sidwizz-portfolio.vercel.app`
 
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                       <div>
-                        <label className="font-bold text-muted-foreground block mb-1.5">Direct Mobile (WhatsApp)</label>
+                        <label className="font-bold text-muted-foreground block mb-1.5 text-xs">Direct Mobile (WhatsApp)</label>
                         <input
                           type="text"
                           value={adminPhone}
@@ -2384,7 +2342,7 @@ https://sidwizz-portfolio.vercel.app`
                       </div>
 
                       <div>
-                        <label className="font-bold text-muted-foreground block mb-1.5">Display Title</label>
+                        <label className="font-bold text-muted-foreground block mb-1.5 text-xs">Display Title</label>
                         <input
                           type="text"
                           value={adminTitle}
@@ -2395,7 +2353,7 @@ https://sidwizz-portfolio.vercel.app`
                     </div>
 
                     <div>
-                      <label className="font-bold text-muted-foreground block mb-1.5">Host Bio Summary</label>
+                      <label className="font-bold text-muted-foreground block mb-1.5 text-xs">Host Bio Summary</label>
                       <textarea
                         rows={3}
                         value={adminBio}
@@ -2405,30 +2363,35 @@ https://sidwizz-portfolio.vercel.app`
                     </div>
 
                     <div className="pt-2">
-                      <button type="submit" className="btn-red !py-2.5 !px-5 text-sm cursor-pointer">
+                      <button type="submit" className="btn-red !py-2.5 !px-5 text-sm cursor-pointer shadow-sm">
                         Save Profile Information
                       </button>
                     </div>
                   </form>
                 </div>
               </div>
+            );
 
-              {/* Password & Security Card */}
+            const renderPasswordCard = () => (
               <div className="panel-card shadow-sm space-y-0">
                 <div className="panel-card-header flex items-center gap-2.5">
                   <span className="h-5 w-1.5 rounded-full bg-primary shrink-0" />
-                  <KeyRound className="h-5 w-5 text-primary" />
+                  <div className="rounded-xl bg-primary/10 p-2 text-primary border border-primary/20 shrink-0">
+                    <KeyRound className="h-4 w-4" />
+                  </div>
                   <div>
-                    <h3 className="font-display text-base sm:text-lg font-extrabold text-foreground uppercase tracking-tight">Change Password &amp; Security</h3>
+                    <h3 className="font-display text-base font-extrabold text-foreground uppercase tracking-tight">
+                      Change Password &amp; Security
+                    </h3>
                     <p className="text-xs text-muted-foreground">Keep your admin authentication credentials secure.</p>
                   </div>
                 </div>
 
-                <div className="panel-card-body p-6">
+                <div className="panel-card-body p-4 sm:p-5">
                   <form onSubmit={handlePasswordSubmit} className="space-y-4 text-sm">
                     <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                       <div>
-                        <label className="font-bold text-muted-foreground block mb-1.5">Current Password</label>
+                        <label className="font-bold text-muted-foreground block mb-1.5 text-xs">Current Password</label>
                         <input
                           type="password"
                           required
@@ -2437,11 +2400,11 @@ https://sidwizz-portfolio.vercel.app`
                           placeholder="••••••••"
                           className="w-full rounded-xl border border-neutral-300 bg-white py-2.5 px-3.5 text-sm text-foreground focus:border-primary focus:outline-none"
                         />
-                        <span className="text-xs text-muted-foreground mt-1 block">Default: sid123</span>
+                        <span className="text-[11px] text-muted-foreground mt-1 block">Default: sid123</span>
                       </div>
 
                       <div>
-                        <label className="font-bold text-muted-foreground block mb-1.5">New Password</label>
+                        <label className="font-bold text-muted-foreground block mb-1.5 text-xs">New Password</label>
                         <input
                           type="password"
                           required
@@ -2453,7 +2416,7 @@ https://sidwizz-portfolio.vercel.app`
                       </div>
 
                       <div>
-                        <label className="font-bold text-muted-foreground block mb-1.5">Confirm New Password</label>
+                        <label className="font-bold text-muted-foreground block mb-1.5 text-xs">Confirm New Password</label>
                         <input
                           type="password"
                           required
@@ -2467,25 +2430,32 @@ https://sidwizz-portfolio.vercel.app`
 
                     <button
                       type="submit"
-                      className="btn-red !py-2.5 !px-5 text-sm cursor-pointer"
+                      className="btn-red !py-2.5 !px-5 text-sm cursor-pointer shadow-sm"
                     >
                       Update Password &amp; Save
                     </button>
                   </form>
                 </div>
               </div>
+            );
 
-              {/* Management Team Members */}
+            const renderTeamPermissionsCard = () => (
               <div className="panel-card shadow-sm space-y-0">
                 <div className="panel-card-header flex items-center justify-between">
                   <div className="flex items-center gap-2.5">
                     <span className="h-5 w-1.5 rounded-full bg-primary shrink-0" />
+                    <div className="rounded-xl bg-primary/10 p-2 text-primary border border-primary/20 shrink-0">
+                      <Users className="h-4 w-4" />
+                    </div>
                     <div>
-                      <h3 className="font-display text-base sm:text-lg font-extrabold text-foreground uppercase tracking-tight">Team Permissions &amp; Management</h3>
+                      <h3 className="font-display text-base font-extrabold text-foreground uppercase tracking-tight">
+                        Team Permissions &amp; Management
+                      </h3>
                       <p className="text-xs text-muted-foreground">Authorized team members with access to the Admin Panel.</p>
                     </div>
                   </div>
                   <button
+                    type="button"
                     onClick={() => toast.info("Invitation link generated for team manager.")}
                     className="btn-outline !py-2 !px-3.5 text-xs sm:text-sm flex items-center gap-1.5 !border-neutral-300 !text-foreground hover:!bg-white cursor-pointer"
                   >
@@ -2495,50 +2465,373 @@ https://sidwizz-portfolio.vercel.app`
 
                 <div className="panel-card-body p-0 sm:p-4">
                   <div className="overflow-x-auto -mx-2 px-2 sm:mx-0 sm:px-0">
-                    <table className="w-full min-w-[600px] text-left text-sm">
-                      <thead className="border-b border-neutral-300 bg-neutral-100 text-xs font-bold text-muted-foreground uppercase tracking-wider">
+                    <table className="w-full min-w-[500px] text-left text-xs">
+                      <thead className="border-b border-neutral-300 bg-neutral-100 font-bold text-muted-foreground uppercase tracking-wider">
                         <tr>
-                          <th className="p-3.5 whitespace-nowrap">User</th>
-                          <th className="p-3.5 whitespace-nowrap">Role</th>
-                          <th className="p-3.5 whitespace-nowrap">Access Level</th>
-                          <th className="p-3.5 text-right whitespace-nowrap">Status</th>
+                          <th className="p-3 whitespace-nowrap">User</th>
+                          <th className="p-3 whitespace-nowrap">Role</th>
+                          <th className="p-3 whitespace-nowrap">Access Level</th>
+                          <th className="p-3 text-right whitespace-nowrap">Status</th>
                         </tr>
                       </thead>
                       <tbody className="divide-y divide-neutral-300">
-                      <tr>
-                        <td className="p-3.5 whitespace-nowrap">
-                          <p className="font-bold text-foreground whitespace-nowrap">Siddharth Maurya</p>
-                          <p className="text-xs text-muted-foreground font-mono whitespace-nowrap">admin@siddwhizz.com</p>
-                        </td>
-                        <td className="p-3.5 font-semibold text-primary whitespace-nowrap">Super Admin (Host)</td>
-                        <td className="p-3.5 text-muted-foreground whitespace-nowrap">Full Permissions</td>
-                        <td className="p-3.5 text-right whitespace-nowrap">
-                          <span className="inline-flex items-center whitespace-nowrap rounded-full bg-primary/20 text-primary px-2.5 py-0.5 text-xs font-bold border border-primary/30">
-                            Active
-                          </span>
-                        </td>
-                      </tr>
+                        <tr>
+                          <td className="p-3 whitespace-nowrap">
+                            <p className="font-bold text-foreground">{adminName}</p>
+                            <p className="text-[11px] text-muted-foreground font-mono">{adminEmail}</p>
+                          </td>
+                          <td className="p-3 font-semibold text-primary whitespace-nowrap">Super Admin (Host)</td>
+                          <td className="p-3 text-muted-foreground whitespace-nowrap">Full Permissions</td>
+                          <td className="p-3 text-right whitespace-nowrap">
+                            <span className="inline-flex items-center rounded-full bg-primary/20 text-primary px-2.5 py-0.5 text-[10px] font-bold border border-primary/30">
+                              Active
+                            </span>
+                          </td>
+                        </tr>
 
-                      <tr>
-                        <td className="p-3.5 whitespace-nowrap">
-                          <p className="font-bold text-foreground whitespace-nowrap">Neha Sharma</p>
-                          <p className="text-xs text-muted-foreground font-mono whitespace-nowrap">neha.bookings@siddwhizz.com</p>
-                        </td>
-                        <td className="p-3.5 font-semibold text-foreground whitespace-nowrap">Booking Manager</td>
-                        <td className="p-3.5 text-muted-foreground whitespace-nowrap">Enquiries &amp; Contracts</td>
-                        <td className="p-3.5 text-right whitespace-nowrap">
-                          <span className="inline-flex items-center whitespace-nowrap rounded-full bg-muted text-foreground px-2.5 py-0.5 text-xs font-bold border border-border">
-                            Active
-                          </span>
-                        </td>
-                      </tr>
-                    </tbody>
-                  </table>
+                        <tr>
+                          <td className="p-3 whitespace-nowrap">
+                            <p className="font-bold text-foreground">Neha Sharma</p>
+                            <p className="text-[11px] text-muted-foreground font-mono">neha.bookings@siddwhizz.com</p>
+                          </td>
+                          <td className="p-3 font-semibold text-foreground whitespace-nowrap">Booking Manager</td>
+                          <td className="p-3 text-muted-foreground whitespace-nowrap">Enquiries &amp; Contracts</td>
+                          <td className="p-3 text-right whitespace-nowrap">
+                            <span className="inline-flex items-center rounded-full bg-neutral-100 text-foreground px-2.5 py-0.5 text-[10px] font-bold border border-neutral-300">
+                              Active
+                            </span>
+                          </td>
+                        </tr>
+                      </tbody>
+                    </table>
+                  </div>
                 </div>
               </div>
-            </div>
-          </div>
-        )}
+            );
+
+            return (
+              <div className="space-y-6 w-full max-w-[1600px]">
+                {/* Header matching Desktop & Mobile Reference */}
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                  <div>
+                    <p className="eyebrow mb-1">Host Identity &amp; Security</p>
+                    <h2 className="display text-2xl sm:text-3xl text-foreground">
+                      Host Account &amp; <span className="text-primary">Profile Settings</span>
+                    </h2>
+                  </div>
+
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-50 text-emerald-700 px-3 py-1 text-xs font-bold border border-emerald-300 shadow-2xs">
+                      <span className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse" />
+                      Accepting Stage Dates
+                    </span>
+                    <span className="inline-flex items-center gap-1.5 rounded-full bg-primary/10 text-primary px-3 py-1 text-xs font-bold border border-primary/20 shadow-2xs">
+                      NeonDB Connected
+                    </span>
+                    {user?.avatar ? (
+                      <img
+                        src={user.avatar}
+                        alt={adminName}
+                        className="h-8 w-8 rounded-full object-cover border-2 border-primary shadow-sm"
+                        title={adminName}
+                      />
+                    ) : (
+                      <div className="grid h-8 w-8 place-items-center rounded-full bg-primary text-xs font-bold text-white shadow-sm">
+                        SM
+                      </div>
+                    )}
+                    <button
+                      type="button"
+                      onClick={() => {
+                        logout();
+                        navigate({ to: "/" });
+                      }}
+                      className="btn-outline !py-1.5 !px-3 text-xs !border-neutral-300 !text-foreground hover:!bg-white cursor-pointer ml-1"
+                      title="Sign Out"
+                    >
+                      <LogOut className="h-3.5 w-3.5" />
+                    </button>
+                  </div>
+                </div>
+
+                {/* Hidden file input for custom profile photo upload */}
+                <input
+                  type="file"
+                  ref={fileInputRef}
+                  onChange={handlePhotoUpload}
+                  accept="image/*"
+                  className="hidden"
+                  aria-label="Upload profile photo"
+                />
+
+                {/* ------------------------------------------------------------------ */}
+                {/* MOBILE VIEW (lg:hidden)                                           */}
+                {/* Navigation menu or selected sub-view matching Mobile UI Spec       */}
+                {/* ------------------------------------------------------------------ */}
+                <div className="block lg:hidden space-y-4">
+                  {mobileAccountSection !== "menu" && (
+                    <button
+                      type="button"
+                      onClick={() => setMobileAccountSection("menu")}
+                      className="inline-flex items-center gap-1.5 text-xs font-bold text-primary hover:underline cursor-pointer bg-white px-3.5 py-2 rounded-xl border border-neutral-300 shadow-2xs"
+                    >
+                      <span>← Back to Account &amp; Profile</span>
+                    </button>
+                  )}
+
+                  {/* Mobile Hub Menu */}
+                  {mobileAccountSection === "menu" && (
+                    <div className="space-y-4">
+                      {/* Host Profile Summary Banner */}
+                      <div className="panel-card shadow-sm p-4">
+                        <div className="flex items-center justify-between gap-3">
+                          <div className="flex items-center gap-3">
+                            <div className="relative">
+                              {user?.avatar ? (
+                                <img
+                                  src={user.avatar}
+                                  alt={adminName}
+                                  className="h-14 w-14 rounded-full object-cover border-2 border-primary shadow"
+                                />
+                              ) : (
+                                <div className="grid h-14 w-14 place-items-center rounded-full bg-primary/20 text-lg font-black text-primary border-2 border-primary/30">
+                                  SM
+                                </div>
+                              )}
+                              <button
+                                type="button"
+                                onClick={() => fileInputRef.current?.click()}
+                                className="absolute -bottom-1 -right-1 rounded-full bg-primary p-1 text-white shadow hover:scale-110 transition cursor-pointer"
+                                title="Upload profile photo"
+                              >
+                                <Camera className="h-3 w-3" />
+                              </button>
+                            </div>
+                            <div>
+                              <h3 className="font-display text-base font-extrabold text-foreground">{adminName}</h3>
+                              <span className="inline-block rounded-full bg-primary/20 text-primary px-2 py-0.2 text-[10px] font-bold border border-primary/30 uppercase tracking-wider">
+                                Host &amp; Super Admin
+                              </span>
+                              <p className="text-xs font-mono text-muted-foreground mt-0.5">{adminEmail}</p>
+                            </div>
+                          </div>
+
+                          <button
+                            type="button"
+                            onClick={() => {
+                              logout();
+                              navigate({ to: "/" });
+                            }}
+                            className="p-2 rounded-xl border border-neutral-300 bg-white hover:bg-neutral-100 text-muted-foreground hover:text-foreground cursor-pointer"
+                            title="Sign Out"
+                          >
+                            <LogOut className="h-4 w-4" />
+                          </button>
+                        </div>
+                      </div>
+
+                      {/* Navigational Cards matching Mobile Screenshot */}
+                      <div className="space-y-2.5">
+                        <button
+                          type="button"
+                          onClick={() => setMobileAccountSection("photo")}
+                          className="w-full text-left rounded-2xl border border-neutral-300 bg-white p-4 shadow-2xs hover:border-primary/50 transition flex items-center justify-between cursor-pointer"
+                        >
+                          <div className="flex items-center gap-3">
+                            <div className="rounded-xl bg-neutral-100 p-2 text-foreground">
+                              <ImagePlus className="h-4 w-4" />
+                            </div>
+                            <span className="font-bold text-sm text-foreground">Profile Photo &amp; Stage Headshot</span>
+                          </div>
+                          <ChevronRight className="h-4 w-4 text-muted-foreground" />
+                        </button>
+
+                        <button
+                          type="button"
+                          onClick={() => setMobileAccountSection("info")}
+                          className="w-full text-left rounded-2xl border border-neutral-300 bg-white p-4 shadow-2xs hover:border-primary/50 transition flex items-center justify-between cursor-pointer"
+                        >
+                          <div className="flex items-center gap-3">
+                            <div className="rounded-xl bg-neutral-100 p-2 text-foreground">
+                              <User className="h-4 w-4" />
+                            </div>
+                            <span className="font-bold text-sm text-foreground">Basic Profile Information</span>
+                          </div>
+                          <ChevronRight className="h-4 w-4 text-muted-foreground" />
+                        </button>
+
+                        <button
+                          type="button"
+                          onClick={() => setMobileAccountSection("security")}
+                          className="w-full text-left rounded-2xl border border-neutral-300 bg-white p-4 shadow-2xs hover:border-primary/50 transition flex items-center justify-between cursor-pointer"
+                        >
+                          <div className="flex items-center gap-3">
+                            <div className="rounded-xl bg-neutral-100 p-2 text-foreground">
+                              <KeyRound className="h-4 w-4" />
+                            </div>
+                            <span className="font-bold text-sm text-foreground">Change Password &amp; Security</span>
+                          </div>
+                          <ChevronRight className="h-4 w-4 text-muted-foreground" />
+                        </button>
+
+                        <button
+                          type="button"
+                          onClick={() => setMobileAccountSection("team")}
+                          className="w-full text-left rounded-2xl border border-neutral-300 bg-white p-4 shadow-2xs hover:border-primary/50 transition flex items-center justify-between cursor-pointer"
+                        >
+                          <div className="flex items-center gap-3">
+                            <div className="rounded-xl bg-neutral-100 p-2 text-foreground">
+                              <Users className="h-4 w-4" />
+                            </div>
+                            <span className="font-bold text-sm text-foreground">Team Permissions &amp; Management</span>
+                          </div>
+                          <ChevronRight className="h-4 w-4 text-muted-foreground" />
+                        </button>
+
+                        {/* Highlighted Social Media Accounts Banner / Card */}
+                        <button
+                          type="button"
+                          onClick={() => setMobileAccountSection("social")}
+                          className="w-full text-left rounded-2xl border-2 border-primary/40 bg-primary/5 p-4 shadow-sm hover:border-primary transition flex items-center justify-between cursor-pointer group"
+                        >
+                          <div className="flex items-start gap-3">
+                            <div className="rounded-xl bg-primary/10 p-2 text-primary border border-primary/20 shrink-0">
+                              <Share2 className="h-5 w-5" />
+                            </div>
+                            <div>
+                              <div className="flex items-center gap-2">
+                                <span className="font-bold text-sm text-foreground group-hover:text-primary transition">
+                                  Social Media Accounts
+                                </span>
+                                <span className="rounded-full bg-primary text-white text-[9px] font-black uppercase px-2 py-0.2">
+                                  NEW
+                                </span>
+                              </div>
+                              <p className="text-xs text-muted-foreground mt-0.5 leading-relaxed">
+                                Manage your social profiles, add multiple accounts, set a main account and control their visibility.
+                              </p>
+                            </div>
+                          </div>
+                          <ChevronRight className="h-5 w-5 text-primary shrink-0 ml-2" />
+                        </button>
+                      </div>
+                    </div>
+                  )}
+
+                  {mobileAccountSection === "social" && (
+                    <div className="space-y-4">
+                      <SocialAccountsManager />
+                    </div>
+                  )}
+
+                  {mobileAccountSection === "photo" && (
+                    <div className="space-y-4">
+                      {renderPhotoStudioCard()}
+                    </div>
+                  )}
+
+                  {mobileAccountSection === "info" && (
+                    <div className="space-y-4">
+                      {renderBasicInfoCard()}
+                    </div>
+                  )}
+
+                  {mobileAccountSection === "security" && (
+                    <div className="space-y-4">
+                      {renderPasswordCard()}
+                    </div>
+                  )}
+
+                  {mobileAccountSection === "team" && (
+                    <div className="space-y-4">
+                      {renderTeamPermissionsCard()}
+                    </div>
+                  )}
+                </div>
+
+                {/* ------------------------------------------------------------------ */}
+                {/* DESKTOP TWO-COLUMN GRID (hidden lg:grid)                           */}
+                {/* ------------------------------------------------------------------ */}
+                <div className="hidden lg:grid lg:grid-cols-12 gap-6 items-start">
+                  {/* Left Column (5 cols): Photo Studio, Basic Info, Password, Team */}
+                  <div className="lg:col-span-5 space-y-6">
+                    {renderPhotoStudioCard()}
+                    {renderBasicInfoCard()}
+                    {renderPasswordCard()}
+                    {renderTeamPermissionsCard()}
+                  </div>
+
+                  {/* Right Column (7 cols): Social Media Accounts Module */}
+                  <div className="lg:col-span-7 space-y-6">
+                    <SocialAccountsManager />
+                  </div>
+                </div>
+
+                {/* ------------------------------------------------------------------ */}
+                {/* BOTTOM STRIP: Supported Platforms (V1) + Security & Privacy        */}
+                {/* ------------------------------------------------------------------ */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-2">
+                  {/* Supported Platforms (V1) */}
+                  <div className="panel-card shadow-sm p-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+                    <div className="flex items-center gap-2.5">
+                      <div className="rounded-xl bg-primary/10 p-2 text-primary border border-primary/20 shrink-0">
+                        <Share2 className="h-4 w-4" />
+                      </div>
+                      <div>
+                        <h4 className="font-display text-xs font-black uppercase tracking-wider text-foreground">
+                          Supported Platforms (V1)
+                        </h4>
+                        <p className="text-[11px] text-muted-foreground">Pre-configured branded handlers &amp; URL sanitization</p>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-1.5 flex-wrap">
+                      {PLATFORM_CATALOG.slice(0, 11).map((p) => (
+                        <span
+                          key={p.id}
+                          className="grid h-7 w-7 place-items-center rounded-lg border border-neutral-200 bg-white shadow-2xs"
+                          title={p.name}
+                        >
+                          <PlatformBrandIcon platform={p.id} className="h-3.5 w-3.5" />
+                        </span>
+                      ))}
+                      <span className="text-[10px] font-bold text-muted-foreground px-1.5 py-0.5 rounded border border-neutral-200 bg-neutral-50">
+                        +Others
+                      </span>
+                    </div>
+                  </div>
+
+                  {/* Security & Privacy Banner */}
+                  <div className="panel-card shadow-sm p-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+                    <div className="flex items-center gap-2.5">
+                      <div className="rounded-xl bg-emerald-500/10 p-2 text-emerald-600 border border-emerald-500/20 shrink-0">
+                        <ShieldCheck className="h-4 w-4" />
+                      </div>
+                      <div>
+                        <h4 className="font-display text-xs font-black uppercase tracking-wider text-foreground">
+                          Security &amp; Privacy Guaranteed
+                        </h4>
+                        <p className="text-[11px] text-muted-foreground">Zero password capture • Read-only directory • Encrypted</p>
+                      </div>
+                    </div>
+                    <div className="space-y-1 text-[11px] font-medium text-foreground">
+                      <div className="flex items-center gap-1.5">
+                        <Check className="h-3 w-3 text-emerald-600 shrink-0" />
+                        <span>No passwords stored in your system (OAuth based)</span>
+                      </div>
+                      <div className="flex items-center gap-1.5">
+                        <Check className="h-3 w-3 text-emerald-600 shrink-0" />
+                        <span>Read-only access (Import only, no export / posting)</span>
+                      </div>
+                      <div className="flex items-center gap-1.5">
+                        <Check className="h-3 w-3 text-emerald-600 shrink-0" />
+                        <span>Encrypted tokens &amp; secure storage (Neon)</span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            );
+          })()}
 
           {/* ========================================================= */}
           {/* 6. SETTINGS VIEW                                          */}

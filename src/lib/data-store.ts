@@ -28,6 +28,10 @@ import {
   insertNeonContractServerFn,
   markNeonAdvancePaidServerFn,
   insertNeonTicketServerFn,
+  insertNeonSocialAccountServerFn,
+  deleteNeonSocialAccountServerFn,
+  updateNeonSocialAccountVisibilityServerFn,
+  setNeonPrimarySocialAccountServerFn,
 } from "@/lib/neon-server";
 
 export interface Enquiry {
@@ -103,12 +107,146 @@ export interface SiteSettings {
   studioAddress: string;
 }
 
+export type SocialPlatformId =
+  | "youtube"
+  | "instagram"
+  | "linkedin"
+  | "x"
+  | "whatsapp"
+  | "facebook"
+  | "tiktok"
+  | "snapchat"
+  | "pinterest"
+  | "reddit"
+  | "threads"
+  | "vimeo"
+  | "others";
+
+export type SocialAccountType =
+  | "Personal"
+  | "Creator"
+  | "Business"
+  | "Portfolio"
+  | "Agency"
+  | "Official";
+
+export interface SocialAccount {
+  id: string;
+  platform: SocialPlatformId;
+  customPlatformName?: string;
+  accountName: string;
+  username: string;
+  profileUrl: string;
+  accountType: SocialAccountType;
+  isPrimaryOverall: boolean;
+  isPrimaryPlatform: boolean;
+  isVisible: boolean;
+  displayOrder: number;
+  status: "Saved";
+  createdAt: string;
+  updatedAt: string;
+}
+
 // Storage Keys
 const ENQUIRIES_KEY = "siddwhizz_dataset_enquiries";
 const BOOKINGS_KEY = "siddwhizz_dataset_bookings";
 const MEDIA_KEY = "siddwhizz_dataset_media";
 const TICKETS_KEY = "siddwhizz_dataset_tickets";
 const SETTINGS_KEY = "siddwhizz_site_settings";
+const SOCIAL_ACCOUNTS_KEY = "siddwhizz_dataset_social_accounts";
+
+export const DEFAULT_SOCIAL_ACCOUNTS: SocialAccount[] = [
+  {
+    id: "soc-1",
+    platform: "youtube",
+    accountName: "Siddharth Maurya",
+    username: "@SiddharthMauryaOfficial",
+    profileUrl: "https://www.youtube.com/@SiddharthMauryaOfficial",
+    accountType: "Creator",
+    isPrimaryOverall: true,
+    isPrimaryPlatform: true,
+    isVisible: true,
+    displayOrder: 1,
+    status: "Saved",
+    createdAt: "2026-10-01",
+    updatedAt: "2026-10-01",
+  },
+  {
+    id: "soc-2",
+    platform: "instagram",
+    accountName: "siddharth_maurya",
+    username: "@siddharth_maurya",
+    profileUrl: "https://www.instagram.com/siddharth_maurya",
+    accountType: "Creator",
+    isPrimaryOverall: false,
+    isPrimaryPlatform: true,
+    isVisible: true,
+    displayOrder: 2,
+    status: "Saved",
+    createdAt: "2026-10-02",
+    updatedAt: "2026-10-02",
+  },
+  {
+    id: "soc-3",
+    platform: "instagram",
+    accountName: "sid_events",
+    username: "@sid_events",
+    profileUrl: "https://www.instagram.com/sid_events",
+    accountType: "Business",
+    isPrimaryOverall: false,
+    isPrimaryPlatform: false,
+    isVisible: false,
+    displayOrder: 3,
+    status: "Saved",
+    createdAt: "2026-10-05",
+    updatedAt: "2026-10-05",
+  },
+  {
+    id: "soc-4",
+    platform: "linkedin",
+    accountName: "Siddharth Maurya",
+    username: "/in/siddharth-maurya",
+    profileUrl: "https://www.linkedin.com/in/siddharth-maurya",
+    accountType: "Personal",
+    isPrimaryOverall: false,
+    isPrimaryPlatform: true,
+    isVisible: true,
+    displayOrder: 4,
+    status: "Saved",
+    createdAt: "2026-10-06",
+    updatedAt: "2026-10-06",
+  },
+  {
+    id: "soc-5",
+    platform: "x",
+    accountName: "Sid Anchors",
+    username: "@Sid_Anchors",
+    profileUrl: "https://x.com/Sid_Anchors",
+    accountType: "Personal",
+    isPrimaryOverall: false,
+    isPrimaryPlatform: true,
+    isVisible: true,
+    displayOrder: 5,
+    status: "Saved",
+    createdAt: "2026-10-08",
+    updatedAt: "2026-10-08",
+  },
+  {
+    id: "soc-6",
+    platform: "whatsapp",
+    accountName: "Event Booking",
+    username: "+91 98200 88776",
+    profileUrl: "https://wa.me/919820088776",
+    accountType: "Business",
+    isPrimaryOverall: false,
+    isPrimaryPlatform: true,
+    isVisible: true,
+    displayOrder: 6,
+    status: "Saved",
+    createdAt: "2026-10-10",
+    updatedAt: "2026-10-10",
+  },
+];
 
 // Initial Seed Datasets
 const DEFAULT_ENQUIRIES: Enquiry[] = [
@@ -839,4 +977,262 @@ export function getDefaultThumbnail(item: { type: string; url?: string; thumbnai
   if (item.type === "audio") return micDark;
   if (item.type === "document") return conferenceHall;
   return stageBeams;
+}
+
+// ============================================================================
+// SOCIAL MEDIA ACCOUNTS (Phase 1 Directory Management)
+// ============================================================================
+
+export function getStoredSocialAccounts(): SocialAccount[] {
+  if (typeof window === "undefined") return DEFAULT_SOCIAL_ACCOUNTS;
+  try {
+    const raw = localStorage.getItem(SOCIAL_ACCOUNTS_KEY);
+    if (!raw) {
+      localStorage.setItem(SOCIAL_ACCOUNTS_KEY, JSON.stringify(DEFAULT_SOCIAL_ACCOUNTS));
+      return DEFAULT_SOCIAL_ACCOUNTS;
+    }
+    const parsed = JSON.parse(raw) as SocialAccount[];
+    return parsed.sort((a, b) => (a.displayOrder || 0) - (b.displayOrder || 0));
+  } catch (err) {
+    console.warn("Failed to parse social accounts:", err);
+    return DEFAULT_SOCIAL_ACCOUNTS;
+  }
+}
+
+export function addSocialAccount(
+  data: Omit<SocialAccount, "id" | "createdAt" | "updatedAt" | "status">
+): SocialAccount {
+  const current = getStoredSocialAccounts();
+  const now = new Date().toISOString().split("T")[0] ?? "2026-11-06";
+  const id = `soc-${Date.now().toString(36)}`;
+
+  // If marked as overall primary, unset previous overall primary
+  const updated = current.map((acc) => {
+    const nextAcc = { ...acc };
+    if (data.isPrimaryOverall) {
+      nextAcc.isPrimaryOverall = false;
+    }
+    if (data.isPrimaryPlatform && acc.platform === data.platform) {
+      nextAcc.isPrimaryPlatform = false;
+    }
+    return nextAcc;
+  });
+
+  const newAccount: SocialAccount = {
+    ...data,
+    id,
+    status: "Saved",
+    createdAt: now,
+    updatedAt: now,
+  };
+
+  updated.push(newAccount);
+  updated.sort((a, b) => (a.displayOrder || 0) - (b.displayOrder || 0));
+
+  if (typeof window !== "undefined") {
+    try {
+      localStorage.setItem(SOCIAL_ACCOUNTS_KEY, JSON.stringify(updated));
+      window.dispatchEvent(new Event("siddwhizz_social_updated"));
+    } catch (err) {
+      console.warn("Failed to save social account to localStorage:", err);
+    }
+  }
+
+  // Server background synchronization to Neon PostgreSQL
+  insertNeonSocialAccountServerFn({
+    data: {
+      id: newAccount.id,
+      platform: newAccount.platform,
+      customPlatformName: newAccount.customPlatformName,
+      accountName: newAccount.accountName,
+      username: newAccount.username,
+      profileUrl: newAccount.profileUrl,
+      accountType: newAccount.accountType,
+      isPrimaryOverall: newAccount.isPrimaryOverall,
+      isPrimaryPlatform: newAccount.isPrimaryPlatform,
+      isVisible: newAccount.isVisible,
+      displayOrder: newAccount.displayOrder,
+      status: newAccount.status,
+    },
+  }).catch((err) => {
+    console.info("Neon social account sync noted (local active):", err);
+  });
+
+  return newAccount;
+}
+
+export function updateSocialAccount(
+  id: string,
+  updates: Partial<SocialAccount>
+): SocialAccount | null {
+  const current = getStoredSocialAccounts();
+  const idx = current.findIndex((a) => a.id === id);
+  if (idx === -1) return null;
+
+  const targetPlatform = updates.platform || current[idx].platform;
+  const now = new Date().toISOString().split("T")[0] ?? "2026-11-06";
+
+  const updatedList = current.map((acc) => {
+    const nextAcc = { ...acc };
+    if (updates.isPrimaryOverall && acc.id !== id) {
+      nextAcc.isPrimaryOverall = false;
+    }
+    if (updates.isPrimaryPlatform && acc.id !== id && acc.platform === targetPlatform) {
+      nextAcc.isPrimaryPlatform = false;
+    }
+    return nextAcc;
+  });
+
+  const existing = updatedList[idx];
+  const merged: SocialAccount = {
+    ...existing,
+    ...updates,
+    updatedAt: now,
+  };
+  updatedList[idx] = merged;
+  updatedList.sort((a, b) => (a.displayOrder || 0) - (b.displayOrder || 0));
+
+  if (typeof window !== "undefined") {
+    try {
+      localStorage.setItem(SOCIAL_ACCOUNTS_KEY, JSON.stringify(updatedList));
+      window.dispatchEvent(new Event("siddwhizz_social_updated"));
+    } catch (err) {
+      console.warn("Failed to update social account in localStorage:", err);
+    }
+  }
+
+  insertNeonSocialAccountServerFn({
+    data: {
+      id: merged.id,
+      platform: merged.platform,
+      customPlatformName: merged.customPlatformName,
+      accountName: merged.accountName,
+      username: merged.username,
+      profileUrl: merged.profileUrl,
+      accountType: merged.accountType,
+      isPrimaryOverall: merged.isPrimaryOverall,
+      isPrimaryPlatform: merged.isPrimaryPlatform,
+      isVisible: merged.isVisible,
+      displayOrder: merged.displayOrder,
+      status: merged.status,
+    },
+  }).catch((err) => {
+    console.info("Neon social update sync noted (local active):", err);
+  });
+
+  return merged;
+}
+
+export function deleteSocialAccount(id: string): boolean {
+  const current = getStoredSocialAccounts();
+  const filtered = current.filter((a) => a.id !== id);
+
+  if (typeof window !== "undefined") {
+    try {
+      localStorage.setItem(SOCIAL_ACCOUNTS_KEY, JSON.stringify(filtered));
+      window.dispatchEvent(new Event("siddwhizz_social_updated"));
+    } catch (err) {
+      console.warn("Failed to delete social account from localStorage:", err);
+    }
+  }
+
+  deleteNeonSocialAccountServerFn({ data: { id } }).catch((err) => {
+    console.info("Neon social delete sync noted:", err);
+  });
+
+  return true;
+}
+
+export function setSocialAccountPrimary(id: string, scope: "platform" | "overall"): boolean {
+  const current = getStoredSocialAccounts();
+  const target = current.find((a) => a.id === id);
+  if (!target) return false;
+
+  const now = new Date().toISOString().split("T")[0] ?? "2026-11-06";
+
+  const updated = current.map((acc) => {
+    const next = { ...acc, updatedAt: now };
+    if (scope === "overall") {
+      next.isPrimaryOverall = acc.id === id;
+      if (acc.id === id) {
+        next.isPrimaryPlatform = true;
+      }
+    } else if (scope === "platform" && acc.platform === target.platform) {
+      next.isPrimaryPlatform = acc.id === id;
+    }
+    return next;
+  });
+
+  if (typeof window !== "undefined") {
+    try {
+      localStorage.setItem(SOCIAL_ACCOUNTS_KEY, JSON.stringify(updated));
+      window.dispatchEvent(new Event("siddwhizz_social_updated"));
+    } catch (err) {
+      console.warn("Failed to set primary social account in localStorage:", err);
+    }
+  }
+
+  setNeonPrimarySocialAccountServerFn({
+    data: { id, platform: target.platform, scope },
+  }).catch((err) => {
+    console.info("Neon primary update sync noted:", err);
+  });
+
+  return true;
+}
+
+export function toggleSocialAccountVisibility(id: string): boolean {
+  const current = getStoredSocialAccounts();
+  const idx = current.findIndex((a) => a.id === id);
+  if (idx === -1) return false;
+
+  const newVisibility = !current[idx].isVisible;
+  current[idx].isVisible = newVisibility;
+  current[idx].updatedAt = new Date().toISOString().split("T")[0] ?? "2026-11-06";
+
+  if (typeof window !== "undefined") {
+    try {
+      localStorage.setItem(SOCIAL_ACCOUNTS_KEY, JSON.stringify(current));
+      window.dispatchEvent(new Event("siddwhizz_social_updated"));
+    } catch (err) {
+      console.warn("Failed to toggle social account visibility:", err);
+    }
+  }
+
+  updateNeonSocialAccountVisibilityServerFn({
+    data: { id, isVisible: newVisibility },
+  }).catch((err) => {
+    console.info("Neon visibility update sync noted:", err);
+  });
+
+  return newVisibility;
+}
+
+export function reorderSocialAccounts(orderedIds: string[]): SocialAccount[] {
+  const current = getStoredSocialAccounts();
+  const orderMap = new Map<string, number>();
+  orderedIds.forEach((id, index) => orderMap.set(id, index + 1));
+
+  const updated = current.map((acc) => {
+    const newOrder = orderMap.get(acc.id);
+    return newOrder !== undefined ? { ...acc, displayOrder: newOrder } : acc;
+  });
+
+  updated.sort((a, b) => a.displayOrder - b.displayOrder);
+
+  if (typeof window !== "undefined") {
+    try {
+      localStorage.setItem(SOCIAL_ACCOUNTS_KEY, JSON.stringify(updated));
+      window.dispatchEvent(new Event("siddwhizz_social_updated"));
+    } catch (err) {
+      console.warn("Failed to save reordered social accounts:", err);
+    }
+  }
+
+  return updated;
+}
+
+export function getPublicSocialAccounts(): SocialAccount[] {
+  const all = getStoredSocialAccounts();
+  return all.filter((a) => a.isVisible).sort((a, b) => a.displayOrder - b.displayOrder);
 }

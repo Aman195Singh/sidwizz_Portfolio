@@ -10,6 +10,7 @@ import {
   getStoredBookings,
   getStoredMedia,
   getStoredTickets,
+  getStoredSocialAccounts,
 } from "@/lib/data-store";
 import { checkNeonDbServerFn } from "@/lib/neon-server";
 
@@ -56,6 +57,7 @@ export function getLiveNeonTables() {
   const bookings = getStoredBookings();
   const media = getStoredMedia();
   const tickets = getStoredTickets();
+  const socialAccounts = getStoredSocialAccounts();
 
   return [
     { name: "users", description: "Better Auth users, roles & avatar photos", rows: 3 },
@@ -66,6 +68,7 @@ export function getLiveNeonTables() {
     { name: "media_assets", description: "Stage photos, audio clips & press kit objects", rows: media.length },
     { name: "testimonials", description: "Client recommendations & event organizer quotes", rows: 8 },
     { name: "support_tickets", description: "Technical tickets & rider adjustments logged to management", rows: tickets.length },
+    { name: "social_accounts", description: "Saved social media directory profiles & public handles", rows: socialAccounts.length },
   ];
 }
 
@@ -78,6 +81,7 @@ export const EXPECTED_NEON_TABLES = [
   { name: "media_assets", description: "Stage photos, audio clips & press kit objects", rows: 8 },
   { name: "testimonials", description: "Client recommendations & event organizer quotes", rows: 8 },
   { name: "support_tickets", description: "Technical tickets & rider adjustments logged to management", rows: 1 },
+  { name: "social_accounts", description: "Saved social media directory profiles & public handles", rows: 6 },
 ];
 
 /**

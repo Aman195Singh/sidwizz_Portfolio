@@ -215,3 +215,131 @@ export const insertNeonTicketServerFn = createServerFn({ method: "POST" })
     return { synced: res.ok };
   });
 
+export interface ServerSocialAccountInput {
+  id: string;
+  platform: string;
+  customPlatformName?: string;
+  accountName: string;
+  username: string;
+  profileUrl: string;
+  accountType: string;
+  isPrimaryOverall: boolean;
+  isPrimaryPlatform: boolean;
+  isVisible: boolean;
+  displayOrder: number;
+  status: string;
+}
+
+export const insertNeonSocialAccountServerFn = createServerFn({ method: "POST" })
+  .validator((data: ServerSocialAccountInput) => data)
+  .handler(async ({ data }) => {
+    // Ensure table exists safely
+    await executeNeonHttpSql(`
+      CREATE TABLE IF NOT EXISTS social_accounts (
+        id TEXT PRIMARY KEY,
+        platform TEXT NOT NULL,
+        custom_platform_name TEXT,
+        account_name TEXT NOT NULL,
+        username TEXT NOT NULL,
+        profile_url TEXT NOT NULL,
+        account_type TEXT NOT NULL,
+        is_primary_overall BOOLEAN DEFAULT FALSE,
+        is_primary_platform BOOLEAN DEFAULT FALSE,
+        is_visible BOOLEAN DEFAULT TRUE,
+        display_order INTEGER DEFAULT 1,
+        status TEXT DEFAULT 'Saved',
+        created_at TIMESTAMPTZ DEFAULT NOW(),
+        updated_at TIMESTAMPTZ DEFAULT NOW()
+      );
+    `);
+
+    // If marked as overall primary, clear others
+    if (data.isPrimaryOverall) {
+      await executeNeonHttpSql(`UPDATE social_accounts SET is_primary_overall = FALSE;`);
+    }
+
+    // If marked as platform primary, clear other accounts of that platform
+    if (data.isPrimaryPlatform) {
+      await executeNeonHttpSql(
+        `UPDATE social_accounts SET is_primary_platform = FALSE WHERE platform = $1;`,
+        [data.platform]
+      );
+    }
+
+    const res = await executeNeonHttpSql(
+      `INSERT INTO social_accounts (
+        id, platform, custom_platform_name, account_name, username,
+        profile_url, account_type, is_primary_overall, is_primary_platform,
+        is_visible, display_order, status, updated_at
+      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, NOW())
+      ON CONFLICT (id) DO UPDATE SET
+        platform = EXCLUDED.platform,
+        custom_platform_name = EXCLUDED.custom_platform_name,
+        account_name = EXCLUDED.account_name,
+        username = EXCLUDED.username,
+        profile_url = EXCLUDED.profile_url,
+        account_type = EXCLUDED.account_type,
+        is_primary_overall = EXCLUDED.is_primary_overall,
+        is_primary_platform = EXCLUDED.is_primary_platform,
+        is_visible = EXCLUDED.is_visible,
+        display_order = EXCLUDED.display_order,
+        status = EXCLUDED.status,
+        updated_at = NOW();`,
+      [
+        data.id,
+        data.platform,
+        data.customPlatformName || null,
+        data.accountName,
+        data.username,
+        data.profileUrl,
+        data.accountType,
+        data.isPrimaryOverall,
+        data.isPrimaryPlatform,
+        data.isVisible,
+        data.displayOrder,
+        data.status,
+      ]
+    );
+    return { synced: res.ok };
+  });
+
+export const deleteNeonSocialAccountServerFn = createServerFn({ method: "POST" })
+  .validator((data: { id: string }) => data)
+  .handler(async ({ data }) => {
+    const res = await executeNeonHttpSql(`DELETE FROM social_accounts WHERE id = $1;`, [data.id]);
+    return { synced: res.ok };
+  });
+
+export const updateNeonSocialAccountVisibilityServerFn = createServerFn({ method: "POST" })
+  .validator((data: { id: string; isVisible: boolean }) => data)
+  .handler(async ({ data }) => {
+    const res = await executeNeonHttpSql(
+      `UPDATE social_accounts SET is_visible = $1, updated_at = NOW() WHERE id = $2;`,
+      [data.isVisible, data.id]
+    );
+    return { synced: res.ok };
+  });
+
+export const setNeonPrimarySocialAccountServerFn = createServerFn({ method: "POST" })
+  .validator((data: { id: string; platform: string; scope: "platform" | "overall" }) => data)
+  .handler(async ({ data }) => {
+    if (data.scope === "overall") {
+      await executeNeonHttpSql(`UPDATE social_accounts SET is_primary_overall = FALSE;`);
+      const res = await executeNeonHttpSql(
+        `UPDATE social_accounts SET is_primary_overall = TRUE, is_primary_platform = TRUE, updated_at = NOW() WHERE id = $1;`,
+        [data.id]
+      );
+      return { synced: res.ok };
+    } else {
+      await executeNeonHttpSql(
+        `UPDATE social_accounts SET is_primary_platform = FALSE WHERE platform = $1;`,
+        [data.platform]
+      );
+      const res = await executeNeonHttpSql(
+        `UPDATE social_accounts SET is_primary_platform = TRUE, updated_at = NOW() WHERE id = $1;`,
+        [data.id]
+      );
+      return { synced: res.ok };
+    }
+  });
+

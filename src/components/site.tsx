@@ -34,6 +34,8 @@ import {
   DropdownMenuLabel,
 } from "@/components/ui/dropdown-menu";
 import { useAuth } from "@/lib/auth";
+import { getPublicSocialAccounts, type SocialAccount } from "@/lib/data-store";
+import { PlatformBrandIcon } from "@/components/social-accounts-manager";
 import ctaHost from "@/assets/cta-host.jpg";
 import ctaCrowd from "@/assets/cta-crowd.jpg";
 import avPriya from "@/assets/avatar-priya.jpg";
@@ -611,6 +613,55 @@ const SOCIAL = [
 ];
 
 export function SocialIcons({ variant = "dark" }: { variant?: "dark" | "card" }) {
+  const [dynamicAccounts, setDynamicAccounts] = useState<SocialAccount[]>(() => {
+    if (typeof window !== "undefined") {
+      try {
+        const publicAccounts = getPublicSocialAccounts();
+        if (publicAccounts && publicAccounts.length > 0) return publicAccounts;
+      } catch {}
+    }
+    return [];
+  });
+
+  useEffect(() => {
+    const handleSync = () => {
+      try {
+        const publicAccounts = getPublicSocialAccounts();
+        if (publicAccounts && publicAccounts.length > 0) {
+          setDynamicAccounts(publicAccounts);
+        }
+      } catch {}
+    };
+    if (typeof window !== "undefined") {
+      window.addEventListener("siddwhizz_social_updated", handleSync);
+      return () => window.removeEventListener("siddwhizz_social_updated", handleSync);
+    }
+  }, []);
+
+  if (dynamicAccounts.length > 0) {
+    return (
+      <div className="flex items-center gap-3 flex-wrap">
+        {dynamicAccounts.map((acc) => (
+          <a
+            key={acc.id}
+            href={acc.profileUrl}
+            target="_blank"
+            rel="noreferrer"
+            aria-label={`${acc.accountName} on ${acc.platform}`}
+            title={`${acc.accountName} (${acc.username})`}
+            className={
+              variant === "dark"
+                ? "grid h-9 w-9 place-items-center rounded-md text-ink-foreground transition-all duration-300 hover:-translate-y-1 hover:text-primary"
+                : "grid h-12 w-16 place-items-center rounded-lg border bg-card text-foreground transition-all duration-300 hover:-translate-y-1 hover:border-primary hover:text-primary"
+            }
+          >
+            <PlatformBrandIcon platform={acc.platform} className={variant === "dark" ? "h-5 w-5" : "h-6 w-6"} />
+          </a>
+        ))}
+      </div>
+    );
+  }
+
   return (
     <div className="flex items-center gap-3">
       {SOCIAL.map((s) => (
