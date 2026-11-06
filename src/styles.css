@@ -106,7 +106,43 @@
   }
   html {
     scroll-behavior: smooth;
+    scrollbar-gutter: stable;
   }
+
+  /* ============================================================== */
+  /* MINIMAL & AESTHETIC SCROLLBAR SYSTEM (Modern W3C + WebKit)     */
+  /* ============================================================== */
+  /* Standards-based (Firefox 64+, Chrome 121+, Safari 17.2+) */
+  html, body, * {
+    scrollbar-width: thin;
+    scrollbar-color: rgba(165, 170, 185, 0.4) transparent;
+  }
+
+  /* WebKit & Chromium-based (Chrome, Edge, Safari, Opera) */
+  ::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+  }
+  ::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  ::-webkit-scrollbar-thumb {
+    background-color: rgba(165, 170, 185, 0.38);
+    border-radius: 9999px;
+    background-clip: padding-box;
+    border: 1px solid transparent;
+    transition: background-color 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+  ::-webkit-scrollbar-thumb:hover {
+    background-color: rgba(225, 29, 72, 0.65); /* SiddWhizz brand concert crimson */
+  }
+  ::-webkit-scrollbar-thumb:active {
+    background-color: rgba(225, 29, 72, 0.95);
+  }
+  ::-webkit-scrollbar-corner {
+    background: transparent;
+  }
+
   body {
     background-color: var(--color-background);
     color: var(--color-foreground);
@@ -332,6 +368,34 @@
   }
   .animate-pulse-ring {
     animation: pulse-ring 2s ease-out infinite;
+  }
+
+  /* Custom Scrollbar Utilities */
+  .no-scrollbar {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+  .no-scrollbar::-webkit-scrollbar {
+    display: none;
+  }
+
+  .thin-scrollbar {
+    scrollbar-width: thin;
+    scrollbar-color: rgba(165, 170, 185, 0.35) transparent;
+  }
+  .thin-scrollbar::-webkit-scrollbar {
+    width: 4px;
+    height: 4px;
+  }
+  .thin-scrollbar::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  .thin-scrollbar::-webkit-scrollbar-thumb {
+    background-color: rgba(165, 170, 185, 0.35);
+    border-radius: 9999px;
+  }
+  .thin-scrollbar::-webkit-scrollbar-thumb:hover {
+    background-color: rgba(225, 29, 72, 0.65);
   }
 }
 
