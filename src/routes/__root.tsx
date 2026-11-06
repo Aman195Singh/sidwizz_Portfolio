@@ -15,6 +15,7 @@ import appCss from "../styles.css?url";
 import { Header, Footer } from "@/components/site";
 import { Toaster } from "@/components/ui/sonner";
 import { AuthProvider } from "@/lib/auth";
+import { recordPageView } from "@/lib/analytics-tracker";
 
 function NotFoundComponent() {
   return (
@@ -128,6 +129,7 @@ function RootComponent() {
   const pathname = useRouterState({ select: (s) => s.location.pathname });
   useEffect(() => {
     window.scrollTo({ top: 0, behavior: "instant" as ScrollBehavior });
+    recordPageView(pathname);
   }, [pathname]);
 
   const isPanel =

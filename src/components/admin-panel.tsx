@@ -75,6 +75,7 @@ import {
 import { UniversalFileIcon, detectFileFormat } from "@/components/universal-file-icon";
 import { MediaEditorModal } from "@/components/media-editor-modal";
 import { downloadMediaAsZip } from "@/lib/zip-export";
+import { WebAnalyticsDashboard } from "@/components/web-analytics-dashboard";
 import {
   getStoredEnquiries,
   updateEnquiryStatus,
@@ -1490,147 +1491,7 @@ https://sidwizz-portfolio.vercel.app`
           {/* 2. WEB PAGE ANALYTICS VIEW                                */}
           {/* ========================================================= */}
           {activeTab === "analytics" && (
-            <div className="space-y-6">
-              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-2 border-b border-border/60">
-                <div>
-                  <p className="eyebrow eyebrow-line">Audience Insights</p>
-                  <h2 className="display mt-2 text-2xl sm:text-3xl">
-                    Website Traffic & <span className="text-primary">Engagement.</span>
-                  </h2>
-                </div>
-                <div className="inline-flex items-center gap-2 rounded-full border border-border/80 bg-card px-3.5 py-1.5 shadow-2xs self-start sm:self-auto">
-                  <span className="relative flex h-2.5 w-2.5">
-                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
-                    <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-emerald-500"></span>
-                  </span>
-                  <span className="font-mono text-xs font-bold text-foreground">
-                    Live Telemetry Active • {new Date().toLocaleDateString("en-IN", { month: "short", day: "numeric", year: "numeric" })}
-                  </span>
-                </div>
-              </div>
-
-              <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
-                <div className="panel-card card-lift shadow-sm">
-                  <div className="panel-card-header py-3 px-5 flex items-center justify-between">
-                    <span className="font-display text-xs font-extrabold text-muted-foreground uppercase">Unique Visitors</span>
-                    <Users className="h-4 w-4 text-primary" />
-                  </div>
-                  <div className="panel-card-body p-5">
-                    <p className="text-3xl font-black font-display text-foreground">42,500</p>
-                    <p className="text-xs text-primary font-bold mt-1">↑ 18.2% this month</p>
-                  </div>
-                </div>
-
-                <div className="panel-card card-lift shadow-sm">
-                  <div className="panel-card-header py-3 px-5 flex items-center justify-between">
-                    <span className="font-display text-xs font-extrabold text-muted-foreground uppercase">Total Pageviews</span>
-                    <TrendingUp className="h-4 w-4 text-primary" />
-                  </div>
-                  <div className="panel-card-body p-5">
-                    <p className="text-3xl font-black font-display text-foreground">118,200</p>
-                    <p className="text-xs text-primary font-bold mt-1">↑ 24.6% this month</p>
-                  </div>
-                </div>
-
-                <div className="panel-card card-lift shadow-sm">
-                  <div className="panel-card-header py-3 px-5 flex items-center justify-between">
-                    <span className="font-display text-xs font-extrabold text-muted-foreground uppercase">Avg. Time</span>
-                    <Clock className="h-4 w-4 text-foreground" />
-                  </div>
-                  <div className="panel-card-body p-5">
-                    <p className="text-3xl font-black font-display text-foreground">2m 48s</p>
-                    <p className="text-xs text-muted-foreground mt-1">High audience retention</p>
-                  </div>
-                </div>
-
-                <div className="panel-card card-lift shadow-sm">
-                  <div className="panel-card-header py-3 px-5 flex items-center justify-between">
-                    <span className="font-display text-xs font-extrabold text-muted-foreground uppercase">Enquiry Rate</span>
-                    <CheckCircle2 className="h-4 w-4 text-emerald-500" />
-                  </div>
-                  <div className="panel-card-body p-5">
-                    <p className="text-3xl font-black font-display text-foreground">4.2%</p>
-                    <p className="text-xs text-muted-foreground font-semibold mt-1">High booking intent</p>
-                  </div>
-                </div>
-              </div>
-
-              {/* Section Popularity Breakdown */}
-              <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
-                <div className="panel-card shadow-sm">
-                  <div className="panel-card-header flex items-center gap-2.5">
-                    <span className="h-5 w-1.5 rounded-full bg-primary shrink-0" />
-                    <h3 className="font-display text-base sm:text-lg font-extrabold text-foreground uppercase tracking-tight">Most Visited Sections</h3>
-                  </div>
-                  <div className="panel-card-body p-6 space-y-4">
-                    <div>
-                      <div className="flex justify-between text-sm font-bold mb-1.5">
-                        <span>Homepage &amp; Hero Showreel (/)</span>
-                        <span className="text-muted-foreground">45% (53,190 views)</span>
-                      </div>
-                      <div className="h-2.5 w-full rounded-full bg-neutral-200 overflow-hidden">
-                        <div className="h-full bg-primary rounded-full" style={{ width: "45%" }} />
-                      </div>
-                    </div>
-
-                    <div>
-                      <div className="flex justify-between text-sm font-bold mb-1.5">
-                        <span>Portfolio &amp; Summits (/portfolio)</span>
-                        <span className="text-muted-foreground">28% (33,096 views)</span>
-                      </div>
-                      <div className="h-2.5 w-full rounded-full bg-neutral-200 overflow-hidden">
-                        <div className="h-full bg-primary rounded-full" style={{ width: "28%" }} />
-                      </div>
-                    </div>
-
-                    <div>
-                      <div className="flex justify-between text-sm font-bold mb-1.5">
-                        <span>Event Formats &amp; Packages (/services)</span>
-                        <span className="text-muted-foreground">15% (17,730 views)</span>
-                      </div>
-                      <div className="h-2.5 w-full rounded-full bg-neutral-200 overflow-hidden">
-                        <div className="h-full bg-primary rounded-full" style={{ width: "15%" }} />
-                      </div>
-                    </div>
-
-                    <div>
-                      <div className="flex justify-between text-sm font-bold mb-1.5">
-                        <span>Live Stage Moments Gallery (/gallery)</span>
-                        <span className="text-muted-foreground">12% (14,184 views)</span>
-                      </div>
-                      <div className="h-2.5 w-full rounded-full bg-neutral-200 overflow-hidden">
-                        <div className="h-full bg-primary rounded-full" style={{ width: "12%" }} />
-                      </div>
-                    </div>
-                  </div>
-                </div>
-
-                <div className="panel-card shadow-sm">
-                  <div className="panel-card-header flex items-center gap-2.5">
-                    <span className="h-5 w-1.5 rounded-full bg-primary shrink-0" />
-                    <h3 className="font-display text-base sm:text-lg font-extrabold text-foreground uppercase tracking-tight">Traffic Referral Channels</h3>
-                  </div>
-                  <div className="panel-card-body p-6 space-y-3.5">
-                    <div className="flex items-center justify-between border-b border-neutral-300 pb-2.5 text-sm">
-                      <span className="font-semibold text-foreground">Direct &amp; Bookmark</span>
-                      <span className="font-mono font-bold text-muted-foreground">38%</span>
-                    </div>
-                    <div className="flex items-center justify-between border-b border-neutral-300 pb-2.5 text-sm">
-                      <span className="font-semibold text-foreground">Instagram (@siddwhizz)</span>
-                      <span className="font-mono font-bold text-foreground">32%</span>
-                    </div>
-                    <div className="flex items-center justify-between border-b border-neutral-300 pb-2.5 text-sm">
-                      <span className="font-semibold text-foreground">LinkedIn (Siddharth Maurya)</span>
-                      <span className="font-mono font-bold text-muted-foreground">20%</span>
-                    </div>
-                    <div className="flex items-center justify-between pb-1 text-sm">
-                      <span className="font-semibold text-foreground">Word-of-Mouth &amp; Agency Referrals</span>
-                      <span className="font-mono font-bold text-muted-foreground">10%</span>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
+            <WebAnalyticsDashboard />
           )}
 
           {/* ========================================================= */}
