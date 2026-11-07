@@ -15,7 +15,9 @@ import appCss from "../styles.css?url";
 import { Header, Footer } from "@/components/site";
 import { Toaster } from "@/components/ui/sonner";
 import { AuthProvider } from "@/lib/auth";
+import { CmsSiteProvider, CmsThemedSurface, usePublishedCms } from "@/lib/cms-context";
 import { recordPageView } from "@/lib/analytics-tracker";
+import { Sparkles } from "lucide-react";
 
 function NotFoundComponent() {
   return (
@@ -124,6 +126,36 @@ function RootShell({ children }: { children: ReactNode }) {
   );
 }
 
+function PublicOrPanelShell({ pathname, isPanel }: { pathname: string; isPanel: boolean }) {
+  const { cms } = usePublishedCms();
+
+  if (isPanel) {
+    return (
+      <main key={pathname} className="h-screen overflow-hidden bg-background">
+        <Outlet />
+      </main>
+    );
+  }
+
+  return (
+    <CmsThemedSurface tokens={cms.themeTokens}>
+      {cms.navigation.announcementBannerEnabled && cms.navigation.announcementBannerText && (
+        <div className="bg-ink text-ink-foreground border-b border-ink-muted/20 px-4 py-2 text-center text-xs font-semibold">
+          <span className="inline-flex items-center justify-center gap-1.5">
+            <Sparkles className="h-3.5 w-3.5 text-primary shrink-0" />
+            <span>{cms.navigation.announcementBannerText}</span>
+          </span>
+        </div>
+      )}
+      <Header />
+      <main key={pathname} className="animate-page">
+        <Outlet />
+      </main>
+      <Footer />
+    </CmsThemedSurface>
+  );
+}
+
 function RootComponent() {
   const { queryClient } = Route.useRouteContext();
   const pathname = useRouterState({ select: (s) => s.location.pathname });
@@ -140,12 +172,10 @@ function RootComponent() {
   return (
     <QueryClientProvider client={queryClient}>
       <AuthProvider>
-        {!isPanel && <Header />}
-        <main key={pathname} className={isPanel ? "h-screen overflow-hidden bg-background" : "animate-page"}>
-          <Outlet />
-        </main>
-        {!isPanel && <Footer />}
-        <Toaster position="top-center" richColors />
+        <CmsSiteProvider>
+          <PublicOrPanelShell pathname={pathname} isPanel={isPanel} />
+          <Toaster position="top-center" richColors />
+        </CmsSiteProvider>
       </AuthProvider>
     </QueryClientProvider>
   );

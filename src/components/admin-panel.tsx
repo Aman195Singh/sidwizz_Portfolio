@@ -64,6 +64,7 @@ import {
   HardDrive,
   Layers,
   CalendarCheck,
+  LayoutTemplate,
 } from "lucide-react";
 import { useAuth } from "@/lib/auth";
 import { toast } from "sonner";
@@ -78,6 +79,9 @@ import { MediaEditorModal } from "@/components/media-editor-modal";
 import { downloadMediaAsZip } from "@/lib/zip-export";
 import { WebAnalyticsDashboard } from "@/components/web-analytics-dashboard";
 import { AdminBookingWorkspace } from "@/components/admin-booking-workspace";
+import { AdminUserManagement } from "@/components/admin-user-management";
+import { AdminCmsWorkspace } from "@/components/admin-cms-workspace";
+import { deleteCmsMediaAssetServerFn } from "@/lib/cms-server";
 import {
   getStoredEnquiries,
   updateEnquiryStatus,
@@ -121,6 +125,8 @@ export type AdminTab =
   | "enquiries"
   | "booking"
   | "media"
+  | "cms"
+  | "users"
   | "account"
   | "settings"
   | "support";
@@ -326,13 +332,14 @@ const INITIAL_MEDIA_ITEMS: MediaItem[] = [
 ];
 
 export function AdminPanel({ initialTab = "overview" }: { initialTab?: AdminTab }) {
-  const { user, logout, updateProfilePhoto, updatePassword, updateProfile } = useAuth();
+  const { user, logout, hasPermission, hasFeature, updateProfilePhoto, updatePassword, updateProfile } = useAuth();
   const navigate = useNavigate();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const mediaFileInputRef = useRef<HTMLInputElement>(null);
 
   const [activeTab, setActiveTab] = useState<AdminTab>(initialTab);
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [pendingOrgCount, setPendingOrgCount] = useState<number>(1);
 
   useEffect(() => {
     if (initialTab) {
@@ -737,9 +744,30 @@ https://sidwizz-portfolio.vercel.app`
     setMediaToDelete(item);
   };
 
-  // Confirm permanent delete
-  const handleConfirmDelete = () => {
+  // Confirm permanent delete (enforces CMS "In Use" reference safeguard first)
+  const handleConfirmDelete = async () => {
     if (!mediaToDelete) return;
+    try {
+      const guard = await deleteCmsMediaAssetServerFn({
+        data: { assetIdOrUrl: mediaToDelete.url },
+      });
+      if (guard.inUse) {
+        toast.error(
+          `Deletion blocked: "${mediaToDelete.title}" is actively referenced in CMS (${guard.blockingLocations.slice(0, 2).join(", ")}). Replace it in Website CMS before deleting.`
+        );
+        setMediaToDelete(null);
+        return;
+      }
+    } catch (err) {
+      toast.error(
+        err instanceof Error
+          ? err.message
+          : "You do not have permission to permanently delete media assets."
+      );
+      setMediaToDelete(null);
+      return;
+    }
+
     deleteMediaItem(mediaToDelete.id);
     setMediaItems(getStoredMedia());
     if (viewingMedia?.id === mediaToDelete.id) {
@@ -809,12 +837,50 @@ https://sidwizz-portfolio.vercel.app`
     setSelectedMediaIds([]);
   };
 
-  const handleBulkDeleteSelected = () => {
+  const handleBulkDeleteSelected = async () => {
     if (selectedMediaIds.length === 0) return;
-    if (window.confirm(`Are you sure you want to permanently delete ${selectedMediaIds.length} selected items?`)) {
-      bulkDeleteMedia(selectedMediaIds);
+    if (!window.confirm(`Are you sure you want to permanently delete ${selectedMediaIds.length} selected items?`)) {
+      return;
+    }
+
+    const deletableIds: string[] = [];
+    const blockedTitles: string[] = [];
+
+    for (const id of selectedMediaIds) {
+      const target = mediaItems.find((m) => m.id === id);
+      if (!target) continue;
+      try {
+        const guard = await deleteCmsMediaAssetServerFn({
+          data: { assetIdOrUrl: target.url },
+        });
+        if (guard.inUse) {
+          blockedTitles.push(target.title);
+        } else {
+          deletableIds.push(id);
+        }
+      } catch (err) {
+        toast.error(
+          err instanceof Error
+            ? err.message
+            : "Permission denied for permanent media deletion."
+        );
+        return;
+      }
+    }
+
+    if (deletableIds.length > 0) {
+      bulkDeleteMedia(deletableIds);
       setMediaItems(getStoredMedia());
-      setSelectedMediaIds([]);
+    }
+    setSelectedMediaIds([]);
+
+    if (blockedTitles.length > 0) {
+      toast.error(
+        `Protected ${blockedTitles.length} asset(s) currently in use on CMS pages (${blockedTitles.slice(0, 2).join(", ")}).${
+          deletableIds.length > 0 ? ` Deleted ${deletableIds.length} unused asset(s).` : ""
+        }`
+      );
+    } else {
       toast.success("Selected items deleted permanently.");
     }
   };
@@ -1122,6 +1188,64 @@ https://sidwizz-portfolio.vercel.app`
             <span className={`text-xs font-bold ${activeTab === "media" ? "text-primary-foreground" : "text-muted-foreground"}`}>{mediaItems.length}</span>
           </button>
 
+          {/* Website CMS & Contact Form Builder Tab */}
+          {hasFeature("feature.cms") && hasPermission("cms.view") && (
+            <button
+              onClick={() => {
+                setActiveTab("cms");
+                setSidebarOpen(false);
+              }}
+              className={`flex w-full items-center justify-between rounded-xl px-3.5 py-3 font-semibold transition ${
+                activeTab === "cms"
+                  ? "bg-primary text-primary-foreground shadow-sm font-bold"
+                  : "text-foreground/80 hover:bg-accent hover:text-foreground"
+              }`}
+            >
+              <span className="flex items-center gap-3">
+                <LayoutTemplate className="h-4 w-4" /> Website CMS
+              </span>
+              <span
+                className={`rounded-full px-2 py-0.5 text-[11px] font-black ${
+                  activeTab === "cms"
+                    ? "bg-white text-primary"
+                    : "bg-primary/15 text-primary border border-primary/25"
+                }`}
+              >
+                6 Pages
+              </span>
+            </button>
+          )}
+
+          {/* Enterprise User, Role & Access Governance Tab */}
+          {hasPermission("user.view") && (
+            <button
+              onClick={() => {
+                setActiveTab("users");
+                setSidebarOpen(false);
+              }}
+              className={`flex w-full items-center justify-between rounded-xl px-3.5 py-3 font-semibold transition ${
+                activeTab === "users"
+                  ? "bg-primary text-primary-foreground shadow-sm font-bold"
+                  : "text-foreground/80 hover:bg-accent hover:text-foreground"
+              }`}
+            >
+              <span className="flex items-center gap-3">
+                <Users className="h-4 w-4" /> User Management
+              </span>
+              <span
+                className={`rounded-full px-2 py-0.5 text-[11px] font-black ${
+                  activeTab === "users"
+                    ? "bg-white text-primary"
+                    : pendingOrgCount > 0
+                    ? "bg-primary text-primary-foreground"
+                    : "bg-primary/15 text-primary border border-primary/25"
+                }`}
+              >
+                {pendingOrgCount > 0 ? `${pendingOrgCount} Review` : "RBAC"}
+              </span>
+            </button>
+          )}
+
           {/* Merged Account & Profile Tab */}
           <button
             onClick={() => {
@@ -1222,6 +1346,8 @@ https://sidwizz-portfolio.vercel.app`
               {activeTab === "enquiries" && "Client Enquiries & Fast Outreach"}
               {activeTab === "booking" && "Role-Based Booking & Operations"}
               {activeTab === "media" && "Media Asset Library"}
+              {activeTab === "cms" && "Website CMS & Form Builder"}
+              {activeTab === "users" && "User, Role & Access Governance"}
               {activeTab === "account" && "Host Account & Profile Settings"}
               {activeTab === "settings" && "Website & Booking Settings"}
               {activeTab === "support" && "Developer Support & Assistance"}
@@ -3308,23 +3434,26 @@ https://sidwizz-portfolio.vercel.app`
                         <label className="font-bold text-muted-foreground block mb-1.5 text-xs">Current Password</label>
                         <input
                           type="password"
+                          name="admin_current_password"
+                          autoComplete="current-password"
                           required
                           value={currentPassword}
                           onChange={(e) => setCurrentPassword(e.target.value)}
                           placeholder="••••••••"
                           className="w-full rounded-xl border border-neutral-300 bg-white py-2.5 px-3.5 text-sm text-foreground focus:border-primary focus:outline-none"
                         />
-                        <span className="text-[11px] text-muted-foreground mt-1 block">Default: sid123</span>
                       </div>
 
                       <div>
                         <label className="font-bold text-muted-foreground block mb-1.5 text-xs">New Password</label>
                         <input
                           type="password"
+                          name="admin_new_password"
+                          autoComplete="new-password"
                           required
                           value={newPassword}
                           onChange={(e) => setNewPassword(e.target.value)}
-                          placeholder="At least 6 characters"
+                          placeholder="At least 8 characters"
                           className="w-full rounded-xl border border-neutral-300 bg-white py-2.5 px-3.5 text-sm text-foreground focus:border-primary focus:outline-none"
                         />
                       </div>
@@ -3368,13 +3497,15 @@ https://sidwizz-portfolio.vercel.app`
                       <p className="text-xs text-muted-foreground">Authorized team members with access to the Admin Panel.</p>
                     </div>
                   </div>
-                  <button
-                    type="button"
-                    onClick={() => toast.info("Invitation link generated for team manager.")}
-                    className="btn-outline !py-2 !px-3.5 text-xs sm:text-sm flex items-center gap-1.5 !border-neutral-300 !text-foreground hover:!bg-white cursor-pointer"
-                  >
-                    <Plus className="h-4 w-4" /> Add Team Member
-                  </button>
+                  {hasPermission("user.view") && (
+                    <button
+                      type="button"
+                      onClick={() => setActiveTab("users")}
+                      className="btn-outline !py-2 !px-3.5 text-xs sm:text-sm flex items-center gap-1.5 !border-neutral-300 !text-foreground hover:!bg-white cursor-pointer"
+                    >
+                      <ShieldCheck className="h-4 w-4 text-primary" /> Open RBAC &amp; Users Hub
+                    </button>
+                  )}
                 </div>
 
                 <div className="panel-card-body p-0 sm:p-4">
@@ -3496,6 +3627,18 @@ https://sidwizz-portfolio.vercel.app`
               </div>
             );
           })()}
+
+          {/* ========================================================= */}
+          {/* 5A. WEBSITE CMS & CONTACT FORM BUILDER STUDIO             */}
+          {/* ========================================================= */}
+          {activeTab === "cms" && <AdminCmsWorkspace />}
+
+          {/* ========================================================= */}
+          {/* 5B. ENTERPRISE USER, ROLE & ACCESS GOVERNANCE VIEW        */}
+          {/* ========================================================= */}
+          {activeTab === "users" && (
+            <AdminUserManagement onPendingCountChange={setPendingOrgCount} />
+          )}
 
           {/* ========================================================= */}
           {/* 6. SETTINGS VIEW                                          */}

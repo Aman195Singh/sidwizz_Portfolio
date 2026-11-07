@@ -21,7 +21,8 @@ for (let n = 0; n < 256; n++) {
 function calculateCrc32(data: Uint8Array): number {
   let crc = 0xffffffff;
   for (let i = 0; i < data.length; i++) {
-    crc = crcTable[(crc ^ data[i]) & 0xff] ^ (crc >>> 8);
+    const byte = data[i] ?? 0;
+    crc = (crcTable[(crc ^ byte) & 0xff] ?? 0) ^ (crc >>> 8);
   }
   return (crc ^ 0xffffffff) >>> 0;
 }
@@ -151,7 +152,7 @@ export async function downloadMediaAsZip(
 
       let data: Uint8Array;
       if (item.url.startsWith("data:")) {
-        const base64 = item.url.split(",")[1];
+        const base64 = item.url.split(",")[1] ?? "";
         const binary = atob(base64);
         data = new Uint8Array(binary.length);
         for (let i = 0; i < binary.length; i++) {

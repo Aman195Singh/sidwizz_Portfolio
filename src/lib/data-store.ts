@@ -585,7 +585,9 @@ export function updateEnquiryStatus(id: string, status: Enquiry["status"]): bool
   const index = current.findIndex((e) => e.id === id);
   if (index === -1) return false;
 
-  current[index].status = status;
+  const target = current[index];
+  if (!target) return false;
+  target.status = status;
   if (typeof window !== "undefined") {
     try {
       localStorage.setItem(ENQUIRIES_KEY, JSON.stringify(current));
@@ -605,6 +607,7 @@ export function addEnquiryNote(id: string, note: string): boolean {
   if (index === -1) return false;
 
   const enq = current[index];
+  if (!enq) return false;
   enq.notes = [...(enq.notes || []), note.trim()];
   if (typeof window !== "undefined") {
     try {
@@ -644,7 +647,7 @@ export function saveBookingContract(
     ...data,
     id: `BK-${Math.floor(100 + Math.random() * 900)}`,
     contractRef: data.contractRef || `REF: SID-CONF-2026-${randomRef}`,
-    createdAt: new Date().toISOString().split("T")[0],
+    createdAt: new Date().toISOString().split("T")[0] ?? "2026-11-07",
   };
 
   const updated = [newBooking, ...current];
@@ -722,8 +725,10 @@ export function markBookingAdvancePaid(bookingId: string): boolean {
   const idx = current.findIndex((b) => b.id === bookingId);
   if (idx === -1) return false;
 
-  current[idx].advancePaid = true;
-  current[idx].status = "Confirmed";
+  const targetBooking = current[idx];
+  if (!targetBooking) return false;
+  targetBooking.advancePaid = true;
+  targetBooking.status = "Confirmed";
 
   if (typeof window !== "undefined") {
     try {
@@ -849,7 +854,9 @@ export function updateTicketStatus(id: string, status: SupportTicket["status"]):
   const idx = current.findIndex((t) => t.id === id);
   if (idx === -1) return false;
 
-  current[idx].status = status;
+  const targetTicket = current[idx];
+  if (!targetTicket) return false;
+  targetTicket.status = status;
   if (typeof window !== "undefined") {
     try {
       localStorage.setItem(TICKETS_KEY, JSON.stringify(current));
@@ -933,7 +940,7 @@ export function addMediaItem(item: Omit<MediaItem, "id" | "createdAt">): MediaIt
   const newItem: MediaItem = {
     ...item,
     id: `med-${Date.now().toString(36)}`,
-    createdAt: new Date().toISOString().split("T")[0],
+    createdAt: new Date().toISOString().split("T")[0] ?? "2026-11-07",
   };
 
   const updated = [newItem, ...current];
@@ -967,7 +974,9 @@ export function updateMediaThumbnail(id: string, thumbnail: string): boolean {
   const idx = current.findIndex((m) => m.id === id);
   if (idx === -1) return false;
 
-  current[idx].thumbnail = thumbnail;
+  const targetMedia = current[idx];
+  if (!targetMedia) return false;
+  targetMedia.thumbnail = thumbnail;
   if (typeof window !== "undefined") {
     try {
       localStorage.setItem(MEDIA_KEY, JSON.stringify(current));
@@ -994,6 +1003,7 @@ export function toggleMediaLike(id: string): { likes: number; isLiked: boolean }
   if (idx === -1) return { likes: 0, isLiked: false };
 
   const item = current[idx];
+  if (!item) return { likes: 0, isLiked: false };
   const isLiked = !item.isLiked;
   const likes = Math.max(0, (item.likes || 12) + (isLiked ? 1 : -1));
 
@@ -1017,13 +1027,18 @@ export function toggleMediaWishlist(id: string, collection?: string): boolean {
   if (idx === -1) return false;
 
   const item = current[idx];
+  if (!item) return false;
   const isWishlist = !item.isWishlist;
-
-  current[idx] = {
+  const nextItem: MediaItem = {
     ...item,
     isWishlist,
-    wishlistCollection: isWishlist ? collection || "General Wishlist" : undefined,
   };
+  if (isWishlist) {
+    nextItem.wishlistCollection = collection || "General Wishlist";
+  } else {
+    delete nextItem.wishlistCollection;
+  }
+  current[idx] = nextItem;
 
   if (typeof window !== "undefined") {
     try {
@@ -1042,7 +1057,9 @@ export function updateMediaDetails(id: string, updates: Partial<MediaItem>): boo
   const idx = current.findIndex((m) => m.id === id);
   if (idx === -1) return false;
 
-  current[idx] = { ...current[idx], ...updates };
+  const existingMedia = current[idx];
+  if (!existingMedia) return false;
+  current[idx] = { ...existingMedia, ...updates };
 
   if (typeof window !== "undefined") {
     try {
@@ -1065,7 +1082,7 @@ export function duplicateMediaItem(id: string): MediaItem | null {
     ...original,
     id: `med-${Date.now().toString(36)}`,
     title: `${original.title} (Copy)`,
-    createdAt: new Date().toISOString().split("T")[0],
+    createdAt: new Date().toISOString().split("T")[0] ?? "2026-11-07",
     isLiked: false,
     likes: 0,
   };
@@ -1183,14 +1200,16 @@ export function saveEditedMediaCopy(
     id: `med-${Date.now().toString(36)}`,
     title: editedData.title || (original ? `[Edited] ${original.title}` : "Edited Media"),
     type: editedData.type || original?.type || "image",
-    format: editedData.format || original?.format,
+    ...((editedData.format || original?.format)
+      ? { format: (editedData.format || original?.format) as string }
+      : {}),
     category: original?.category || "Edited Assets",
     size: editedData.size || original?.size || "2.1 MB",
-    duration: original?.duration,
-    dimensions: original?.dimensions,
+    ...(original?.duration ? { duration: original.duration } : {}),
+    ...(original?.dimensions ? { dimensions: original.dimensions } : {}),
     url: editedData.url,
     thumbnail: editedData.thumbnail || editedData.url,
-    createdAt: new Date().toISOString().split("T")[0],
+    createdAt: new Date().toISOString().split("T")[0] ?? "2026-11-07",
     tags: original?.tags ? [...original.tags, "Edited"] : ["Edited"],
     version: 1,
   };
@@ -1298,7 +1317,9 @@ export function updateSocialAccount(
   const idx = current.findIndex((a) => a.id === id);
   if (idx === -1) return null;
 
-  const targetPlatform = updates.platform || current[idx].platform;
+  const currentAtIdx = current[idx];
+  if (!currentAtIdx) return null;
+  const targetPlatform = updates.platform || currentAtIdx.platform;
   const now = new Date().toISOString().split("T")[0] ?? "2026-11-06";
 
   const updatedList = current.map((acc) => {
@@ -1313,6 +1334,7 @@ export function updateSocialAccount(
   });
 
   const existing = updatedList[idx];
+  if (!existing) return null;
   const merged: SocialAccount = {
     ...existing,
     ...updates,
@@ -1415,9 +1437,11 @@ export function toggleSocialAccountVisibility(id: string): boolean {
   const idx = current.findIndex((a) => a.id === id);
   if (idx === -1) return false;
 
-  const newVisibility = !current[idx].isVisible;
-  current[idx].isVisible = newVisibility;
-  current[idx].updatedAt = new Date().toISOString().split("T")[0] ?? "2026-11-06";
+  const targetAccount = current[idx];
+  if (!targetAccount) return false;
+  const newVisibility = !targetAccount.isVisible;
+  targetAccount.isVisible = newVisibility;
+  targetAccount.updatedAt = new Date().toISOString().split("T")[0] ?? "2026-11-06";
 
   if (typeof window !== "undefined") {
     try {

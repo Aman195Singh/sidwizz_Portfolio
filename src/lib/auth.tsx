@@ -1,7 +1,19 @@
-import React, { createContext, useContext, useEffect, useState, type ReactNode } from "react";
+import React, { createContext, useCallback, useContext, useEffect, useState, type ReactNode } from "react";
 import hostBowtie from "@/assets/host-bowtie.jpg";
 import avatarPriya from "@/assets/avatar-priya.jpg";
 import avatarAmit from "@/assets/avatar-amit.jpg";
+import {
+  changeSelfPasswordServerFn,
+  devQuickLoginServerFn,
+  getCurrentSessionServerFn,
+  loginServerFn,
+  logoutServerFn,
+  registerMemberServerFn,
+  submitOrganizerApplicationServerFn,
+  updateSelfProfileServerFn,
+  type AuthSessionDTO,
+} from "@/lib/auth-server";
+import type { AccountStatus, DataScope, FeatureKey, PermissionKey } from "@/lib/rbac-schema";
 
 export type UserRole = "admin" | "client" | "member";
 
@@ -9,319 +21,320 @@ export interface User {
   id: string;
   name: string;
   email: string;
+  phone?: string | undefined;
   role: UserRole;
-  organization?: string;
-  avatar?: string;
+  primaryRoleKey: string;
+  roleKeys: string[];
+  roleNames: string[];
+  accountStatus: AccountStatus;
+  emailVerified: boolean;
+  organization?: string | undefined;
+  organizationIds: string[];
+  avatar?: string | undefined;
+  dataScope: DataScope;
+  permissions: PermissionKey[];
+  features: FeatureKey[];
   createdAt: string;
-  sessionSignature?: string;
+  lastLoginAt?: string | undefined;
+  pendingApplicationStatus?:
+    | "pending_review"
+    | "approved"
+    | "changes_requested"
+    | "rejected"
+    | undefined;
+  pendingApplicationNote?: string | undefined;
 }
 
-export const DEMO_USERS: Record<UserRole, User> = {
-  admin: {
-    id: "usr_admin_01",
-    name: "Siddharth Maurya",
-    email: "admin@siddwhizz.com",
-    role: "admin",
-    organization: "SIDD.WHIZZ Official",
-    avatar: hostBowtie,
-    createdAt: "2024-01-01T00:00:00Z",
-  },
-  client: {
-    id: "usr_client_01",
-    name: "Priya Sharma",
-    email: "priya@techsummit.io",
-    role: "client",
-    organization: "Apex Global Tech Summits",
-    avatar: avatarPriya,
-    createdAt: "2024-06-15T00:00:00Z",
-  },
-  member: {
-    id: "usr_member_01",
-    name: "Amit Verma",
-    email: "amit.verma@example.com",
-    role: "member",
-    organization: "Event Enthusiast & Community",
-    avatar: avatarAmit,
-    createdAt: "2024-09-10T00:00:00Z",
-  },
+const DEFAULT_ROLE_AVATARS: Record<UserRole, string> = {
+  admin: hostBowtie,
+  client: avatarPriya,
+  member: avatarAmit,
 };
 
-/**
- * Tamper-evident session signature generator & verifier.
- * Prevents DevTools privilege escalation (e.g. manually editing `"role": "admin"` in localStorage).
- */
-const SESSION_SALT = "SIDDWHIZZ_RBAC_GUARD_2026_V2";
-
-function computeSessionSignature(u: Pick<User, "id" | "email" | "role">): string {
-  const payload = `${u.id}|${u.email.toLowerCase()}|${u.role}|${SESSION_SALT}`;
-  let h1 = 0xdeadbeef ^ payload.length;
-  let h2 = 0x41c6ce57 ^ payload.length;
-  for (let i = 0; i < payload.length; i++) {
-    const ch = payload.charCodeAt(i);
-    h1 = Math.imul(h1 ^ ch, 2654435761);
-    h2 = Math.imul(h2 ^ ch, 1597334677);
-  }
-  h1 = Math.imul(h1 ^ (h1 >>> 16), 2246822507) ^ Math.imul(h2 ^ (h2 >>> 13), 3266489909);
-  h2 = Math.imul(h2 ^ (h2 >>> 16), 2246822507) ^ Math.imul(h1 ^ (h1 >>> 13), 3266489909);
-  return `sig_${(h2 >>> 0).toString(16).padStart(8, "0")}${(h1 >>> 0).toString(16).padStart(8, "0")}`;
+function mapSessionToUser(s: AuthSessionDTO): User {
+  return {
+    id: s.userId,
+    name: s.name,
+    email: s.email,
+    phone: s.phone,
+    role: s.role,
+    primaryRoleKey: s.primaryRoleKey,
+    roleKeys: s.roleKeys,
+    roleNames: s.roleNames,
+    accountStatus: s.accountStatus,
+    emailVerified: s.emailVerified,
+    organization: s.organization,
+    organizationIds: s.organizationIds,
+    avatar: s.avatar || DEFAULT_ROLE_AVATARS[s.role],
+    dataScope: s.dataScope,
+    permissions: s.permissions,
+    features: s.features,
+    createdAt: s.createdAt,
+    lastLoginAt: s.lastLoginAt,
+    pendingApplicationStatus: s.pendingApplicationStatus,
+    pendingApplicationNote: s.pendingApplicationNote,
+  };
 }
 
-function verifySessionIntegrity(u: User | null): u is User {
-  if (!u || !u.id || !u.email || !u.role || !u.sessionSignature) return false;
-  return u.sessionSignature === computeSessionSignature(u);
+export interface OrganizerOnboardingInput {
+  name: string;
+  email: string;
+  password: string;
+  phone: string;
+  organizationName: string;
+  organizationType:
+    | "Corporate Brand"
+    | "Event Management Agency"
+    | "Tech Summit / Conference"
+    | "Festival / Live Promoter"
+    | "Luxury Wedding / Family Office"
+    | "University / Institution";
+  websiteOrSocial?: string | undefined;
+  expectedEventFormats?: string[] | undefined;
+  notes?: string | undefined;
 }
 
 interface AuthContextType {
   user: User | null;
   isAuthenticated: boolean;
   isLoading: boolean;
-  login: (email: string, password?: string, role?: UserRole) => Promise<{ success: boolean; error?: string; user?: User }>;
-  signup: (data: { name: string; email: string; password?: string; role: UserRole; organization?: string }) => Promise<{ success: boolean; error?: string }>;
-  logout: () => void;
-  switchRole: (role: UserRole) => void;
+  login: (
+    email: string,
+    password: string
+  ) => Promise<{ success: boolean; error?: string | undefined; user?: User | undefined }>;
+  devQuickLogin: (
+    role: UserRole
+  ) => Promise<{ success: boolean; error?: string | undefined; user?: User | undefined }>;
+  signup: (data: {
+    name: string;
+    email: string;
+    password: string;
+    role: UserRole;
+    organization?: string | undefined;
+    phone?: string | undefined;
+  }) => Promise<{ success: boolean; error?: string | undefined; user?: User | undefined }>;
+  submitOrganizerApplication: (
+    data: OrganizerOnboardingInput
+  ) => Promise<{ success: boolean; error?: string | undefined; user?: User | undefined }>;
+  logout: () => Promise<void>;
+  refreshSession: () => Promise<void>;
+  hasPermission: (permission: PermissionKey) => boolean;
+  hasFeature: (feature: FeatureKey) => boolean;
   updateProfilePhoto: (avatarUrl: string) => Promise<{ success: boolean; error?: string }>;
-  updatePassword: (currentPassword: string, newPassword: string) => Promise<{ success: boolean; error?: string }>;
+  updatePassword: (
+    currentPassword: string,
+    newPassword: string
+  ) => Promise<{ success: boolean; error?: string }>;
   updateProfile: (data: Partial<User>) => Promise<{ success: boolean; error?: string }>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-const STORAGE_KEY = "siddwhizz_auth_user";
-const PASSWORDS_KEY = "siddwhizz_user_passwords";
-const PROFILES_KEY = "siddwhizz_user_profiles";
-
-interface SavedUserProfile {
-  name?: string;
-  organization?: string;
-  avatar?: string;
-}
-
-function getSavedProfileForEmail(email: string): SavedUserProfile | null {
-  if (typeof window === "undefined") return null;
-  try {
-    const map = JSON.parse(localStorage.getItem(PROFILES_KEY) || "{}");
-    return map[email.toLowerCase().trim()] || null;
-  } catch {
-    return null;
-  }
-}
-
-function persistProfileForEmail(u: User) {
-  if (typeof window === "undefined" || !u.email) return;
-  try {
-    const map = JSON.parse(localStorage.getItem(PROFILES_KEY) || "{}");
-    map[u.email.toLowerCase().trim()] = {
-      name: u.name,
-      organization: u.organization,
-      avatar: u.avatar,
-    };
-    localStorage.setItem(PROFILES_KEY, JSON.stringify(map));
-  } catch {
-    // ignore
-  }
-}
-
-function mergeWithSavedProfile(baseUser: User): User {
-  const saved = getSavedProfileForEmail(baseUser.email);
-  if (!saved) return baseUser;
-  return {
-    ...baseUser,
-    name: saved.name || baseUser.name,
-    organization: saved.organization || baseUser.organization,
-    avatar: saved.avatar !== undefined ? saved.avatar : baseUser.avatar,
-  };
-}
-
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
-  // Initialize from localStorage on mount with tamper-evident signature verification
-  useEffect(() => {
+  const refreshSession = useCallback(async () => {
     try {
+      // Purge any legacy client-side localStorage session keys from pre-P1 builds
       if (typeof window !== "undefined") {
-        const stored = localStorage.getItem(STORAGE_KEY);
-        if (stored) {
-          const parsed: User = JSON.parse(stored);
-          if (verifySessionIntegrity(parsed)) {
-            const hydrated = mergeWithSavedProfile({
-              ...parsed,
-              avatar: parsed.avatar ?? DEMO_USERS[parsed.role]?.avatar,
-            });
-            setUser(hydrated);
-          } else {
-            console.warn("Tampered or unsigned session detected in localStorage. Clearing session.");
-            localStorage.removeItem(STORAGE_KEY);
-            setUser(null);
-          }
-        }
+        localStorage.removeItem("siddwhizz_auth_user");
+        localStorage.removeItem("siddwhizz_user_passwords");
       }
-    } catch (e) {
-      console.warn("Failed to read user from localStorage", e);
+      const res = await getCurrentSessionServerFn();
+      if (res.authenticated && res.session) {
+        setUser(mapSessionToUser(res.session));
+      } else {
+        setUser(null);
+      }
+    } catch {
+      setUser(null);
     } finally {
       setIsLoading(false);
     }
   }, []);
 
-  const saveUser = (u: User | null) => {
-    if (!u) {
-      setUser(null);
-      try {
-        if (typeof window !== "undefined") {
-          localStorage.removeItem(STORAGE_KEY);
-        }
-      } catch {
-        // ignore
+  useEffect(() => {
+    refreshSession();
+  }, [refreshSession]);
+
+  const login = async (email: string, password: string) => {
+    try {
+      const res = await loginServerFn({ data: { email, password } });
+      if (!res.success || !res.session) {
+        return { success: false, error: res.error || "Invalid credentials." };
       }
-      return;
-    }
-
-    const signedUser: User = {
-      ...u,
-      sessionSignature: computeSessionSignature(u),
-    };
-    setUser(signedUser);
-    persistProfileForEmail(signedUser);
-    try {
-      if (typeof window !== "undefined") {
-        localStorage.setItem(STORAGE_KEY, JSON.stringify(signedUser));
-      }
-    } catch (e) {
-      console.warn("Failed to write user to localStorage", e);
-    }
-  };
-
-  const getStoredPassword = (email: string): string => {
-    if (typeof window === "undefined") return "password123";
-    try {
-      const map = JSON.parse(localStorage.getItem(PASSWORDS_KEY) || "{}");
-      if (map[email.toLowerCase()]) return map[email.toLowerCase()];
-    } catch {
-      // ignore
-    }
-    return email.toLowerCase().includes("admin") ? "sid123" : "password123";
-  };
-
-  const setStoredPassword = (email: string, newPass: string) => {
-    if (typeof window === "undefined") return;
-    try {
-      const map = JSON.parse(localStorage.getItem(PASSWORDS_KEY) || "{}");
-      map[email.toLowerCase()] = newPass;
-      localStorage.setItem(PASSWORDS_KEY, JSON.stringify(map));
-    } catch {
-      // ignore
-    }
-  };
-
-  const login = async (email: string, password?: string, forcedRole?: UserRole) => {
-    const lowerEmail = email.toLowerCase().trim();
-    let selectedUser: User;
-
-    if (forcedRole && DEMO_USERS[forcedRole]) {
-      selectedUser = { ...DEMO_USERS[forcedRole] };
-    } else if (lowerEmail.includes("admin") || lowerEmail === DEMO_USERS.admin.email) {
-      selectedUser = { ...DEMO_USERS.admin };
-    } else if (lowerEmail.includes("client") || lowerEmail.includes("summit") || lowerEmail === DEMO_USERS.client.email) {
-      selectedUser = { ...DEMO_USERS.client };
-    } else if (lowerEmail === DEMO_USERS.member.email) {
-      selectedUser = { ...DEMO_USERS.member };
-    } else {
-      selectedUser = {
-        id: `usr_${Date.now()}`,
-        name: email.split("@")[0].replace(/[._]/g, " ").replace(/\b\w/g, (c) => c.toUpperCase()),
-        email: lowerEmail,
-        role: "client",
-        organization: "Client Organization",
-        createdAt: new Date().toISOString(),
+      const hydrated = mapSessionToUser(res.session);
+      setUser(hydrated);
+      return { success: true, user: hydrated };
+    } catch (err) {
+      return {
+        success: false,
+        error: err instanceof Error ? err.message : "Authentication service error.",
       };
     }
-
-    // Retain saved profile & avatar across sign-outs using persistent PROFILES_KEY
-    selectedUser = mergeWithSavedProfile(selectedUser);
-
-    // Verify password if given
-    if (password) {
-      const validPass = getStoredPassword(lowerEmail);
-      if (password !== validPass && password !== "sid123" && password !== "password123") {
-        return { success: false, error: "Incorrect password. Default for admin is 'sid123'." };
-      }
-    }
-
-    saveUser(selectedUser);
-    return { success: true, user: selectedUser };
   };
 
-  const signup = async (data: { name: string; email: string; password?: string; role: UserRole; organization?: string }) => {
+  const devQuickLogin = async (targetRole: UserRole) => {
+    if (!import.meta.env.DEV) {
+      return {
+        success: false,
+        error: "Demo role switching is disabled in production.",
+      };
+    }
+    try {
+      const res = await devQuickLoginServerFn({ data: { targetRole } });
+      if (!res.success || !res.session) {
+        return { success: false, error: res.error || "Dev login unavailable." };
+      }
+      const hydrated = mapSessionToUser(res.session);
+      setUser(hydrated);
+      return { success: true, user: hydrated };
+    } catch (err) {
+      return {
+        success: false,
+        error: err instanceof Error ? err.message : "Dev login failed.",
+      };
+    }
+  };
+
+  const signup = async (data: {
+    name: string;
+    email: string;
+    password: string;
+    role: UserRole;
+    organization?: string | undefined;
+    phone?: string | undefined;
+  }) => {
     if (data.role === "admin") {
       return {
         success: false,
-        error: "Admin accounts cannot be self-registered publicly. Please sign in on /login with authorized Admin credentials.",
+        error: "Admin accounts cannot be self-registered publicly. Staff must be invited by a Super Admin.",
       };
     }
 
-    const safeRole: UserRole = data.role === "member" ? "member" : "client";
-    const cleanEmail = data.email.toLowerCase().trim();
-    const existingSaved = getSavedProfileForEmail(cleanEmail);
-    const newUser: User = {
-      id: `usr_${Date.now()}`,
-      name: data.name.trim(),
-      email: cleanEmail,
-      role: safeRole,
-      organization:
-        data.organization?.trim() || (safeRole === "client" ? "Corporate Client" : "Community"),
-      avatar: existingSaved?.avatar || DEMO_USERS[safeRole].avatar,
-      createdAt: new Date().toISOString(),
-    };
-
-    if (data.password) {
-      setStoredPassword(data.email, data.password);
+    if (data.role === "client") {
+      return submitOrganizerApplication({
+        name: data.name,
+        email: data.email,
+        password: data.password,
+        phone: data.phone || "+91 00000 00000",
+        organizationName: data.organization || "Corporate / Event Partner",
+        organizationType: "Corporate Brand",
+      });
     }
 
-    saveUser(newUser);
-    return { success: true };
-  };
-
-  const updateProfilePhoto = async (avatarUrl: string): Promise<{ success: boolean; error?: string }> => {
-    if (!user) return { success: false, error: "Not logged in" };
-    const updated = { ...user, avatar: avatarUrl };
-    saveUser(updated);
-    return { success: true };
-  };
-
-  const updatePassword = async (currentPassword: string, newPassword: string): Promise<{ success: boolean; error?: string }> => {
-    if (!user) return { success: false, error: "Not logged in" };
-    const currentValid = getStoredPassword(user.email);
-
-    if (currentPassword !== currentValid && currentPassword !== "sid123" && currentPassword !== "password123") {
-      return { success: false, error: "Current password does not match." };
+    try {
+      const res = await registerMemberServerFn({
+        data: {
+          name: data.name,
+          email: data.email,
+          password: data.password,
+          phone: data.phone,
+        },
+      });
+      if (!res.success || !res.session) {
+        return { success: false, error: res.error || "Member registration failed." };
+      }
+      const hydrated = mapSessionToUser(res.session);
+      setUser(hydrated);
+      return { success: true, user: hydrated };
+    } catch (err) {
+      return {
+        success: false,
+        error: err instanceof Error ? err.message : "Registration error.",
+      };
     }
+  };
 
-    if (newPassword.length < 6) {
-      return { success: false, error: "New password must be at least 6 characters long." };
+  const submitOrganizerApplication = async (data: OrganizerOnboardingInput) => {
+    try {
+      const res = await submitOrganizerApplicationServerFn({ data });
+      if (!res.success || !res.session) {
+        return { success: false, error: res.error || "Application submission failed." };
+      }
+      const hydrated = mapSessionToUser(res.session);
+      setUser(hydrated);
+      return { success: true, user: hydrated };
+    } catch (err) {
+      return {
+        success: false,
+        error: err instanceof Error ? err.message : "Organizer application error.",
+      };
     }
-
-    setStoredPassword(user.email, newPassword);
-    return { success: true };
   };
 
-  const updateProfile = async (data: Partial<User>): Promise<{ success: boolean; error?: string }> => {
+  const logout = async () => {
+    setUser(null);
+    try {
+      await logoutServerFn();
+    } catch {
+      // ignore
+    }
+  };
+
+  const hasPermission = useCallback(
+    (permission: PermissionKey): boolean => {
+      if (!user || user.accountStatus !== "active") return false;
+      return user.permissions.includes(permission);
+    },
+    [user]
+  );
+
+  const hasFeature = useCallback(
+    (feature: FeatureKey): boolean => {
+      if (!user || user.accountStatus !== "active") return false;
+      return user.features.includes(feature);
+    },
+    [user]
+  );
+
+  const updateProfilePhoto = async (avatarUrl: string) => {
     if (!user) return { success: false, error: "Not logged in" };
-    // Prevent arbitrary role escalation through updateProfile
-    const { role: _ignoredRole, sessionSignature: _ignoredSig, ...safeUpdates } = data;
-    const updated = { ...user, ...safeUpdates };
-    saveUser(updated);
-    return { success: true };
+    try {
+      const res = await updateSelfProfileServerFn({ data: { avatar: avatarUrl } });
+      if (res.success && res.session) {
+        setUser(mapSessionToUser(res.session));
+        return { success: true };
+      }
+      return { success: false, error: res.error || "Failed to update photo." };
+    } catch {
+      return { success: false, error: "Failed to update photo." };
+    }
   };
 
-  const logout = () => {
-    saveUser(null);
+  const updatePassword = async (currentPassword: string, newPassword: string) => {
+    if (!user) return { success: false, error: "Not logged in" };
+    try {
+      return await changeSelfPasswordServerFn({
+        data: { currentPassword, newPassword },
+      });
+    } catch (err) {
+      return {
+        success: false,
+        error: err instanceof Error ? err.message : "Password update failed.",
+      };
+    }
   };
 
-  const switchRole = (newRole: UserRole) => {
-    if (DEMO_USERS[newRole]) {
-      saveUser(mergeWithSavedProfile({ ...DEMO_USERS[newRole] }));
-    } else if (user) {
-      saveUser(mergeWithSavedProfile({ ...user, role: newRole }));
+  const updateProfile = async (data: Partial<User>) => {
+    if (!user) return { success: false, error: "Not logged in" };
+    try {
+      const res = await updateSelfProfileServerFn({
+        data: {
+          name: data.name,
+          phone: data.phone,
+          organization: data.organization,
+          avatar: data.avatar,
+        },
+      });
+      if (res.success && res.session) {
+        setUser(mapSessionToUser(res.session));
+        return { success: true };
+      }
+      return { success: false, error: res.error || "Profile update failed." };
+    } catch {
+      return { success: false, error: "Profile update failed." };
     }
   };
 
@@ -332,9 +345,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         isAuthenticated: !!user,
         isLoading,
         login,
+        devQuickLogin,
         signup,
+        submitOrganizerApplication,
         logout,
-        switchRole,
+        refreshSession,
+        hasPermission,
+        hasFeature,
         updateProfilePhoto,
         updatePassword,
         updateProfile,

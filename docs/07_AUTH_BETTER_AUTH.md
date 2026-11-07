@@ -1,4 +1,6 @@
-# 07 — Better Auth Specification
+# 07 — Server Authentication & RBAC Specification
+
+> **Architecture Alignment Note (Verified Baseline):** Authentication and 4-Gate RBAC (`Session` → `Feature Entitlement` → `Permission` → `Data Scope`) run natively on **TanStack Start Server Functions (`@tanstack/react-start/server` `HttpOnly` cookies + PBKDF2-SHA256 password hashing + Neon PostgreSQL `user_sessions`)**—**not** Next.js. Legacy notes below are retained for historical context.
 
 ## Choice
 Self-hosted Better Auth running in the Next.js application, with its data persisted in Neon PostgreSQL via Drizzle adapter. This is distinct from Neon Managed Auth. Do not mix both approaches in V1.

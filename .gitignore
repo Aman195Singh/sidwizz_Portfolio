@@ -2,6 +2,11 @@
 .env
 .env.*
 !.env.example
+*credential*
+*credentials*
+*.secret*
+*.pem
+*.key
 
 # Logs
 logs
@@ -36,3 +41,6 @@ scratch/
 *.njsproj
 *.sln
 *.sw?
+
+
+user-credential.txt

@@ -14,17 +14,21 @@ export const Route = createFileRoute("/admin")({
       | "enquiries"
       | "booking"
       | "media"
+      | "cms"
+      | "users"
       | "account"
       | "settings"
       | "support"
       | undefined;
   } => ({
-    tab: (typeof search.tab === "string" ? search.tab : undefined) as
+    tab: (typeof search["tab"] === "string" ? search["tab"] : undefined) as
       | "overview"
       | "analytics"
       | "enquiries"
       | "booking"
       | "media"
+      | "cms"
+      | "users"
       | "account"
       | "settings"
       | "support"
@@ -33,7 +37,7 @@ export const Route = createFileRoute("/admin")({
   head: () => ({
     meta: [
       { title: "Admin Panel — SIDD.WHIZZ Control Center" },
-      { name: "description", content: "Administrative management portal for inquiries, analytics, media library, and website settings." },
+      { name: "description", content: "Administrative management portal for inquiries, analytics, media library, RBAC user governance, and website settings." },
       { name: "robots", content: "noindex, nofollow" },
     ],
   }),
@@ -43,10 +47,22 @@ export const Route = createFileRoute("/admin")({
 function AdminRouteComponent() {
   const { user, isAuthenticated, isLoading } = useAuth();
   const search = Route.useSearch();
-  const navigate = useNavigate();
 
-  // If user is not logged in as admin, show access guard with demo 1-click option
-  if (!isLoading && (!isAuthenticated || user?.role !== "admin")) {
+  if (isLoading) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-background px-4">
+        <div className="text-center space-y-2">
+          <div className="mx-auto h-8 w-8 animate-spin rounded-full border-2 border-primary border-t-transparent" />
+          <p className="font-display text-xs font-extrabold uppercase tracking-wider text-muted-foreground">
+            Verifying Admin Session &amp; RBAC Policy...
+          </p>
+        </div>
+      </div>
+    );
+  }
+
+  // Require active verified admin/staff session
+  if (!isAuthenticated || user?.role !== "admin" || user.accountStatus !== "active") {
     return (
       <div className="flex min-h-screen items-center justify-center bg-background px-4">
         <div className="w-full max-w-md rounded-2xl border bg-card p-8 text-center shadow-xl space-y-4">
@@ -55,7 +71,7 @@ function AdminRouteComponent() {
           </div>
           <h2 className="text-xl font-black font-display text-foreground">Admin Access Required</h2>
           <p className="text-xs text-muted-foreground leading-relaxed">
-            This area is restricted to Siddharth Maurya and verified stage managers. Please log in with your admin credentials.
+            This area is restricted to Siddharth Maurya and authorized staff roles. Please sign in with an active staff account.
           </p>
           <div className="pt-2 flex flex-col gap-2">
             <Link to="/login" className="btn-red w-full text-xs">
@@ -70,6 +86,10 @@ function AdminRouteComponent() {
     );
   }
 
-  return <AdminPanel initialTab={search.tab || "overview"} />;
+  return (
+    <AdminPanel
+      {...(search.tab ? { initialTab: search.tab } : {})}
+    />
+  );
 }
 

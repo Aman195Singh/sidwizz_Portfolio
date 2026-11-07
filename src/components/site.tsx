@@ -34,6 +34,7 @@ import {
   DropdownMenuLabel,
 } from "@/components/ui/dropdown-menu";
 import { useAuth } from "@/lib/auth";
+import { usePublishedCms } from "@/lib/cms-context";
 import { getPublicSocialAccounts, type SocialAccount } from "@/lib/data-store";
 import { PlatformBrandIcon } from "@/components/social-accounts-manager";
 import ctaHost from "@/assets/cta-host.jpg";
@@ -115,6 +116,7 @@ export function Reveal({
 
 /* ---------- Logo ---------- */
 export function Logo({ light = false }: { light?: boolean }) {
+  const { cms } = usePublishedCms();
   return (
     <span className="flex items-center gap-2">
       <svg viewBox="0 0 40 28" className="h-7 w-9 text-primary" aria-hidden>
@@ -124,20 +126,21 @@ export function Logo({ light = false }: { light?: boolean }) {
         })}
       </svg>
       <span className={`font-display text-xl font-black tracking-tight md:text-2xl ${light ? "text-ink-foreground" : "text-foreground"}`}>
-        SIDD.<span className="text-primary">WHIZZ</span>
+        {cms.siteSettings.brandNamePrefix}<span className="text-primary">{cms.siteSettings.brandNameAccent}</span>
       </span>
     </span>
   );
 }
 
 function Tagline({ light = false }: { light?: boolean }) {
+  const { cms } = usePublishedCms();
   return (
     <div className={`border-l pl-4 leading-tight ${light ? "border-ink-muted/40" : "border-border"}`}>
       <p className={`font-display text-[13px] font-extrabold ${light ? "text-ink-foreground" : "text-foreground"}`}>
-        SIDDHARTH “SID” MAURYA
+        {cms.siteSettings.hostFullName.toUpperCase()}
       </p>
       <p className={`text-[10px] font-semibold tracking-wide ${light ? "text-ink-muted" : "text-muted-foreground"}`}>
-        EVENT HOST • EMCEE • MODERATOR
+        {cms.siteSettings.hostRoleTagline.toUpperCase()}
       </p>
     </div>
   );
@@ -150,6 +153,10 @@ export function Header() {
   const [scrolled, setScrolled] = useState(false);
   const pathname = useRouterState({ select: (s) => s.location.pathname });
   const { user, logout } = useAuth();
+  const { cms } = usePublishedCms();
+
+  const visiblePrimaryNav = cms.navigation.primaryNav.filter((n) => n.visible);
+  const visibleMoreActiveNav = cms.navigation.moreActiveNav.filter((n) => n.visible);
 
   useEffect(() => setOpen(false), [pathname]);
   useEffect(() => {
@@ -171,9 +178,9 @@ export function Header() {
 
         {/* Middle: Primary Pages + More Dropdown */}
         <nav className="hidden items-center gap-6 lg:flex">
-          {PRIMARY_NAV.map((n) => (
+          {visiblePrimaryNav.map((n) => (
             <Link
-              key={n.to}
+              key={n.id}
               to={n.to}
               className="nav-link font-medium text-sm transition-colors hover:text-primary"
               activeOptions={{ exact: n.to === "/" }}
@@ -202,18 +209,18 @@ export function Header() {
               <DropdownMenuLabel className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground px-2 py-1">
                 Active Pages
               </DropdownMenuLabel>
-              {MORE_ACTIVE_NAV.map((item) => (
-                <DropdownMenuItem key={item.to} asChild>
+              {visibleMoreActiveNav.map((item) => (
+                <DropdownMenuItem key={item.id} asChild>
                   <Link
                     to={item.to}
                     className="flex items-start gap-2.5 rounded-lg px-2.5 py-2 text-sm transition-colors hover:bg-accent hover:text-primary cursor-pointer group"
                   >
-                    <item.icon className="h-4 w-4 mt-0.5 text-primary shrink-0" />
+                    <ImageIcon className="h-4 w-4 mt-0.5 text-primary shrink-0" />
                     <div>
                       <p className="font-semibold text-foreground group-hover:text-primary leading-tight">
                         {item.label}
                       </p>
-                      <p className="text-xs text-muted-foreground leading-snug">{item.desc}</p>
+                      <p className="text-xs text-muted-foreground leading-snug">{item.description || "Stage visuals & moments"}</p>
                     </div>
                   </Link>
                 </DropdownMenuItem>
@@ -253,13 +260,13 @@ export function Header() {
           </DropdownMenu>
         </nav>
 
-        {/* Right: "Book Sid" Button (Shifted 75% Left) & Auth Profile / Login Capsule */}
-        <div className="hidden items-center lg:flex">
+        {/* Right: "Book Sid" Button & Auth Profile / Login Capsule */}
+        <div className="hidden items-center gap-3 lg:flex">
           <Link
-            to="/contact"
-            className="btn-red !px-4 !py-2 !normal-case relative -translate-x-3/4 whitespace-nowrap transition-transform"
+            to={cms.navigation.headerCtaTo}
+            className="btn-red !px-4 !py-2 !normal-case whitespace-nowrap transition-transform"
           >
-            <CalendarDays className="h-4 w-4" /> Book Sid <ArrowRight className="h-4 w-4" />
+            <CalendarDays className="h-4 w-4" /> {cms.navigation.headerCtaLabel} <ArrowRight className="h-4 w-4" />
           </Link>
 
           {user ? (
@@ -484,10 +491,10 @@ export function Header() {
       >
         <div className="min-h-0">
           <nav className="container-x flex flex-col gap-1 py-4">
-            {/* 4 Primary Pages */}
-            {PRIMARY_NAV.map((n) => (
+            {/* Primary Pages */}
+            {visiblePrimaryNav.map((n) => (
               <Link
-                key={n.to}
+                key={n.id}
                 to={n.to}
                 activeOptions={{ exact: n.to === "/" }}
                 className="rounded-md px-3 py-2 font-semibold text-foreground data-[status=active]:bg-accent data-[status=active]:text-primary"
@@ -513,13 +520,13 @@ export function Header() {
                 <p className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground pt-1">
                   Active Pages
                 </p>
-                {MORE_ACTIVE_NAV.map((item) => (
+                {visibleMoreActiveNav.map((item) => (
                   <Link
-                    key={item.to}
+                    key={item.id}
                     to={item.to}
                     className="flex items-center gap-2 rounded-md px-2 py-1.5 text-sm font-medium text-foreground hover:text-primary data-[status=active]:text-primary"
                   >
-                    <item.icon className="h-3.5 w-3.5 text-primary" />
+                    <ImageIcon className="h-3.5 w-3.5 text-primary" />
                     <span>{item.label}</span>
                   </Link>
                 ))}
@@ -594,8 +601,8 @@ export function Header() {
               )}
             </div>
 
-            <Link to="/contact" className="btn-red mt-2">
-              <CalendarDays className="h-4 w-4" /> Book Sid
+            <Link to={cms.navigation.headerCtaTo} className="btn-red mt-2">
+              <CalendarDays className="h-4 w-4" /> {cms.navigation.headerCtaLabel}
             </Link>
           </nav>
         </div>
@@ -636,6 +643,7 @@ export function SocialIcons({ variant = "dark" }: { variant?: "dark" | "card" })
       window.addEventListener("siddwhizz_social_updated", handleSync);
       return () => window.removeEventListener("siddwhizz_social_updated", handleSync);
     }
+    return undefined;
   }, []);
 
   if (dynamicAccounts.length > 0) {
@@ -688,22 +696,24 @@ export function SocialIcons({ variant = "dark" }: { variant?: "dark" | "card" })
 
 /* ---------- Footer ---------- */
 export function Footer() {
+  const { cms } = usePublishedCms();
+  const visibleFooterLinks = cms.navigation.footerLinks.filter((n) => n.visible);
   return (
     <footer className="bg-ink text-ink-foreground">
       <div className="container-x grid gap-8 py-8 md:grid-cols-[auto_1fr_auto] md:items-center">
         <div className="flex items-center gap-4">
           <Logo light />
           <div className="border-l border-ink-muted/30 pl-4 text-xs">
-            <p className="font-bold">Siddharth “Sid” Maurya</p>
-            <p className="text-ink-muted">Event Host • Emcee • Moderator</p>
+            <p className="font-bold">{cms.siteSettings.hostFullName}</p>
+            <p className="text-ink-muted">{cms.siteSettings.hostRoleTagline}</p>
           </div>
         </div>
         <div className="md:justify-self-center">
           <p className="mb-2 text-sm font-bold">Quick Links</p>
           <nav className="flex flex-wrap gap-x-6 gap-y-2 text-sm text-ink-muted">
-            {NAV.map((n) => (
+            {visibleFooterLinks.map((n) => (
               <Link
-                key={n.to}
+                key={n.id}
                 to={n.to}
                 activeOptions={{ exact: true }}
                 className="transition-colors hover:text-ink-foreground data-[status=active]:text-primary data-[status=active]:underline data-[status=active]:underline-offset-8"
@@ -719,7 +729,7 @@ export function Footer() {
         </div>
       </div>
       <div className="container-x flex flex-col justify-between gap-2 border-t border-ink-muted/20 py-4 text-xs text-ink-muted sm:flex-row">
-        <p>© 2026 SIDD.WHIZZ • Aerocity Business District, New Delhi — 110037. All Rights Reserved.</p>
+        <p>{cms.siteSettings.footerCopyright}</p>
         <p className="flex gap-3">
           <Link to="/contact" className="hover:text-ink-foreground">Booking Terms</Link>
           <span>|</span>
@@ -1087,12 +1097,18 @@ export function Lightbox({
 }
 
 export function Signature() {
+  const { cms } = usePublishedCms();
   return (
     <div className="mt-5">
-      <p className="text-4xl text-primary" style={{ fontFamily: "'Great Vibes', cursive" }}>
-        Siddharth Maurya
+      <p
+        className="text-4xl text-primary"
+        style={{ fontFamily: "var(--cms-signature-font, 'Great Vibes', cursive)" }}
+      >
+        {cms.siteSettings.signatureText}
       </p>
-      <p className="mt-1 text-xs font-bold tracking-[0.3em]">SIDD.WHIZZ</p>
+      <p className="mt-1 text-xs font-bold tracking-[0.3em]">
+        {cms.siteSettings.brandNamePrefix}{cms.siteSettings.brandNameAccent}
+      </p>
     </div>
   );
 }

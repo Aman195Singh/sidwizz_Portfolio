@@ -11,10 +11,13 @@ CREATE TABLE IF NOT EXISTS users (
     id VARCHAR(64) PRIMARY KEY,
     name VARCHAR(255) NOT NULL,
     email VARCHAR(255) UNIQUE NOT NULL,
-    password_hash VARCHAR(255) NOT NULL DEFAULT 'password123',
-    role VARCHAR(32) NOT NULL DEFAULT 'client' CHECK (role IN ('admin', 'client', 'member')),
+    password_hash TEXT NOT NULL,
+    role VARCHAR(32) NOT NULL DEFAULT 'member',
     organization VARCHAR(255),
     avatar TEXT,
+    account_status VARCHAR(32) NOT NULL DEFAULT 'active',
+    email_verified BOOLEAN NOT NULL DEFAULT FALSE,
+    deleted_at TIMESTAMP WITH TIME ZONE,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
 );
@@ -118,12 +121,12 @@ CREATE TABLE IF NOT EXISTS support_tickets (
 -- INITIAL SEED DATA (Default System State)
 -- ==============================================================================
 
--- Seed Users (Default logins)
-INSERT INTO users (id, name, email, password_hash, role, organization)
+-- Seed Users (Password hashes are provisioned cryptographically via server bootstrap — never plaintext)
+INSERT INTO users (id, name, email, password_hash, role, organization, account_status, email_verified)
 VALUES
-    ('usr_admin_01', 'Siddharth Maurya', 'admin@siddwhizz.com', 'sid123', 'admin', 'SIDD.WHIZZ Official'),
-    ('usr_client_01', 'Priya Sharma', 'priya@techsummit.io', 'password123', 'client', 'Apex Global Tech Summits'),
-    ('usr_member_01', 'Amit Verma', 'amit.verma@example.com', 'password123', 'member', 'Event Community Pass')
+    ('usr_admin_01', 'Siddharth Maurya', 'admin@siddwhizz.com', 'PROVISIONED_VIA_SERVER_AUTH_BOOTSTRAP', 'admin', 'SIDD.WHIZZ Official', 'active', TRUE),
+    ('usr_client_01', 'Priya Sharma', 'priya@techsummit.io', 'PROVISIONED_VIA_SERVER_AUTH_BOOTSTRAP', 'client', 'Apex Global Tech Summits', 'active', TRUE),
+    ('usr_member_01', 'Amit Verma', 'amit.verma@example.com', 'PROVISIONED_VIA_SERVER_AUTH_BOOTSTRAP', 'member', 'Event Community Pass', 'active', TRUE)
 ON CONFLICT (email) DO NOTHING;
 
 -- Seed Sample Booking Enquiries
@@ -152,3 +155,132 @@ VALUES
     ('med-6', 'Black Bowtie Gala Host Portrait', 'image', 'Headshots', '1.8 MB', NULL, '2400 x 3000', 'https://sidwizz-portfolio.vercel.app/assets/host-bowtie.jpg')
 ON CONFLICT (id) DO NOTHING;
 
+
+-- ============================================================================
+-- MILESTONE 2: WEBSITE CMS, CONTROLLED THEME TOKENS & CONTACT FORM BUILDER
+-- (Mirrors database/migrations/002_website_cms_and_forms.sql)
+-- ============================================================================
+
+CREATE TABLE IF NOT EXISTS cms_site_settings (
+  id TEXT PRIMARY KEY DEFAULT 'global',
+  draft_settings JSONB NOT NULL DEFAULT '{}'::jsonb,
+  published_settings JSONB NOT NULL DEFAULT '{}'::jsonb,
+  updated_by TEXT,
+  published_by TEXT,
+  published_at TIMESTAMPTZ,
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+CREATE TABLE IF NOT EXISTS cms_theme_tokens (
+  id TEXT PRIMARY KEY DEFAULT 'global',
+  draft_tokens JSONB NOT NULL DEFAULT '{}'::jsonb,
+  published_tokens JSONB NOT NULL DEFAULT '{}'::jsonb,
+  contrast_verified BOOLEAN NOT NULL DEFAULT TRUE,
+  updated_by TEXT,
+  published_by TEXT,
+  published_at TIMESTAMPTZ,
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+CREATE TABLE IF NOT EXISTS cms_navigation_menus (
+  id TEXT PRIMARY KEY DEFAULT 'global',
+  draft_navigation JSONB NOT NULL DEFAULT '{}'::jsonb,
+  published_navigation JSONB NOT NULL DEFAULT '{}'::jsonb,
+  updated_by TEXT,
+  published_by TEXT,
+  published_at TIMESTAMPTZ,
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+CREATE TABLE IF NOT EXISTS cms_pages (
+  slug TEXT PRIMARY KEY CHECK (slug IN ('home', 'about', 'services', 'portfolio', 'gallery', 'contact')),
+  title TEXT NOT NULL,
+  route_path TEXT NOT NULL UNIQUE,
+  status TEXT NOT NULL DEFAULT 'published' CHECK (status IN ('draft', 'in_review', 'scheduled', 'published')),
+  scheduled_publish_at TIMESTAMPTZ,
+  draft_seo JSONB NOT NULL DEFAULT '{}'::jsonb,
+  published_seo JSONB NOT NULL DEFAULT '{}'::jsonb,
+  draft_sections JSONB NOT NULL DEFAULT '[]'::jsonb,
+  published_sections JSONB NOT NULL DEFAULT '[]'::jsonb,
+  current_version INTEGER NOT NULL DEFAULT 1,
+  updated_by TEXT,
+  published_by TEXT,
+  published_at TIMESTAMPTZ DEFAULT NOW(),
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+CREATE TABLE IF NOT EXISTS cms_page_revisions (
+  id TEXT PRIMARY KEY,
+  page_slug TEXT NOT NULL REFERENCES cms_pages(slug) ON DELETE CASCADE,
+  version_number INTEGER NOT NULL,
+  label TEXT NOT NULL,
+  workflow_status TEXT NOT NULL,
+  sections_snapshot JSONB NOT NULL,
+  seo_snapshot JSONB NOT NULL,
+  theme_snapshot JSONB,
+  created_by_id TEXT,
+  created_by_email TEXT NOT NULL,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  UNIQUE (page_slug, version_number)
+);
+
+CREATE TABLE IF NOT EXISTS cms_media_assets (
+  id TEXT PRIMARY KEY,
+  title TEXT NOT NULL,
+  media_type TEXT NOT NULL DEFAULT 'image' CHECK (media_type IN ('image', 'video', 'document', 'audio')),
+  storage_provider TEXT NOT NULL DEFAULT 'vercel_blob' CHECK (storage_provider IN ('vercel_blob', 'bundled_asset', 'inline_fallback')),
+  public_url TEXT NOT NULL,
+  alt_text TEXT NOT NULL DEFAULT '',
+  category TEXT NOT NULL DEFAULT 'Stage Moments',
+  mime_type TEXT NOT NULL DEFAULT 'image/jpeg',
+  byte_size INTEGER NOT NULL DEFAULT 0,
+  width INTEGER,
+  height INTEGER,
+  uploaded_by_email TEXT,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+CREATE TABLE IF NOT EXISTS cms_media_usages (
+  id TEXT PRIMARY KEY,
+  asset_url TEXT NOT NULL,
+  page_slug TEXT NOT NULL,
+  section_id TEXT NOT NULL,
+  section_label TEXT NOT NULL,
+  environment TEXT NOT NULL CHECK (environment IN ('published', 'draft', 'seo')),
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+CREATE TABLE IF NOT EXISTS cms_forms (
+  id TEXT PRIMARY KEY DEFAULT 'contact_main',
+  name TEXT NOT NULL,
+  draft_config JSONB NOT NULL DEFAULT '{}'::jsonb,
+  published_config JSONB NOT NULL DEFAULT '{}'::jsonb,
+  current_version INTEGER NOT NULL DEFAULT 1,
+  updated_by TEXT,
+  published_by TEXT,
+  published_at TIMESTAMPTZ DEFAULT NOW(),
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+CREATE TABLE IF NOT EXISTS cms_form_submissions (
+  id TEXT PRIMARY KEY,
+  form_id TEXT NOT NULL REFERENCES cms_forms(id) ON DELETE RESTRICT,
+  form_version INTEGER NOT NULL DEFAULT 1,
+  mapped_enquiry_id TEXT,
+  client_name TEXT NOT NULL,
+  client_email TEXT NOT NULL,
+  client_phone TEXT NOT NULL,
+  organization TEXT NOT NULL DEFAULT '',
+  event_date TEXT NOT NULL DEFAULT '',
+  event_city TEXT NOT NULL DEFAULT '',
+  event_format TEXT NOT NULL DEFAULT '',
+  package_tier TEXT NOT NULL DEFAULT '',
+  payload JSONB NOT NULL DEFAULT '{}'::jsonb,
+  is_read BOOLEAN NOT NULL DEFAULT FALSE,
+  crm_stage TEXT NOT NULL DEFAULT 'New' CHECK (crm_stage IN ('New', 'Contacted', 'Qualified', 'Converted', 'Closed')),
+  assigned_staff_email TEXT,
+  internal_notes JSONB NOT NULL DEFAULT '[]'::jsonb,
+  ip_hash TEXT,
+  submitted_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);

@@ -1,5 +1,7 @@
 # Sidd.Whizz V1 — Comprehensive Engineering Audit Report (Corrected Baseline)
 
+> **Architecture Alignment Note (Verified Source Baseline):** While this early planning document referenced Next.js 15, the verified repository runtime is **TanStack Start (`@tanstack/react-start` 1.168.60) + TanStack Router (`1.170.41`) + Vite 8 + Tailwind CSS v4 + Neon PostgreSQL (`@neondatabase/serverless`)**. Always follow `AGENTS.md` as the authoritative stack specification.
+
 **Document Version:** 2.0.0 (Post-Review Corrected Baseline)  
 **Audit Date:** November 2026  
 **Auditor:** Antigravity Principal Engineering & Security Audit Agent  

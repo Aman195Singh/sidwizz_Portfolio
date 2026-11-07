@@ -373,7 +373,7 @@ export function getRealAnalytics(daysFilter = 30): AggregatedAnalytics {
       if (pathCounts[p] !== undefined) {
         pathCounts[p] += 1;
       } else {
-        pathCounts["/"] += 1;
+        pathCounts["/"] = (pathCounts["/"] ?? 0) + 1;
       }
     });
 

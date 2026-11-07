@@ -1,5 +1,7 @@
 # 06 — Database Model and Drizzle Schema Plan
 
+> **Architecture Alignment Note (Verified Baseline):** The live executable application uses **TanStack Start (`@tanstack/react-start` 1.168.x) + TanStack Router + Vite 8 + Nitro + Neon PostgreSQL (`@neondatabase/serverless` & `drizzle-orm`)** as documented in `AGENTS.md` and `database/migrations/`. Do **not** introduce Next.js (`src/app/` or `next/*`).
+
 ## Tables
 ### Better Auth tables
 Use Better Auth CLI/schema generation for the pinned Better Auth version. Core entities typically include `user`, `session`, `account`, `verification`. Do not hand-invent the schema; generate using the installed Better Auth CLI, review it and commit the generated Drizzle schema/migration.
