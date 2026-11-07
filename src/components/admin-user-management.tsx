@@ -1048,7 +1048,7 @@ export function AdminUserManagement({
       <div
         role="tablist"
         aria-label="User Management Sections"
-        className="flex items-center gap-1.5 overflow-x-auto pb-1 thin-scrollbar border-b border-border"
+        className="flex items-center gap-1.5 overflow-x-auto pb-1 no-scrollbar border-b border-border"
       >
         {navItems
           .filter((item) => !item.permission || hasPermission(item.permission))
@@ -2783,7 +2783,7 @@ export function AdminUserManagement({
             </div>
 
             {/* 7 Drawer Tabs */}
-            <div className="flex items-center gap-1 overflow-x-auto border-b border-border px-4 pt-2 thin-scrollbar">
+            <div className="flex items-center gap-1 overflow-x-auto border-b border-border px-4 pt-2 no-scrollbar">
               {(
                 [
                   { id: "overview", label: "Overview" },

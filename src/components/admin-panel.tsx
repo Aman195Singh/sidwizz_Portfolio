@@ -1158,7 +1158,7 @@ https://sidwizz-portfolio.vercel.app`
             }`}
           >
             <span className="flex items-center gap-3">
-              <CalendarCheck className="h-4 w-4" /> Booking
+              <CalendarCheck className="h-4 w-4" /> Bookings
             </span>
             <span
               className={`rounded-full px-2 py-0.5 text-xs font-bold ${
@@ -1227,7 +1227,7 @@ https://sidwizz-portfolio.vercel.app`
             }`}
           >
             <span className="flex items-center gap-3">
-              <Users className="h-4 w-4" /> User Management
+              <Users className="h-4 w-4" /> Users
             </span>
             <span
               className={`rounded-full px-2 py-0.5 text-[11px] font-black ${
@@ -1340,10 +1340,10 @@ https://sidwizz-portfolio.vercel.app`
               {activeTab === "overview" && "Dashboard Overview"}
               {activeTab === "analytics" && "Web Page Traffic & Analytics"}
               {activeTab === "enquiries" && "Client Enquiries & Fast Outreach"}
-              {activeTab === "booking" && "Role-Based Booking & Operations"}
+              {activeTab === "booking" && "Role-Based Bookings & Operations"}
               {activeTab === "media" && "Media Asset Library"}
               {activeTab === "cms" && "Website CMS & Form Builder"}
-              {activeTab === "users" && "User, Role & Access Governance"}
+              {activeTab === "users" && "Users & Access Governance"}
               {activeTab === "account" && "Host Account & Profile Settings"}
               {activeTab === "settings" && "Website & Booking Settings"}
               {activeTab === "support" && "Developer Support & Assistance"}
@@ -1513,7 +1513,7 @@ https://sidwizz-portfolio.vercel.app`
                     </div>
                     <div>
                       <div className="flex items-center gap-2">
-                        <h3 className="font-display text-base font-extrabold text-foreground">User &amp; Access Governance</h3>
+                        <h3 className="font-display text-base font-extrabold text-foreground">Users &amp; Access Governance</h3>
                         <span className="rounded-full bg-emerald-50 text-emerald-700 border border-emerald-300 px-2 py-0.5 text-[10px] font-black uppercase">
                           Enterprise RBAC
                         </span>
@@ -1533,7 +1533,7 @@ https://sidwizz-portfolio.vercel.app`
                       className="btn-outline !py-1.5 !px-3.5 text-xs flex items-center gap-1.5 cursor-pointer !border-neutral-300 !text-foreground hover:!bg-neutral-100"
                     >
                       <ShieldCheck className="h-3.5 w-3.5 text-primary" />
-                      <span>Open User Management</span>
+                      <span>Open Users Hub</span>
                     </button>
                   </div>
                 </div>
@@ -3570,7 +3570,7 @@ https://sidwizz-portfolio.vercel.app`
                 </div>
 
                 <div className="panel-card-body p-0 sm:p-4">
-                  <div className="overflow-x-auto -mx-2 px-2 sm:mx-0 sm:px-0">
+                  <div className="overflow-x-auto no-scrollbar -mx-2 px-2 sm:mx-0 sm:px-0">
                     <table className="w-full min-w-[500px] text-left text-xs">
                       <thead className="border-b border-neutral-300 bg-neutral-100 font-bold text-muted-foreground uppercase tracking-wider">
                         <tr>

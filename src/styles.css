@@ -347,10 +347,15 @@
   .rbac-table-region {
     container-type: inline-size;
     overflow-x: auto;
+    scrollbar-width: none;
+    -ms-overflow-style: none;
     max-width: 100%;
     border-radius: 0.875rem;
     border: 1px solid #e2e8f0;
     background-color: #ffffff;
+  }
+  .rbac-table-region::-webkit-scrollbar {
+    display: none;
   }
   .rbac-table-region:focus-visible {
     outline: 2px solid var(--primary);
