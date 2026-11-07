@@ -30,6 +30,9 @@ dist-ssr
 .wrangler/
 .dev.vars
 
+# Vercel
+.vercel/
+
 # Editor directories and files
 scratch/
 .vscode/*
