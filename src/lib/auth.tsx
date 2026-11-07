@@ -67,8 +67,8 @@ function mapSessionToUser(s: AuthSessionDTO): User {
     organizationIds: s.organizationIds,
     avatar: s.avatar || DEFAULT_ROLE_AVATARS[s.role],
     dataScope: s.dataScope,
-    permissions: s.permissions,
-    features: s.features,
+    permissions: Array.isArray(s.permissions) ? s.permissions : [],
+    features: Array.isArray(s.features) ? s.features : [],
     createdAt: s.createdAt,
     lastLoginAt: s.lastLoginAt,
     pendingApplicationStatus: s.pendingApplicationStatus,
@@ -276,6 +276,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const hasPermission = useCallback(
     (permission: PermissionKey): boolean => {
       if (!user || user.accountStatus !== "active") return false;
+      // Super Admin and active Platform Admins have full access to all permissions
+      if (user.role === "admin" || user.primaryRoleKey === "super_admin") return true;
+      if (!Array.isArray(user.permissions)) return false;
       return user.permissions.includes(permission);
     },
     [user]
@@ -284,6 +287,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const hasFeature = useCallback(
     (feature: FeatureKey): boolean => {
       if (!user || user.accountStatus !== "active") return false;
+      // Super Admin and active Platform Admins have full access to all features
+      if (user.role === "admin" || user.primaryRoleKey === "super_admin") return true;
+      if (!Array.isArray(user.features)) return false;
       return user.features.includes(feature);
     },
     [user]

@@ -1189,62 +1189,58 @@ https://sidwizz-portfolio.vercel.app`
           </button>
 
           {/* Website CMS & Contact Form Builder Tab */}
-          {hasFeature("feature.cms") && hasPermission("cms.view") && (
-            <button
-              onClick={() => {
-                setActiveTab("cms");
-                setSidebarOpen(false);
-              }}
-              className={`flex w-full items-center justify-between rounded-xl px-3.5 py-3 font-semibold transition ${
+          <button
+            onClick={() => {
+              setActiveTab("cms");
+              setSidebarOpen(false);
+            }}
+            className={`flex w-full items-center justify-between rounded-xl px-3.5 py-3 font-semibold transition ${
+              activeTab === "cms"
+                ? "bg-primary text-primary-foreground shadow-sm font-bold"
+                : "text-foreground/80 hover:bg-accent hover:text-foreground"
+            }`}
+          >
+            <span className="flex items-center gap-3">
+              <LayoutTemplate className="h-4 w-4" /> Website CMS
+            </span>
+            <span
+              className={`rounded-full px-2 py-0.5 text-[11px] font-black ${
                 activeTab === "cms"
-                  ? "bg-primary text-primary-foreground shadow-sm font-bold"
-                  : "text-foreground/80 hover:bg-accent hover:text-foreground"
+                  ? "bg-white text-primary"
+                  : "bg-primary/15 text-primary border border-primary/25"
               }`}
             >
-              <span className="flex items-center gap-3">
-                <LayoutTemplate className="h-4 w-4" /> Website CMS
-              </span>
-              <span
-                className={`rounded-full px-2 py-0.5 text-[11px] font-black ${
-                  activeTab === "cms"
-                    ? "bg-white text-primary"
-                    : "bg-primary/15 text-primary border border-primary/25"
-                }`}
-              >
-                6 Pages
-              </span>
-            </button>
-          )}
+              6 Pages
+            </span>
+          </button>
 
           {/* Enterprise User, Role & Access Governance Tab */}
-          {hasPermission("user.view") && (
-            <button
-              onClick={() => {
-                setActiveTab("users");
-                setSidebarOpen(false);
-              }}
-              className={`flex w-full items-center justify-between rounded-xl px-3.5 py-3 font-semibold transition ${
+          <button
+            onClick={() => {
+              setActiveTab("users");
+              setSidebarOpen(false);
+            }}
+            className={`flex w-full items-center justify-between rounded-xl px-3.5 py-3 font-semibold transition ${
+              activeTab === "users"
+                ? "bg-primary text-primary-foreground shadow-sm font-bold"
+                : "text-foreground/80 hover:bg-accent hover:text-foreground"
+            }`}
+          >
+            <span className="flex items-center gap-3">
+              <Users className="h-4 w-4" /> User Management
+            </span>
+            <span
+              className={`rounded-full px-2 py-0.5 text-[11px] font-black ${
                 activeTab === "users"
-                  ? "bg-primary text-primary-foreground shadow-sm font-bold"
-                  : "text-foreground/80 hover:bg-accent hover:text-foreground"
+                  ? "bg-white text-primary"
+                  : pendingOrgCount > 0
+                  ? "bg-primary text-primary-foreground"
+                  : "bg-primary/15 text-primary border border-primary/25"
               }`}
             >
-              <span className="flex items-center gap-3">
-                <Users className="h-4 w-4" /> User Management
-              </span>
-              <span
-                className={`rounded-full px-2 py-0.5 text-[11px] font-black ${
-                  activeTab === "users"
-                    ? "bg-white text-primary"
-                    : pendingOrgCount > 0
-                    ? "bg-primary text-primary-foreground"
-                    : "bg-primary/15 text-primary border border-primary/25"
-                }`}
-              >
-                {pendingOrgCount > 0 ? `${pendingOrgCount} Review` : "RBAC"}
-              </span>
-            </button>
-          )}
+              {pendingOrgCount > 0 ? `${pendingOrgCount} Review` : "RBAC"}
+            </span>
+          </button>
 
           {/* Merged Account & Profile Tab */}
           <button
@@ -1477,6 +1473,71 @@ https://sidwizz-portfolio.vercel.app`
                   </div>
                 </div>
               )}
+
+              {/* Executive Workspaces Quick Access */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="panel-card shadow-sm border border-neutral-300 bg-white p-5 flex flex-col justify-between">
+                  <div className="flex items-start gap-3.5">
+                    <div className="rounded-xl bg-primary/10 p-3 text-primary border border-primary/20 shrink-0">
+                      <LayoutTemplate className="h-5 w-5" />
+                    </div>
+                    <div>
+                      <div className="flex items-center gap-2">
+                        <h3 className="font-display text-base font-extrabold text-foreground">Website CMS Studio</h3>
+                        <span className="rounded-full bg-primary/15 text-primary border border-primary/30 px-2 py-0.5 text-[10px] font-black uppercase">
+                          Live Editor
+                        </span>
+                      </div>
+                      <p className="text-xs text-muted-foreground mt-1 leading-relaxed">
+                        Manage all 6 public pages (Home, About, Services, Portfolio, Gallery, Contact), typography &amp; visual styles, and the 3-column contact form builder.
+                      </p>
+                    </div>
+                  </div>
+                  <div className="mt-4 pt-3 border-t border-neutral-200 flex items-center justify-between">
+                    <span className="text-xs font-bold text-muted-foreground">6 Pages • Dynamic Form</span>
+                    <button
+                      type="button"
+                      onClick={() => setActiveTab("cms")}
+                      className="btn-red !py-1.5 !px-3.5 text-xs flex items-center gap-1.5 cursor-pointer"
+                    >
+                      <span>Open Website CMS</span>
+                      <ArrowRight className="h-3.5 w-3.5" />
+                    </button>
+                  </div>
+                </div>
+
+                <div className="panel-card shadow-sm border border-neutral-300 bg-white p-5 flex flex-col justify-between">
+                  <div className="flex items-start gap-3.5">
+                    <div className="rounded-xl bg-primary/10 p-3 text-primary border border-primary/20 shrink-0">
+                      <Users className="h-5 w-5" />
+                    </div>
+                    <div>
+                      <div className="flex items-center gap-2">
+                        <h3 className="font-display text-base font-extrabold text-foreground">User &amp; Access Governance</h3>
+                        <span className="rounded-full bg-emerald-50 text-emerald-700 border border-emerald-300 px-2 py-0.5 text-[10px] font-black uppercase">
+                          Enterprise RBAC
+                        </span>
+                      </div>
+                      <p className="text-xs text-muted-foreground mt-1 leading-relaxed">
+                        Control all user accounts, assign custom granular permissions, configure module feature entitlements, and review organizer applications.
+                      </p>
+                    </div>
+                  </div>
+                  <div className="mt-4 pt-3 border-t border-neutral-200 flex items-center justify-between">
+                    <span className="text-xs font-bold text-muted-foreground">
+                      {pendingOrgCount > 0 ? `${pendingOrgCount} Pending Approval` : "Full RBAC Active"}
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() => setActiveTab("users")}
+                      className="btn-outline !py-1.5 !px-3.5 text-xs flex items-center gap-1.5 cursor-pointer !border-neutral-300 !text-foreground hover:!bg-neutral-100"
+                    >
+                      <ShieldCheck className="h-3.5 w-3.5 text-primary" />
+                      <span>Open User Management</span>
+                    </button>
+                  </div>
+                </div>
+              </div>
 
               {/* Recent Enquiries Table Preview */}
               <div className="panel-card shadow-sm">
