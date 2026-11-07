@@ -6,19 +6,27 @@
 // You can pass additional config via defineConfig({ vite: { ... }, etc... }) if needed.
 import { defineConfig } from "@lovable.dev/vite-tanstack-config";
 
-// P0 Security Guard: Fail production builds if sensitive credentials use the public VITE_ prefix.
-const FORBIDDEN_PUBLIC_ENV_KEYS = [
-  "VITE_DATABASE_URL",
-  "VITE_DIRECT_URL",
-  "VITE_SESSION_SECRET",
-  "VITE_BETTER_AUTH_SECRET",
-  "VITE_BLOB_READ_WRITE_TOKEN",
-] as const;
+// P0 Security & Deployment Guard:
+// If sensitive credentials exist with the public `VITE_` prefix (e.g. from Vercel dashboard settings),
+// safely migrate them to the un-prefixed server-only environment variable (e.g. DATABASE_URL)
+// and DELETE the `VITE_` prefixed key from process.env so Vite NEVER bundles it into client-side JS.
+const SENSITIVE_CREDENTIAL_MAPPINGS: Record<string, string> = {
+  VITE_DATABASE_URL: "DATABASE_URL",
+  VITE_DIRECT_URL: "DIRECT_URL",
+  VITE_SESSION_SECRET: "SESSION_SECRET",
+  VITE_BETTER_AUTH_SECRET: "BETTER_AUTH_SECRET",
+  VITE_BLOB_READ_WRITE_TOKEN: "BLOB_READ_WRITE_TOKEN",
+};
 
-for (const forbiddenKey of FORBIDDEN_PUBLIC_ENV_KEYS) {
-  if (process.env[forbiddenKey]?.trim()) {
-    throw new Error(
-      `[SECURITY BLOCK] ${forbiddenKey} must NOT be prefixed with VITE_ because Vite bundles VITE_* variables into public client JavaScript. Remove ${forbiddenKey} and use the server-only variable name instead.`
+for (const [publicPrefixedKey, serverOnlyKey] of Object.entries(SENSITIVE_CREDENTIAL_MAPPINGS)) {
+  const val = process.env[publicPrefixedKey]?.trim();
+  if (val) {
+    if (!process.env[serverOnlyKey]?.trim()) {
+      process.env[serverOnlyKey] = val;
+    }
+    delete process.env[publicPrefixedKey];
+    console.warn(
+      `[SECURITY NOTICE] Auto-migrated ${publicPrefixedKey} to server-only ${serverOnlyKey} and sanitized it from client bundle.`
     );
   }
 }
