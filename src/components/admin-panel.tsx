@@ -65,6 +65,7 @@ import {
   Layers,
   CalendarCheck,
   LayoutTemplate,
+  Bell,
 } from "lucide-react";
 import { useAuth } from "@/lib/auth";
 import { toast } from "sonner";
@@ -81,6 +82,8 @@ import { WebAnalyticsDashboard } from "@/components/web-analytics-dashboard";
 import { AdminBookingWorkspace } from "@/components/admin-booking-workspace";
 import { AdminUserManagement } from "@/components/admin-user-management";
 import { AdminCmsWorkspace } from "@/components/admin-cms-workspace";
+import { AdminNotificationWorkspace } from "@/components/admin-notification-workspace";
+import { useNotificationSummary } from "@/lib/notification-client";
 import { deleteCmsMediaAssetServerFn } from "@/lib/cms-server";
 import {
   getStoredEnquiries,
@@ -127,6 +130,7 @@ export type AdminTab =
   | "media"
   | "cms"
   | "users"
+  | "notifications"
   | "account"
   | "settings"
   | "support";
@@ -333,6 +337,7 @@ const INITIAL_MEDIA_ITEMS: MediaItem[] = [
 
 export function AdminPanel({ initialTab = "overview" }: { initialTab?: AdminTab }) {
   const { user, logout, hasPermission, hasFeature, updateProfilePhoto, updatePassword, updateProfile } = useAuth();
+  const { unreadCount: unreadNotifCount, criticalCount: criticalNotifCount } = useNotificationSummary();
   const navigate = useNavigate();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const mediaFileInputRef = useRef<HTMLInputElement>(null);
@@ -1242,6 +1247,36 @@ https://sidwizz-portfolio.vercel.app`
             </span>
           </button>
 
+          {/* Centralized Notification Manager Tab */}
+          <button
+            onClick={() => {
+              setActiveTab("notifications");
+              setSidebarOpen(false);
+            }}
+            className={`flex w-full items-center justify-between rounded-xl px-3.5 py-3 font-semibold transition ${
+              activeTab === "notifications"
+                ? "bg-primary text-primary-foreground shadow-sm font-bold"
+                : "text-foreground/80 hover:bg-accent hover:text-foreground"
+            }`}
+          >
+            <span className="flex items-center gap-3">
+              <Bell className="h-4 w-4" /> Notifications
+            </span>
+            {unreadNotifCount > 0 && (
+              <span
+                className={`rounded-full px-2 py-0.5 text-[11px] font-black ${
+                  criticalNotifCount > 0
+                    ? "bg-red-600 text-white animate-pulse"
+                    : activeTab === "notifications"
+                    ? "bg-white text-primary"
+                    : "bg-primary text-primary-foreground"
+                }`}
+              >
+                {unreadNotifCount}
+              </span>
+            )}
+          </button>
+
           {/* Merged Account & Profile Tab */}
           <button
             onClick={() => {
@@ -1344,6 +1379,7 @@ https://sidwizz-portfolio.vercel.app`
               {activeTab === "media" && "Media Asset Library"}
               {activeTab === "cms" && "Website CMS & Form Builder"}
               {activeTab === "users" && "Users & Access Governance"}
+              {activeTab === "notifications" && "Notification Manager & Infrastructure Hub"}
               {activeTab === "account" && "Host Account & Profile Settings"}
               {activeTab === "settings" && "Website & Booking Settings"}
               {activeTab === "support" && "Developer Support & Assistance"}
@@ -3700,6 +3736,11 @@ https://sidwizz-portfolio.vercel.app`
           {activeTab === "users" && (
             <AdminUserManagement onPendingCountChange={setPendingOrgCount} />
           )}
+
+          {/* ========================================================= */}
+          {/* 5C. NOTIFICATION MANAGER & INFRASTRUCTURE HUB VIEW        */}
+          {/* ========================================================= */}
+          {activeTab === "notifications" && <AdminNotificationWorkspace />}
 
           {/* ========================================================= */}
           {/* 6. SETTINGS VIEW                                          */}

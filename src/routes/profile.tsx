@@ -20,10 +20,12 @@ import {
   Printer,
   Download,
   Check,
+  Bell,
 } from "lucide-react";
 import { useAuth } from "@/lib/auth";
 import { Logo } from "@/components/site";
 import { VipPassQrModal } from "@/components/LiveBookingAndModals";
+import { useNotifications, useNotificationSummary } from "@/lib/notification-client";
 import {
   getAttendeeTickets,
   validateAndCheckInTicket,
@@ -43,10 +45,18 @@ export const Route = createFileRoute("/profile")({
 
 function ProfilePage() {
   const { user, isAuthenticated, logout, updateProfilePhoto, updatePassword, updateProfile } = useAuth();
+  const { unreadCount: unreadNotifCount } = useNotificationSummary();
+  const {
+    notifications,
+    markAsRead,
+    markAllAsRead,
+    togglePin,
+    isLoading: notifsLoading,
+  } = useNotifications();
   const navigate = useNavigate();
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  const [activeTab, setActiveTab] = useState<"overview" | "account" | "security">("overview");
+  const [activeTab, setActiveTab] = useState<"overview" | "notifications" | "account" | "security">("overview");
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [vipPassOpen, setVipPassOpen] = useState(false);
   const [tickets, setTickets] = useState<AttendeeTicketRecord[]>(() => getAttendeeTickets());
@@ -263,6 +273,28 @@ function ProfilePage() {
             </span>
           </button>
 
+          {/* Member Notifications Tab */}
+          <button
+            onClick={() => {
+              setActiveTab("notifications");
+              setSidebarOpen(false);
+            }}
+            className={`flex w-full items-center justify-between rounded-xl px-3.5 py-3 font-semibold transition ${
+              activeTab === "notifications"
+                ? "bg-primary text-primary-foreground shadow-sm font-bold"
+                : "text-foreground/80 hover:bg-accent hover:text-foreground"
+            }`}
+          >
+            <span className="flex items-center gap-3">
+              <Bell className="h-4 w-4 shrink-0" /> Notifications
+            </span>
+            {unreadNotifCount > 0 && (
+              <span className="rounded-full bg-crimson px-2 py-0.5 text-[11px] font-black text-white">
+                {unreadNotifCount}
+              </span>
+            )}
+          </button>
+
           <button
             onClick={() => {
               setActiveTab("account");
@@ -335,6 +367,7 @@ function ProfilePage() {
             </button>
             <h1 className="truncate font-display text-lg font-extrabold uppercase tracking-tight text-foreground sm:text-xl">
               {activeTab === "overview" && "Attendee Overview & Stage Passes"}
+              {activeTab === "notifications" && "Member Notification Inbox"}
               {activeTab === "account" && "Personal Profile & Photo Studio"}
               {activeTab === "security" && "Account Security & Password"}
             </h1>
@@ -442,6 +475,109 @@ function ProfilePage() {
               </div>
             </div>
           </div>
+
+          {activeTab === "notifications" && (
+            <div className="space-y-6">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                <div>
+                  <p className="eyebrow mb-1">Pass Updates &amp; Event Alerts</p>
+                  <h2 className="display text-2xl sm:text-3xl text-foreground">
+                    Member <span className="text-primary">Notifications</span>
+                  </h2>
+                </div>
+
+                {unreadNotifCount > 0 && (
+                  <button
+                    type="button"
+                    onClick={() => markAllAsRead()}
+                    className="btn-red !py-2 !px-4 text-xs flex items-center gap-1.5 self-start sm:self-auto cursor-pointer"
+                  >
+                    <Check className="h-4 w-4" />
+                    <span>Mark All Read</span>
+                  </button>
+                )}
+              </div>
+
+              <div className="panel-card shadow-sm">
+                <div className="panel-card-header flex items-center justify-between">
+                  <div className="flex items-center gap-2.5">
+                    <span className="h-5 w-1.5 rounded-full bg-primary shrink-0" />
+                    <h3 className="font-display text-base font-black tracking-tight text-foreground uppercase">
+                      Recent Activity &amp; Schedule Announcements
+                    </h3>
+                  </div>
+                  <span className="text-xs text-muted-foreground font-semibold">
+                    {notifications.length} alerts
+                  </span>
+                </div>
+
+                <div className="panel-card-body p-4 space-y-3">
+                  {notifsLoading && notifications.length === 0 ? (
+                    <div className="py-12 text-center text-xs text-muted-foreground">
+                      Loading notifications...
+                    </div>
+                  ) : notifications.length === 0 ? (
+                    <div className="py-12 text-center text-xs text-muted-foreground">
+                      No notifications yet. You will receive alerts when your tickets are confirmed or schedules change.
+                    </div>
+                  ) : (
+                    notifications.map((item) => (
+                      <div
+                        key={item.id}
+                        className={`p-4 rounded-xl border transition-all ${
+                          !item.isRead
+                            ? "bg-primary/5 border-primary/30"
+                            : "bg-card border-border hover:border-neutral-300"
+                        }`}
+                      >
+                        <div className="flex items-start justify-between gap-3">
+                          <div className="space-y-1">
+                            <div className="flex items-center gap-2">
+                              <span className="text-[11px] font-bold text-primary uppercase">
+                                {item.category.replace(/_/g, " ")}
+                              </span>
+                              <span className="text-xs text-muted-foreground">•</span>
+                              <span className="text-xs text-muted-foreground">
+                                {new Date(item.createdAt).toLocaleDateString("en-US", {
+                                  month: "short",
+                                  day: "numeric",
+                                  hour: "2-digit",
+                                  minute: "2-digit",
+                                })}
+                              </span>
+                            </div>
+                            <h4 className="text-sm font-bold text-foreground">{item.title}</h4>
+                            <p className="text-xs text-muted-foreground leading-relaxed">{item.message}</p>
+                          </div>
+
+                          <div className="flex items-center gap-1.5 shrink-0">
+                            <button
+                              type="button"
+                              onClick={() => markAsRead(item.id, !item.isRead)}
+                              className="text-xs text-muted-foreground hover:text-foreground p-1"
+                              title={item.isRead ? "Mark unread" : "Mark read"}
+                            >
+                              <CheckCircle2
+                                className={`h-4 w-4 ${item.isRead ? "text-neutral-400" : "text-primary"}`}
+                              />
+                            </button>
+                            {item.link && (
+                              <Link
+                                to={item.link.split("?")[0] as any}
+                                className="text-xs font-bold text-primary hover:underline ml-2"
+                              >
+                                {item.actionLabel || "View"} &rarr;
+                              </Link>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                    ))
+                  )}
+                </div>
+              </div>
+            </div>
+          )}
 
           {activeTab === "overview" && (
             <div className="space-y-8">

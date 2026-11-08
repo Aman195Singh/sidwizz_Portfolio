@@ -35,6 +35,8 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { useAuth } from "@/lib/auth";
 import { usePublishedCms } from "@/lib/cms-context";
+import { NotificationBell } from "@/components/notification-bell";
+import { NotificationDrawer } from "@/components/notification-drawer";
 import { getPublicSocialAccounts, type SocialAccount } from "@/lib/data-store";
 import { PlatformBrandIcon } from "@/components/social-accounts-manager";
 import ctaHost from "@/assets/cta-host.jpg";
@@ -151,6 +153,7 @@ export function Header() {
   const [open, setOpen] = useState(false);
   const [mobileMoreOpen, setMobileMoreOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
+  const [notifDrawerOpen, setNotifDrawerOpen] = useState(false);
   const pathname = useRouterState({ select: (s) => s.location.pathname });
   const { user, logout } = useAuth();
   const { cms } = usePublishedCms();
@@ -262,6 +265,11 @@ export function Header() {
 
         {/* Right: "Book Sid" Button & Auth Profile / Login Capsule */}
         <div className="hidden items-center gap-3 lg:flex">
+          <NotificationBell
+            isOpen={notifDrawerOpen}
+            onToggle={() => setNotifDrawerOpen((prev) => !prev)}
+          />
+
           <Link
             to={cms.navigation.headerCtaTo}
             className="btn-red !px-4 !py-2 !normal-case whitespace-nowrap transition-transform"
@@ -391,6 +399,11 @@ export function Header() {
 
         {/* Mobile Hamburger & Profile / Login Capsule */}
         <div className="flex items-center gap-2.5 lg:hidden">
+          <NotificationBell
+            isOpen={notifDrawerOpen}
+            onToggle={() => setNotifDrawerOpen((prev) => !prev)}
+          />
+
           {user ? (
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
@@ -607,6 +620,11 @@ export function Header() {
           </nav>
         </div>
       </div>
+
+      <NotificationDrawer
+        isOpen={notifDrawerOpen}
+        onClose={() => setNotifDrawerOpen(false)}
+      />
     </header>
   );
 }

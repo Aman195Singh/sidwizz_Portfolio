@@ -551,6 +551,7 @@ export function saveEnquiry(
     try {
       localStorage.setItem(ENQUIRIES_KEY, JSON.stringify(updated));
       window.dispatchEvent(new Event("siddwhizz_enquiries_updated"));
+      window.dispatchEvent(new Event("siddwhizz_notifications_updated"));
     } catch (err) {
       console.warn("Failed to persist new enquiry:", err);
     }
@@ -655,6 +656,7 @@ export function saveBookingContract(
     try {
       localStorage.setItem(BOOKINGS_KEY, JSON.stringify(updated));
       window.dispatchEvent(new Event("siddwhizz_bookings_updated"));
+      window.dispatchEvent(new Event("siddwhizz_notifications_updated"));
     } catch (err) {
       console.warn("Failed to save booking contract:", err);
     }

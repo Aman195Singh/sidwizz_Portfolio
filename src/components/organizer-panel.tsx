@@ -32,6 +32,7 @@ import {
   Trash2,
   KeyRound,
   Upload,
+  Bell,
 } from "lucide-react";
 import { useAuth } from "@/lib/auth";
 import { toast } from "sonner";
@@ -52,8 +53,10 @@ import {
   TechnicalRiderRequestModal,
 } from "@/components/LiveBookingAndModals";
 import { OrganizerBookingWorkspace } from "@/components/organizer-booking-workspace";
+import { OrganizerNotificationWorkspace } from "@/components/organizer-notification-workspace";
+import { useNotificationSummary } from "@/lib/notification-client";
 
-export type OrganizerTab = "overview" | "booking" | "enquiries" | "bookings" | "events" | "account";
+export type OrganizerTab = "overview" | "booking" | "enquiries" | "bookings" | "events" | "notifications" | "account";
 
 interface OrgEnquiry {
   id: string;
@@ -97,6 +100,7 @@ const INITIAL_ORG_ENQUIRIES: OrgEnquiry[] = [
 
 export function OrganizerPanel() {
   const { user, logout, updateProfilePhoto, updatePassword, updateProfile } = useAuth();
+  const { unreadCount: unreadNotifCount } = useNotificationSummary();
   const navigate = useNavigate();
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -424,6 +428,28 @@ export function OrganizerPanel() {
             </span>
           </button>
 
+          {/* Organizer Notification Hub Tab */}
+          <button
+            onClick={() => {
+              setActiveTab("notifications");
+              setSidebarOpen(false);
+            }}
+            className={`flex w-full items-center justify-between rounded-xl px-3.5 py-3 font-semibold transition ${
+              activeTab === "notifications"
+                ? "bg-primary text-primary-foreground shadow-sm font-bold"
+                : "text-foreground/80 hover:bg-accent hover:text-foreground"
+            }`}
+          >
+            <span className="flex items-center gap-3">
+              <Bell className="h-4 w-4 shrink-0" /> Notifications
+            </span>
+            {unreadNotifCount > 0 && (
+              <span className="rounded-full bg-crimson px-2 py-0.5 text-[11px] font-black text-white">
+                {unreadNotifCount}
+              </span>
+            )}
+          </button>
+
           <button
             onClick={() => {
               setActiveTab("account");
@@ -484,6 +510,7 @@ export function OrganizerPanel() {
               {activeTab === "enquiries" && "My Stage Booking Enquiries"}
               {activeTab === "bookings" && "Confirmed Bookings & Contracts"}
               {activeTab === "events" && "Event Details & Host Tech Rider"}
+              {activeTab === "notifications" && "Organizer Notification Hub"}
               {activeTab === "account" && "Company Account & Lead Profile"}
             </h1>
           </div>
@@ -936,6 +963,11 @@ export function OrganizerPanel() {
               </div>
             </div>
           )}
+
+          {/* ========================================================= */}
+          {/* 4B. NOTIFICATION HUB VIEW                                 */}
+          {/* ========================================================= */}
+          {activeTab === "notifications" && <OrganizerNotificationWorkspace />}
 
           {/* ========================================================= */}
           {/* 5. MY ACCOUNTS VIEW (Merged Account & Profile)             */}
