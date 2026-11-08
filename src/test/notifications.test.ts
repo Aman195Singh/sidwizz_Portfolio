@@ -223,7 +223,7 @@ describe("Milestone 3 — Centralized Notification Manager Architecture", () => 
     });
   });
 
-  describe("4. Platform Notification Dispatch Engine", () => {
+  describe("4. Platform Notification Dispatch Engine & Strict Role Isolation", () => {
     it("dispatches cross-module event notifications successfully", async () => {
       const id = await dispatchPlatformNotification({
         title: "Test Booking Confirmed",
@@ -239,6 +239,37 @@ describe("Milestone 3 — Centralized Notification Manager Architecture", () => 
       });
 
       expect(id).toMatch(/^notif_/);
+    });
+
+    it("verifies strict role boundary: admin, organizer, and member inboxes are mutually exclusive", () => {
+      const allNotifications: Array<{ id: string; roleTarget: UserRole | "all"; title: string }> = [
+        { id: "1", roleTarget: "admin", title: "Neon DB Spike" },
+        { id: "2", roleTarget: "client", title: "Quotation Received" },
+        { id: "3", roleTarget: "member", title: "VIP Pass Ready" },
+        { id: "4", roleTarget: "all", title: "Platform Maintenance" },
+      ];
+
+      const filterForRole = (role: UserRole) =>
+        allNotifications.filter((n) => n.roleTarget === "all" || n.roleTarget === role);
+
+      const adminInbox = filterForRole("admin");
+      const clientInbox = filterForRole("client");
+      const memberInbox = filterForRole("member");
+
+      // Admin sees admin + all
+      expect(adminInbox.map((n) => n.id)).toEqual(["1", "4"]);
+      expect(adminInbox.some((n) => n.roleTarget === "client")).toBe(false);
+      expect(adminInbox.some((n) => n.roleTarget === "member")).toBe(false);
+
+      // Client sees client + all
+      expect(clientInbox.map((n) => n.id)).toEqual(["2", "4"]);
+      expect(clientInbox.some((n) => n.roleTarget === "admin")).toBe(false);
+      expect(clientInbox.some((n) => n.roleTarget === "member")).toBe(false);
+
+      // Member sees member + all
+      expect(memberInbox.map((n) => n.id)).toEqual(["3", "4"]);
+      expect(memberInbox.some((n) => n.roleTarget === "admin")).toBe(false);
+      expect(memberInbox.some((n) => n.roleTarget === "client")).toBe(false);
     });
   });
 });

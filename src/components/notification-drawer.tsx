@@ -1,7 +1,7 @@
 /**
  * SIDD.WHIZZ — Notification Drawer Component
- * Accessible right-sliding animated notification panel with live filtering,
- * scroll lock, keyboard shortcuts, priority badges, and deep workspace links.
+ * Styled to seamlessly harmonize with the SiddWhizz light card & crimson theme.
+ * Smooth right-sliding drawer with accessible focus trap, scroll lock, and deep workspace links.
  */
 
 import React, { useEffect, useId, useRef, useState } from "react";
@@ -23,7 +23,6 @@ import {
   Pin,
   CheckCircle2,
   AlertTriangle,
-  Info,
   Clock,
 } from "lucide-react";
 import { useNotifications } from "@/lib/notification-client";
@@ -52,7 +51,6 @@ export const NotificationDrawer: React.FC<NotificationDrawerProps> = ({
     markAsRead,
     markAllAsRead,
     togglePin,
-    refresh,
   } = useNotifications(isOpen ? { autoPollMs: 10000 } : undefined);
 
   // Body scroll lock & Escape key handling
@@ -114,16 +112,16 @@ export const NotificationDrawer: React.FC<NotificationDrawerProps> = ({
 
   const getWorkspaceTitle = () => {
     if (!isAuthenticated || !user) return "View Full Inbox";
-    if (user.role === "admin") return "Open Admin Notification Center";
-    if (user.role === "client") return "Open Organizer Notification Center";
-    return "Open Member Portal";
+    if (user.role === "admin") return "Open Full Admin Notification Center";
+    if (user.role === "client") return "Open Full Organizer Notification Hub";
+    return "Open Member Portal Inbox";
   };
 
   return (
     <>
       {/* Backdrop */}
       <div
-        className={`fixed inset-0 bg-black/70 backdrop-blur-sm z-40 transition-opacity duration-300 ${
+        className={`fixed inset-0 bg-ink/40 backdrop-blur-xs z-40 transition-opacity duration-300 ${
           isOpen ? "opacity-100 pointer-events-auto" : "opacity-0 pointer-events-none"
         }`}
         onClick={onClose}
@@ -135,29 +133,35 @@ export const NotificationDrawer: React.FC<NotificationDrawerProps> = ({
         role="dialog"
         aria-modal="true"
         aria-labelledby={titleId}
-        className={`fixed top-0 right-0 bottom-0 z-50 w-full max-w-[440px] bg-neutral-950 border-l border-white/10 shadow-2xl flex flex-col transform transition-transform duration-300 ease-in-out ${
+        className={`fixed top-0 right-0 bottom-0 z-50 w-full max-w-[430px] bg-card border-l border-border shadow-2xl flex flex-col transform transition-transform duration-300 ease-in-out ${
           isOpen ? "translate-x-0" : "translate-x-full"
         }`}
       >
         {/* Drawer Header */}
-        <div className="p-4 sm:p-5 border-b border-white/10 bg-neutral-900/60 backdrop-blur flex items-center justify-between gap-3">
+        <div className="p-4 sm:p-5 border-b border-border bg-card flex items-center justify-between gap-3">
           <div className="flex items-center gap-2.5">
-            <div className="w-8 h-8 rounded-lg bg-crimson/20 border border-crimson/40 flex items-center justify-center text-crimson">
+            <div className="w-9 h-9 rounded-xl bg-primary/10 border border-primary/20 flex items-center justify-center text-primary shadow-xs">
               <Bell className="w-4 h-4" />
             </div>
             <div>
               <div className="flex items-center gap-2">
-                <h2 id={titleId} className="text-base font-bold text-white font-display">
+                <h2 id={titleId} className="text-base font-bold text-foreground font-display">
                   Notifications
                 </h2>
                 {unreadCount > 0 && (
-                  <span className="px-2 py-0.5 text-xs font-semibold rounded-full bg-crimson/20 border border-crimson/30 text-crimson">
+                  <span className="px-2 py-0.5 text-xs font-bold rounded-full bg-primary/10 border border-primary/25 text-primary">
                     {unreadCount} new
                   </span>
                 )}
               </div>
-              <p className="text-xs text-neutral-400">
-                {user ? `${user.name} (${user.role.toUpperCase()})` : "Live platform alerts"}
+              <p className="text-xs text-muted-foreground">
+                {user ? (
+                  <span className="font-semibold">
+                    {user.role === "admin" ? "Admin Alert Feed" : user.role === "client" ? "Organizer Updates" : "Member Activity"}
+                  </span>
+                ) : (
+                  "Platform Alerts"
+                )}
               </p>
             </div>
           </div>
@@ -168,9 +172,9 @@ export const NotificationDrawer: React.FC<NotificationDrawerProps> = ({
                 type="button"
                 onClick={() => markAllAsRead()}
                 title="Mark all as read"
-                className="p-1.5 text-xs text-neutral-400 hover:text-white rounded-lg hover:bg-white/10 transition-colors flex items-center gap-1"
+                className="px-2.5 py-1 text-xs font-semibold text-muted-foreground hover:text-primary rounded-lg hover:bg-accent transition-colors flex items-center gap-1 cursor-pointer"
               >
-                <CheckCheck className="w-4 h-4" />
+                <CheckCheck className="w-3.5 h-3.5" />
                 <span className="hidden sm:inline">All read</span>
               </button>
             )}
@@ -179,7 +183,7 @@ export const NotificationDrawer: React.FC<NotificationDrawerProps> = ({
               type="button"
               onClick={onClose}
               aria-label="Close notifications panel"
-              className="p-1.5 rounded-lg text-neutral-400 hover:text-white hover:bg-white/10 transition-colors"
+              className="p-1.5 rounded-lg text-muted-foreground hover:text-foreground hover:bg-accent transition-colors cursor-pointer"
             >
               <X className="w-5 h-5" />
             </button>
@@ -187,16 +191,16 @@ export const NotificationDrawer: React.FC<NotificationDrawerProps> = ({
         </div>
 
         {/* Filter Tabs & Search Bar */}
-        <div className="p-3 sm:px-4 border-b border-white/10 bg-neutral-900/30 space-y-2.5">
+        <div className="p-3 sm:px-4 border-b border-border bg-muted/40 space-y-2.5">
           {/* Quick Filter Pills */}
           <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar pb-0.5">
             <button
               type="button"
               onClick={() => setActiveFilter("all")}
-              className={`px-3 py-1 rounded-lg text-xs font-medium transition-colors shrink-0 ${
+              className={`px-3 py-1 rounded-lg text-xs font-semibold transition-all shrink-0 cursor-pointer ${
                 activeFilter === "all"
-                  ? "bg-white text-neutral-950 font-semibold"
-                  : "bg-white/5 text-neutral-400 hover:text-white hover:bg-white/10"
+                  ? "bg-primary text-primary-foreground shadow-xs"
+                  : "bg-card border border-border text-muted-foreground hover:text-foreground hover:bg-accent"
               }`}
             >
               All ({notifications.length})
@@ -204,10 +208,10 @@ export const NotificationDrawer: React.FC<NotificationDrawerProps> = ({
             <button
               type="button"
               onClick={() => setActiveFilter("unread")}
-              className={`px-3 py-1 rounded-lg text-xs font-medium transition-colors shrink-0 ${
+              className={`px-3 py-1 rounded-lg text-xs font-semibold transition-all shrink-0 cursor-pointer ${
                 activeFilter === "unread"
-                  ? "bg-crimson text-white font-semibold"
-                  : "bg-white/5 text-neutral-400 hover:text-white hover:bg-white/10"
+                  ? "bg-primary text-primary-foreground shadow-xs"
+                  : "bg-card border border-border text-muted-foreground hover:text-foreground hover:bg-accent"
               }`}
             >
               Unread ({unreadCount})
@@ -215,10 +219,10 @@ export const NotificationDrawer: React.FC<NotificationDrawerProps> = ({
             <button
               type="button"
               onClick={() => setActiveFilter("bookings")}
-              className={`px-3 py-1 rounded-lg text-xs font-medium transition-colors shrink-0 ${
+              className={`px-3 py-1 rounded-lg text-xs font-semibold transition-all shrink-0 cursor-pointer ${
                 activeFilter === "bookings"
-                  ? "bg-amber-500/20 text-amber-300 border border-amber-500/40 font-semibold"
-                  : "bg-white/5 text-neutral-400 hover:text-white hover:bg-white/10"
+                  ? "bg-amber-500 text-white shadow-xs"
+                  : "bg-card border border-border text-muted-foreground hover:text-foreground hover:bg-accent"
               }`}
             >
               Bookings
@@ -226,10 +230,10 @@ export const NotificationDrawer: React.FC<NotificationDrawerProps> = ({
             <button
               type="button"
               onClick={() => setActiveFilter("system")}
-              className={`px-3 py-1 rounded-lg text-xs font-medium transition-colors shrink-0 ${
+              className={`px-3 py-1 rounded-lg text-xs font-semibold transition-all shrink-0 cursor-pointer ${
                 activeFilter === "system"
-                  ? "bg-cyan-500/20 text-cyan-300 border border-cyan-500/40 font-semibold"
-                  : "bg-white/5 text-neutral-400 hover:text-white hover:bg-white/10"
+                  ? "bg-blue-600 text-white shadow-xs"
+                  : "bg-card border border-border text-muted-foreground hover:text-foreground hover:bg-accent"
               }`}
             >
               System
@@ -238,19 +242,19 @@ export const NotificationDrawer: React.FC<NotificationDrawerProps> = ({
 
           {/* Search Field */}
           <div className="relative">
-            <Search className="w-3.5 h-3.5 text-neutral-400 absolute left-2.5 top-1/2 -translate-y-1/2 pointer-events-none" />
+            <Search className="w-3.5 h-3.5 text-muted-foreground absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" />
             <input
               type="text"
-              placeholder="Filter by keyword..."
+              placeholder="Search notifications..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full bg-neutral-950/80 border border-white/10 rounded-lg pl-8 pr-3 py-1.5 text-xs text-white placeholder-neutral-500 focus:outline-none focus:border-crimson focus:ring-1 focus:ring-crimson transition-all"
+              className="w-full bg-card border border-border rounded-xl pl-8 pr-7 py-1.5 text-xs text-foreground placeholder:text-muted-foreground/60 focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-all shadow-2xs"
             />
             {searchQuery && (
               <button
                 type="button"
                 onClick={() => setSearchQuery("")}
-                className="absolute right-2.5 top-1/2 -translate-y-1/2 text-neutral-500 hover:text-white"
+                className="absolute right-2.5 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
               >
                 <X className="w-3 h-3" />
               </button>
@@ -262,19 +266,19 @@ export const NotificationDrawer: React.FC<NotificationDrawerProps> = ({
         <div className="flex-1 overflow-y-auto no-scrollbar p-3 sm:p-4 space-y-2.5">
           {isLoading && notifications.length === 0 ? (
             <div className="py-12 text-center space-y-3">
-              <div className="w-8 h-8 mx-auto rounded-full border-2 border-crimson border-t-transparent animate-spin" />
-              <p className="text-xs text-neutral-400">Loading notifications...</p>
+              <div className="w-7 h-7 mx-auto rounded-full border-2 border-primary border-t-transparent animate-spin" />
+              <p className="text-xs text-muted-foreground">Loading notifications...</p>
             </div>
           ) : sortedNotifications.length === 0 ? (
             <div className="py-12 text-center space-y-3 px-4">
-              <div className="w-12 h-12 mx-auto rounded-2xl bg-white/5 border border-white/10 flex items-center justify-center text-neutral-500">
-                <CheckCircle2 className="w-6 h-6" />
+              <div className="w-12 h-12 mx-auto rounded-2xl bg-muted border border-border flex items-center justify-center text-muted-foreground">
+                <CheckCircle2 className="w-6 h-6 text-primary" />
               </div>
-              <h3 className="text-sm font-semibold text-white">No notifications</h3>
-              <p className="text-xs text-neutral-400 max-w-xs mx-auto">
+              <h3 className="text-sm font-bold text-foreground">No notifications</h3>
+              <p className="text-xs text-muted-foreground max-w-xs mx-auto">
                 {searchQuery || activeFilter !== "all"
-                  ? "No matching alerts found for your filter criteria."
-                  : "You're all caught up! New bookings, system events, and messages will appear here."}
+                  ? "No alerts match your current filter parameters."
+                  : "You're all caught up! New updates will appear here."}
               </p>
               {(searchQuery || activeFilter !== "all") && (
                 <button
@@ -283,7 +287,7 @@ export const NotificationDrawer: React.FC<NotificationDrawerProps> = ({
                     setActiveFilter("all");
                     setSearchQuery("");
                   }}
-                  className="px-3 py-1 text-xs text-crimson hover:underline"
+                  className="px-3 py-1 text-xs font-bold text-primary hover:underline cursor-pointer"
                 >
                   Reset filters
                 </button>
@@ -303,12 +307,12 @@ export const NotificationDrawer: React.FC<NotificationDrawerProps> = ({
         </div>
 
         {/* Drawer Footer with Role Workspace Link */}
-        <div className="p-3 sm:p-4 border-t border-white/10 bg-neutral-900/60 backdrop-blur flex items-center justify-between gap-2">
+        <div className="p-3 sm:p-4 border-t border-border bg-card flex items-center justify-between gap-2">
           <Link
             to={getRoleWorkspaceLink()}
             search={{ tab: "notifications" } as any}
             onClick={onClose}
-            className="flex-1 inline-flex items-center justify-center gap-1.5 px-4 py-2 text-xs font-semibold rounded-xl bg-white/10 hover:bg-white/15 text-white transition-all border border-white/10 hover:border-white/20"
+            className="btn-red !w-full !py-2.5 !text-xs flex items-center justify-center gap-1.5 cursor-pointer shadow-xs"
           >
             <span>{getWorkspaceTitle()}</span>
             <ExternalLink className="w-3.5 h-3.5" />
@@ -339,23 +343,23 @@ const NotificationCard: React.FC<NotificationCardProps> = ({
   const getIcon = () => {
     switch (item.category) {
       case "infrastructure":
-        return <Server className="w-4 h-4 text-cyan-400" />;
+        return <Server className="w-4 h-4 text-blue-600" />;
       case "booking":
       case "enquiries":
-        return <Calendar className="w-4 h-4 text-amber-400" />;
+        return <Calendar className="w-4 h-4 text-primary" />;
       case "cms":
-        return <FileText className="w-4 h-4 text-emerald-400" />;
+        return <FileText className="w-4 h-4 text-emerald-600" />;
       case "security":
-        return <ShieldAlert className="w-4 h-4 text-red-400" />;
+        return <ShieldAlert className="w-4 h-4 text-destructive" />;
       case "messages":
       case "admin_messages":
-        return <MessageSquare className="w-4 h-4 text-purple-400" />;
+        return <MessageSquare className="w-4 h-4 text-purple-600" />;
       case "tickets":
-        return <Ticket className="w-4 h-4 text-blue-400" />;
+        return <Ticket className="w-4 h-4 text-blue-600" />;
       case "developer":
-        return <Database className="w-4 h-4 text-neutral-300" />;
+        return <Database className="w-4 h-4 text-neutral-600" />;
       default:
-        return <Sparkles className="w-4 h-4 text-amber-300" />;
+        return <Sparkles className="w-4 h-4 text-primary" />;
     }
   };
 
@@ -363,25 +367,25 @@ const NotificationCard: React.FC<NotificationCardProps> = ({
     switch (priority) {
       case "critical":
         return (
-          <span className="px-1.5 py-0.5 text-[10px] font-bold rounded bg-red-500/20 text-red-300 border border-red-500/30 uppercase tracking-wider flex items-center gap-0.5">
+          <span className="px-1.5 py-0.5 text-[10px] font-bold rounded bg-destructive/15 text-destructive border border-destructive/25 uppercase tracking-wider flex items-center gap-0.5">
             <AlertTriangle className="w-2.5 h-2.5" /> P0 Critical
           </span>
         );
       case "high":
         return (
-          <span className="px-1.5 py-0.5 text-[10px] font-semibold rounded bg-amber-500/20 text-amber-300 border border-amber-500/30 uppercase tracking-wider">
+          <span className="px-1.5 py-0.5 text-[10px] font-semibold rounded bg-amber-500/15 text-amber-800 border border-amber-500/25 uppercase tracking-wider">
             P1 High
           </span>
         );
       case "medium":
         return (
-          <span className="px-1.5 py-0.5 text-[10px] font-medium rounded bg-blue-500/20 text-blue-300 border border-blue-500/30">
+          <span className="px-1.5 py-0.5 text-[10px] font-medium rounded bg-blue-500/15 text-blue-800 border border-blue-500/25">
             Medium
           </span>
         );
       case "success":
         return (
-          <span className="px-1.5 py-0.5 text-[10px] font-medium rounded bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">
+          <span className="px-1.5 py-0.5 text-[10px] font-medium rounded bg-emerald-500/15 text-emerald-800 border border-emerald-500/25">
             Success
           </span>
         );
@@ -411,15 +415,15 @@ const NotificationCard: React.FC<NotificationCardProps> = ({
     <div
       className={`group relative p-3 rounded-xl border transition-all ${
         !item.isRead
-          ? "bg-neutral-900/90 border-crimson/40 shadow-sm shadow-crimson/5 hover:border-crimson"
-          : "bg-neutral-900/40 border-white/5 hover:border-white/15"
-      } ${item.isPinned ? "ring-1 ring-amber-500/30" : ""}`}
+          ? "bg-primary/[0.03] border-primary/35 shadow-xs hover:border-primary/60"
+          : "bg-card border-border hover:border-neutral-300"
+      } ${item.isPinned ? "ring-2 ring-amber-500/30" : ""}`}
     >
       <div className="flex items-start gap-3">
         {/* Category Icon */}
         <div
           className={`w-8 h-8 rounded-lg shrink-0 flex items-center justify-center ${
-            !item.isRead ? "bg-white/10" : "bg-white/5"
+            !item.isRead ? "bg-primary/10" : "bg-muted"
           }`}
         >
           {getIcon()}
@@ -430,7 +434,7 @@ const NotificationCard: React.FC<NotificationCardProps> = ({
           <div className="flex items-center justify-between gap-1 mb-1">
             <div className="flex items-center gap-1.5 flex-wrap">
               {getPriorityBadge(item.priority)}
-              <span className="text-[11px] font-medium text-neutral-400 capitalize">
+              <span className="text-[11px] font-bold text-muted-foreground capitalize">
                 {item.category.replace(/_/g, " ")}
               </span>
             </div>
@@ -440,47 +444,47 @@ const NotificationCard: React.FC<NotificationCardProps> = ({
                 type="button"
                 onClick={onTogglePin}
                 title={item.isPinned ? "Unpin alert" : "Pin alert"}
-                className={`p-1 rounded text-neutral-400 hover:text-white hover:bg-white/10 transition-colors ${
-                  item.isPinned ? "text-amber-400" : ""
+                className={`p-1 rounded text-muted-foreground hover:text-foreground hover:bg-accent transition-colors cursor-pointer ${
+                  item.isPinned ? "text-amber-500" : ""
                 }`}
               >
-                <Pin className={`w-3.5 h-3.5 ${item.isPinned ? "fill-amber-400" : ""}`} />
+                <Pin className={`w-3.5 h-3.5 ${item.isPinned ? "fill-amber-500" : ""}`} />
               </button>
               <button
                 type="button"
                 onClick={onMarkRead}
                 title={item.isRead ? "Mark as unread" : "Mark as read"}
-                className="p-1 rounded text-neutral-400 hover:text-white hover:bg-white/10 transition-colors"
+                className="p-1 rounded text-muted-foreground hover:text-foreground hover:bg-accent transition-colors cursor-pointer"
               >
                 <CheckCircle2
-                  className={`w-3.5 h-3.5 ${item.isRead ? "text-neutral-500" : "text-crimson"}`}
+                  className={`w-3.5 h-3.5 ${item.isRead ? "text-muted-foreground/60" : "text-primary"}`}
                 />
               </button>
             </div>
           </div>
 
           <h4
-            className={`text-xs font-semibold leading-snug line-clamp-2 ${
-              !item.isRead ? "text-white" : "text-neutral-300"
+            className={`text-xs font-bold leading-snug line-clamp-2 ${
+              !item.isRead ? "text-foreground" : "text-foreground/80"
             }`}
           >
             {item.title}
           </h4>
 
-          <p className="text-xs text-neutral-400 mt-1 line-clamp-2 leading-relaxed">
+          <p className="text-xs text-muted-foreground mt-1 line-clamp-2 leading-relaxed">
             {item.message}
           </p>
 
           {item.internalNote && (
-            <div className="mt-1.5 text-[11px] text-amber-200/80 bg-amber-500/10 border border-amber-500/20 rounded p-1.5">
-              <span className="font-semibold text-amber-300">Staff Note: </span>
+            <div className="mt-1.5 text-[11px] text-amber-900 bg-amber-500/10 border border-amber-500/25 rounded-lg p-2">
+              <span className="font-bold text-amber-900">Staff Note: </span>
               {item.internalNote}
             </div>
           )}
 
           {/* Action Link & Timestamp Footer */}
-          <div className="flex items-center justify-between gap-2 mt-2 pt-2 border-t border-white/5">
-            <div className="flex items-center gap-1 text-[10px] text-neutral-500">
+          <div className="flex items-center justify-between gap-2 mt-2 pt-2 border-t border-border/60">
+            <div className="flex items-center gap-1 text-[10px] text-muted-foreground font-medium">
               <Clock className="w-3 h-3" />
               <span>{formatRelativeTime(item.createdAt)}</span>
             </div>
@@ -494,7 +498,7 @@ const NotificationCard: React.FC<NotificationCardProps> = ({
                     : undefined
                 }
                 onClick={onCloseDrawer}
-                className="inline-flex items-center gap-1 text-xs font-semibold text-crimson hover:text-red-400 transition-colors"
+                className="inline-flex items-center gap-1 text-xs font-bold text-primary hover:text-primary-deep transition-colors"
               >
                 <span>{item.actionLabel || "View Details"}</span>
                 <ExternalLink className="w-3 h-3" />
@@ -506,4 +510,3 @@ const NotificationCard: React.FC<NotificationCardProps> = ({
     </div>
   );
 };
-

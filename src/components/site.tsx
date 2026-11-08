@@ -265,11 +265,6 @@ export function Header() {
 
         {/* Right: "Book Sid" Button & Auth Profile / Login Capsule */}
         <div className="hidden items-center gap-3 lg:flex">
-          <NotificationBell
-            isOpen={notifDrawerOpen}
-            onToggle={() => setNotifDrawerOpen((prev) => !prev)}
-          />
-
           <Link
             to={cms.navigation.headerCtaTo}
             className="btn-red !px-4 !py-2 !normal-case whitespace-nowrap transition-transform"
@@ -278,7 +273,13 @@ export function Header() {
           </Link>
 
           {user ? (
-            <DropdownMenu>
+            <div className="flex items-center gap-2.5">
+              <NotificationBell
+                isOpen={notifDrawerOpen}
+                onToggle={() => setNotifDrawerOpen((prev) => !prev)}
+              />
+
+              <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <button
                   type="button"
@@ -384,6 +385,7 @@ export function Header() {
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
+            </div>
           ) : (
             <Link
               to="/login"
@@ -399,13 +401,14 @@ export function Header() {
 
         {/* Mobile Hamburger & Profile / Login Capsule */}
         <div className="flex items-center gap-2.5 lg:hidden">
-          <NotificationBell
-            isOpen={notifDrawerOpen}
-            onToggle={() => setNotifDrawerOpen((prev) => !prev)}
-          />
-
           {user ? (
-            <DropdownMenu>
+            <>
+              <NotificationBell
+                isOpen={notifDrawerOpen}
+                onToggle={() => setNotifDrawerOpen((prev) => !prev)}
+              />
+
+              <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <button
                   type="button"
@@ -475,6 +478,7 @@ export function Header() {
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
+            </>
           ) : (
             <Link
               to="/login"
@@ -621,10 +625,12 @@ export function Header() {
         </div>
       </div>
 
-      <NotificationDrawer
-        isOpen={notifDrawerOpen}
-        onClose={() => setNotifDrawerOpen(false)}
-      />
+      {user && (
+        <NotificationDrawer
+          isOpen={notifDrawerOpen}
+          onClose={() => setNotifDrawerOpen(false)}
+        />
+      )}
     </header>
   );
 }

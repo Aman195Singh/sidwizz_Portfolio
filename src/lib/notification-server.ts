@@ -466,8 +466,8 @@ function getEnrichedNotificationsForUser(userId: string, role: UserRole): Enrich
     const notif = serverNotifState.notifications.get(recip.notificationId);
     if (!notif) continue;
 
-    // Filter role boundary
-    if (notif.roleTarget !== "all" && notif.roleTarget !== role && role !== "admin") {
+    // Strict role boundary: Admin sees admin, Organizer sees client, Member sees member
+    if (notif.roleTarget !== "all" && notif.roleTarget !== role) {
       continue;
     }
 
@@ -484,24 +484,24 @@ function getEnrichedNotificationsForUser(userId: string, role: UserRole): Enrich
     });
   }
 
-  // If user is Admin, also surface any platform-wide or unassigned admin notifications
-  if (role === "admin") {
-    for (const notif of serverNotifState.notifications.values()) {
-      if (notif.roleTarget === "admin" && !notif.targetUserId) {
-        const hasRecipient = results.some((r) => r.id === notif.id);
-        if (!hasRecipient) {
-          // Auto-generate virtual recipient for admin
-          results.push({
-            ...notif,
-            recipientId: `rcp_auto_${notif.id}_${userId}`,
-            readAt: null,
-            archivedAt: null,
-            isPinned: notif.priority === "critical",
-            isStarred: notif.priority === "high",
-            isRead: false,
-            isArchived: false,
-          });
-        }
+  // Also surface any unassigned notifications targeted to this user's role
+  for (const notif of serverNotifState.notifications.values()) {
+    if (
+      (notif.roleTarget === role || notif.roleTarget === "all") &&
+      (!notif.targetUserId || notif.targetUserId === userId)
+    ) {
+      const hasRecipient = results.some((r) => r.id === notif.id);
+      if (!hasRecipient) {
+        results.push({
+          ...notif,
+          recipientId: `rcp_auto_${notif.id}_${userId}`,
+          readAt: null,
+          archivedAt: null,
+          isPinned: notif.priority === "critical",
+          isStarred: notif.priority === "high",
+          isRead: false,
+          isArchived: false,
+        });
       }
     }
   }

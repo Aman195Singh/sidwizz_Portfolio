@@ -1,7 +1,7 @@
 /**
  * SIDD.WHIZZ — Organizer Notification Center Workspace
- * Dedicated notification hub for event organizers & corporate clients.
- * Manages bookings, quotations, admin messages, attendee check-ins, and feature updates.
+ * Clean, light-themed notification hub for event organizers & corporate clients.
+ * Matches the portfolio UI/UX with crimson accents, light cards, and clear typography.
  */
 
 import React, { useState } from "react";
@@ -70,40 +70,31 @@ export const OrganizerNotificationWorkspace: React.FC = () => {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 p-5 rounded-2xl bg-gradient-to-r from-neutral-900 via-neutral-900 to-neutral-950 border border-white/10 shadow-xl">
-        <div className="flex items-center gap-3">
-          <div className="w-12 h-12 rounded-xl bg-amber-500/20 border border-amber-500/40 flex items-center justify-center text-amber-400">
-            <Bell className="w-6 h-6" />
-          </div>
-          <div>
-            <h1 className="text-xl sm:text-2xl font-bold text-white font-display flex items-center gap-2">
-              Organizer Notification Hub
-              {unreadCount > 0 && (
-                <span className="px-2.5 py-0.5 text-xs font-semibold rounded-full bg-crimson/20 border border-crimson/40 text-crimson">
-                  {unreadCount} Unread
-                </span>
-              )}
-            </h1>
-            <p className="text-xs sm:text-sm text-neutral-400 mt-0.5">
-              Live updates on your bookings, Sid&apos;s proposals, attendee registrations, and stage schedules
-            </p>
-          </div>
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+        <div>
+          <p className="eyebrow eyebrow-line">Host Bookings, Enquiries &amp; Stage Updates</p>
+          <h2 className="display mt-2 text-2xl sm:text-3xl text-foreground">
+            Organizer <span className="text-primary">Notification Hub</span>
+          </h2>
+          <p className="text-xs sm:text-sm text-muted-foreground mt-1">
+            Live updates on your bookings, Sid&apos;s proposals, attendee registrations, and stage schedules
+          </p>
         </div>
 
         <div className="flex items-center gap-2 flex-wrap">
           <button
             type="button"
             onClick={() => refresh()}
-            className="px-3 py-2 text-xs font-medium rounded-xl bg-white/5 hover:bg-white/10 text-neutral-300 hover:text-white border border-white/10 flex items-center gap-1.5 transition-all"
+            className="inline-flex items-center gap-1.5 rounded-xl border border-border bg-card px-3.5 py-2 text-xs font-bold text-foreground hover:bg-accent focus-visible:ring-2 focus-visible:ring-primary transition cursor-pointer shadow-xs"
           >
-            <RefreshCw className={`w-3.5 h-3.5 ${isLoading ? "animate-spin text-amber-400" : ""}`} />
+            <RefreshCw className={`w-3.5 h-3.5 ${isLoading ? "animate-spin text-primary" : ""}`} />
             <span>Refresh</span>
           </button>
           {unreadCount > 0 && (
             <button
               type="button"
               onClick={() => markAllAsRead()}
-              className="px-3.5 py-2 text-xs font-semibold rounded-xl bg-amber-600 hover:bg-amber-700 text-white flex items-center gap-1.5 transition-all shadow-md"
+              className="btn-red !py-2 !px-4 text-xs flex items-center gap-1.5 cursor-pointer shadow-xs"
             >
               <CheckCheck className="w-3.5 h-3.5" />
               <span>Mark All Read</span>
@@ -113,7 +104,7 @@ export const OrganizerNotificationWorkspace: React.FC = () => {
       </div>
 
       {/* Tabs */}
-      <div className="flex items-center gap-2 border-b border-white/10 overflow-x-auto no-scrollbar pb-1">
+      <div className="flex items-center gap-1.5 border-b border-border overflow-x-auto no-scrollbar pb-2">
         {[
           { key: "all", label: "All Alerts", icon: Layers },
           { key: "admin_messages", label: "Admin Messages", icon: MessageSquare },
@@ -131,10 +122,10 @@ export const OrganizerNotificationWorkspace: React.FC = () => {
               key={tab.key}
               type="button"
               onClick={() => setActiveTab(tab.key as OrganizerTab)}
-              className={`flex items-center gap-2 px-3.5 py-2 text-xs font-medium rounded-xl transition-all whitespace-nowrap shrink-0 ${
+              className={`flex items-center gap-2 px-3.5 py-2 text-xs font-bold rounded-xl transition-all whitespace-nowrap shrink-0 cursor-pointer ${
                 isActive
-                  ? "bg-amber-500 text-neutral-950 font-bold shadow-md"
-                  : "text-neutral-400 hover:text-white hover:bg-white/5"
+                  ? "bg-primary text-primary-foreground shadow-xs"
+                  : "bg-card border border-border text-foreground/80 hover:bg-accent hover:text-foreground"
               }`}
             >
               <Icon className="w-3.5 h-3.5" />
@@ -145,15 +136,15 @@ export const OrganizerNotificationWorkspace: React.FC = () => {
       </div>
 
       {/* Filter and Search Bar */}
-      <div className="p-4 rounded-2xl bg-neutral-900/40 border border-white/10 flex flex-col md:flex-row md:items-center justify-between gap-3">
+      <div className="panel-card shadow-sm p-4 flex flex-col md:flex-row md:items-center justify-between gap-3">
         <div className="relative flex-1 max-w-md">
-          <Search className="w-4 h-4 text-neutral-400 absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" />
+          <Search className="w-4 h-4 text-muted-foreground absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" />
           <input
             type="text"
             placeholder="Search notifications..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full bg-neutral-950 border border-white/10 rounded-xl pl-9 pr-3 py-2 text-xs text-white placeholder-neutral-500 focus:outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500 transition-all"
+            className="w-full bg-background border border-border rounded-xl pl-9 pr-3 py-2 text-xs text-foreground placeholder:text-muted-foreground/60 focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-all shadow-2xs"
           />
         </div>
 
@@ -161,7 +152,7 @@ export const OrganizerNotificationWorkspace: React.FC = () => {
           <select
             value={priorityFilter}
             onChange={(e) => setPriorityFilter(e.target.value)}
-            className="bg-neutral-950 border border-white/10 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-amber-500 transition-all"
+            className="bg-card border border-border rounded-xl px-3 py-2 text-xs font-bold text-foreground focus:outline-none focus:border-primary transition-all shadow-2xs"
           >
             <option value="all">All Priorities</option>
             <option value="critical">Critical / Urgent</option>
@@ -174,17 +165,17 @@ export const OrganizerNotificationWorkspace: React.FC = () => {
       {/* List */}
       <div className="space-y-3">
         {isLoading && notifications.length === 0 ? (
-          <div className="p-12 text-center rounded-2xl bg-neutral-900/30 border border-white/5 space-y-3">
-            <div className="w-8 h-8 mx-auto rounded-full border-2 border-amber-500 border-t-transparent animate-spin" />
-            <p className="text-xs text-neutral-400">Loading notifications...</p>
+          <div className="panel-card p-12 text-center space-y-3">
+            <div className="w-8 h-8 mx-auto rounded-full border-2 border-primary border-t-transparent animate-spin" />
+            <p className="text-xs text-muted-foreground">Loading notifications...</p>
           </div>
         ) : displayList.length === 0 ? (
-          <div className="p-12 text-center rounded-2xl bg-neutral-900/30 border border-white/10 space-y-3">
-            <div className="w-12 h-12 mx-auto rounded-2xl bg-white/5 border border-white/10 flex items-center justify-center text-neutral-500">
-              <CheckCircle2 className="w-6 h-6" />
+          <div className="panel-card p-12 text-center space-y-3">
+            <div className="w-12 h-12 mx-auto rounded-2xl bg-muted border border-border flex items-center justify-center text-muted-foreground">
+              <CheckCircle2 className="w-6 h-6 text-primary" />
             </div>
-            <h3 className="text-sm font-semibold text-white">No notifications</h3>
-            <p className="text-xs text-neutral-400 max-w-sm mx-auto">
+            <h3 className="text-sm font-bold text-foreground">No notifications</h3>
+            <p className="text-xs text-muted-foreground max-w-sm mx-auto">
               You are all caught up! Updates regarding your event bookings and messages will appear here.
             </p>
           </div>
@@ -221,17 +212,17 @@ const OrganizerNotificationCard: React.FC<OrganizerNotificationCardProps> = ({
   const getIcon = () => {
     switch (item.category) {
       case "booking":
-        return <Calendar className="w-4 h-4 text-amber-400" />;
+        return <Calendar className="w-4 h-4 text-primary" />;
       case "admin_messages":
-        return <MessageSquare className="w-4 h-4 text-purple-400" />;
+        return <MessageSquare className="w-4 h-4 text-purple-600" />;
       case "attendees":
-        return <Ticket className="w-4 h-4 text-blue-400" />;
+        return <Ticket className="w-4 h-4 text-blue-600" />;
       case "payments":
-        return <CreditCard className="w-4 h-4 text-emerald-400" />;
+        return <CreditCard className="w-4 h-4 text-emerald-600" />;
       case "team":
-        return <Users className="w-4 h-4 text-cyan-400" />;
+        return <Users className="w-4 h-4 text-cyan-600" />;
       default:
-        return <Sparkles className="w-4 h-4 text-amber-300" />;
+        return <Sparkles className="w-4 h-4 text-primary" />;
     }
   };
 
@@ -239,13 +230,13 @@ const OrganizerNotificationCard: React.FC<OrganizerNotificationCardProps> = ({
     switch (priority) {
       case "critical":
         return (
-          <span className="px-2 py-0.5 text-[10px] font-bold rounded-md bg-red-500/20 text-red-300 border border-red-500/30 uppercase tracking-wider flex items-center gap-1">
+          <span className="px-2 py-0.5 text-[10px] font-bold rounded-md bg-destructive/15 text-destructive border border-destructive/25 uppercase tracking-wider flex items-center gap-1">
             <AlertTriangle className="w-3 h-3" /> Urgent
           </span>
         );
       case "high":
         return (
-          <span className="px-2 py-0.5 text-[10px] font-semibold rounded-md bg-amber-500/20 text-amber-300 border border-amber-500/30 uppercase tracking-wider">
+          <span className="px-2 py-0.5 text-[10px] font-semibold rounded-md bg-amber-500/15 text-amber-800 border border-amber-500/25 uppercase tracking-wider">
             High Priority
           </span>
         );
@@ -256,17 +247,17 @@ const OrganizerNotificationCard: React.FC<OrganizerNotificationCardProps> = ({
 
   return (
     <div
-      className={`p-4 rounded-xl border transition-all ${
+      className={`panel-card p-4 transition-all ${
         !item.isRead
-          ? "bg-neutral-900/80 border-amber-500/40 shadow-sm shadow-amber-500/5"
-          : "bg-neutral-900/30 border-white/5 hover:border-white/10"
-      } ${item.isPinned ? "ring-1 ring-amber-500/30" : ""}`}
+          ? "border-primary/40 bg-primary/[0.02] shadow-xs"
+          : "border-border bg-card hover:border-neutral-300"
+      } ${item.isPinned ? "ring-2 ring-amber-500/30" : ""}`}
     >
       <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-3">
         <div className="flex items-start gap-3">
           <div
-            className={`w-9 h-9 rounded-lg shrink-0 flex items-center justify-center ${
-              !item.isRead ? "bg-white/10" : "bg-white/5"
+            className={`w-9 h-9 rounded-xl shrink-0 flex items-center justify-center ${
+              !item.isRead ? "bg-primary/10" : "bg-muted"
             }`}
           >
             {getIcon()}
@@ -274,11 +265,11 @@ const OrganizerNotificationCard: React.FC<OrganizerNotificationCardProps> = ({
           <div className="space-y-1">
             <div className="flex items-center gap-2 flex-wrap">
               {getPriorityBadge(item.priority)}
-              <span className="text-[11px] font-medium text-neutral-400 capitalize">
+              <span className="text-[11px] font-bold text-muted-foreground capitalize">
                 {item.category.replace(/_/g, " ")}
               </span>
-              <span className="text-neutral-600">•</span>
-              <span className="text-[11px] text-neutral-500">
+              <span className="text-muted-foreground">•</span>
+              <span className="text-[11px] text-muted-foreground font-medium">
                 {new Date(item.createdAt).toLocaleDateString("en-US", {
                   month: "short",
                   day: "numeric",
@@ -289,12 +280,12 @@ const OrganizerNotificationCard: React.FC<OrganizerNotificationCardProps> = ({
             </div>
             <h4
               className={`text-sm font-bold ${
-                !item.isRead ? "text-white" : "text-neutral-300"
+                !item.isRead ? "text-foreground" : "text-foreground/80"
               }`}
             >
               {item.title}
             </h4>
-            <p className="text-xs text-neutral-400 leading-relaxed max-w-2xl">
+            <p className="text-xs text-muted-foreground leading-relaxed max-w-2xl">
               {item.message}
             </p>
           </div>
@@ -305,21 +296,21 @@ const OrganizerNotificationCard: React.FC<OrganizerNotificationCardProps> = ({
             type="button"
             onClick={onTogglePin}
             title={item.isPinned ? "Unpin alert" : "Pin alert"}
-            className={`p-1.5 rounded-lg text-neutral-400 hover:text-white hover:bg-white/10 ${
-              item.isPinned ? "text-amber-400" : ""
+            className={`p-1.5 rounded-lg text-muted-foreground hover:text-foreground hover:bg-accent cursor-pointer ${
+              item.isPinned ? "text-amber-500" : ""
             }`}
           >
-            <Pin className={`w-3.5 h-3.5 ${item.isPinned ? "fill-amber-400" : ""}`} />
+            <Pin className={`w-3.5 h-3.5 ${item.isPinned ? "fill-amber-500" : ""}`} />
           </button>
 
           <button
             type="button"
             onClick={onMarkRead}
             title={item.isRead ? "Mark unread" : "Mark read"}
-            className="p-1.5 rounded-lg text-neutral-400 hover:text-white hover:bg-white/10"
+            className="p-1.5 rounded-lg text-muted-foreground hover:text-foreground hover:bg-accent cursor-pointer"
           >
             <CheckCircle2
-              className={`w-3.5 h-3.5 ${item.isRead ? "text-neutral-500" : "text-amber-400"}`}
+              className={`w-3.5 h-3.5 ${item.isRead ? "text-muted-foreground/60" : "text-primary"}`}
             />
           </button>
 
@@ -331,7 +322,7 @@ const OrganizerNotificationCard: React.FC<OrganizerNotificationCardProps> = ({
                   ? (Object.fromEntries(new URLSearchParams(item.link.split("?")[1])) as any)
                   : undefined
               }
-              className="inline-flex items-center gap-1 px-3 py-1.5 text-xs font-semibold rounded-lg bg-amber-500/20 text-amber-300 hover:bg-amber-500/30 border border-amber-500/30 ml-1"
+              className="inline-flex items-center gap-1 px-3 py-1.5 text-xs font-bold rounded-lg bg-primary/10 text-primary hover:bg-primary/20 border border-primary/25 ml-1"
             >
               <span>{item.actionLabel || "View"}</span>
               <ExternalLink className="w-3 h-3" />
@@ -342,4 +333,3 @@ const OrganizerNotificationCard: React.FC<OrganizerNotificationCardProps> = ({
     </div>
   );
 };
-
